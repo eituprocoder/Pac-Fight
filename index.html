@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pac-Fight - Epic RPG</title>
+    <style>
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+        body { margin: 0; overflow: hidden; background: #000411; font-family: 'Courier New', monospace; color: #fff; }
+
+        /* Screens */
+        .screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; flex-direction: column; }
+        #screen-menu { z-index: 100; background: linear-gradient(135deg, #000411 0%, #001133 100%); align-items: center; justify-content: flex-start; padding: 20px; overflow-y: auto; }
+        #screen-battle { z-index: 10; display: none; }
+
+        /* Header UI */
+        h1.title { font-size: 38px; color: #ffff00; text-shadow: 0 0 15px #ffff00, 3px 3px 0 #ff0000; margin: 10px 0 5px 0; letter-spacing: 3px; text-align: center; }
+        .subtitle { color: #00f2ff; font-size: 14px; margin-bottom: 20px; text-shadow: 0 0 8px #00f2ff; text-align: center; }
+
+        /* Level Map Screen */
+        .map-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 12px; width: 100%; max-width: 800px; background: rgba(0,0,0,0.6); border: 2px solid #00f2ff; border-radius: 12px; padding: 20px; box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); max-height: 60vh; overflow-y: auto; }
+        .level-btn { aspect-ratio: 1; border-radius: 10px; border: 2px solid #00f2ff; background: rgba(0, 242, 255, 0.1); color: #00f2ff; font-weight: bold; font-size: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; position: relative; }
+        .level-btn:hover:not(.locked) { background: #00f2ff; color: #000; box-shadow: 0 0 15px #00f2ff; transform: scale(1.05); }
+        .level-btn.locked { border-color: #444; color: #555; background: rgba(255,255,255,0.03); cursor: not-allowed; }
+        .level-btn.boss { border-color: #ff0000; color: #ff0000; background: rgba(255,0,0,0.15); box-shadow: 0 0 10px rgba(255,0,0,0.3); }
+        .level-btn.boss:hover:not(.locked) { background: #ff0000; color: #fff; box-shadow: 0 0 20px #ff0000; }
+        .level-btn.cleared { border-color: #00ff00; color: #00ff00; background: rgba(0,255,0,0.1); }
+        .level-btn .star-rating { font-size: 9px; color: #ffff00; margin-top: 2px; }
+
+        /* Battle UI */
+        #battle-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 15px; }
+        .interactive { pointer-events: auto; }
+
+        /* HUD top */
+        .hud-top { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
+        .status-box { background: rgba(0, 4, 17, 0.85); border: 2px solid #00f2ff; border-radius: 10px; padding: 10px 15px; width: 220px; box-shadow: 0 0 10px rgba(0, 242, 255, 0.3); }
+        .status-box h3 { margin: 0 0 5px 0; font-size: 16px; color: #ffff00; display: flex; justify-content: space-between; }
+        .bar-bg { width: 100%; height: 14px; background: #222; border: 1px solid #fff; border-radius: 7px; overflow: hidden; position: relative; margin-top: 4px; }
+        .bar-fill { height: 100%; transition: width 0.3s ease; }
+        #hp-bar { background: linear-gradient(90deg, #ff0000, #00ff00); width: 100%; }
+        #pellet-bar { background: #ffff00; width: 0%; }
+
+        /* Floating Info overlay */
+        #stage-indicator { text-align: center; font-size: 20px; color: #ffff00; font-weight: bold; text-shadow: 0 0 8px #000; background: rgba(0,0,0,0.6); padding: 6px 16px; border-radius: 20px; border: 1px solid #ffff00; }
+
+        /* Action Menu Bottom */
+        .action-panel { display: flex; justify-content: center; gap: 15px; width: 100%; margin-bottom: 10px; }
+        .cmd-btn { width: 120px; padding: 12px; border: 2px solid #00f2ff; border-radius: 12px; background: rgba(0, 242, 255, 0.15); color: #00f2ff; font-weight: bold; font-family: inherit; font-size: 14px; cursor: pointer; transition: all 0.2s ease; text-align: center; box-shadow: 0 0 10px rgba(0,242,255,0.2); }
+        .cmd-btn:hover:not(:disabled) { background: #00f2ff; color: #000; box-shadow: 0 0 20px #00f2ff; transform: translateY(-3px); }
+        .cmd-btn:disabled { opacity: 0.4; border-color: #555; color: #777; cursor: not-allowed; transform: none; box-shadow: none; }
+        .cmd-btn.power { border-color: #ffff00; color: #ffff00; background: rgba(255, 255, 0, 0.15); }
+        .cmd-btn.power:hover:not(:disabled) { background: #ffff00; color: #000; box-shadow: 0 0 20px #ffff00; }
+        .cmd-btn.heal { border-color: #00ff00; color: #00ff00; background: rgba(0, 255, 0, 0.15); }
+        .cmd-btn.heal:hover:not(:disabled) { background: #00ff00; color: #000; box-shadow: 0 0 20px #00ff00; }
+
+        /* Quick-Time Shield Overlay */
+        #shield-overlay { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; background: rgba(0,0,0,0.9); border: 3px solid #00f2ff; border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 0 30px #00f2ff; z-index: 500; }
+        #shield-overlay h2 { margin: 0 0 10px 0; color: #ffff00; font-size: 18px; }
+        .timing-bar-container { width: 100%; height: 26px; background: #222; border: 2px solid #fff; border-radius: 13px; position: relative; overflow: hidden; margin: 15px 0; }
+        .timing-zone { position: absolute; top: 0; height: 100%; background: #00ff00; opacity: 0.6; }
+        .timing-indicator { position: absolute; top: 0; width: 6px; height: 100%; background: #ffffff; box-shadow: 0 0 10px #fff; left: 0%; }
+        #btn-shield { width: 100%; padding: 15px; font-size: 18px; font-weight: bold; background: #00f2ff; border: none; border-radius: 10px; color: #000; cursor: pointer; box-shadow: 0 0 15px #00f2ff; }
+        #btn-shield:active { transform: scale(0.96); }
+
+        /* Floating Damage Text */
+        .float-text { position: absolute; font-weight: bold; font-size: 24px; pointer-events: none; animation: floatUp 1s ease-out forwards; text-shadow: 2px 2px 0 #000; z-index: 1000; }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-60px) scale(1.4); } }
+
+        /* Modals */
+        .modal { display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); flex-direction: column; align-items: center; justify-content: center; z-index: 2000; }
+        .modal-content { background: #001133; border: 3px solid #00f2ff; border-radius: 15px; padding: 30px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 0 30px #00f2ff; }
+        .modal h2 { font-size: 32px; margin: 0 0 15px 0; }
+        .modal-btn { padding: 12px 30px; font-size: 18px; font-weight: bold; border-radius: 10px; border: none; cursor: pointer; margin-top: 20px; font-family: inherit; }
+
+        /* Top Bar Info */
+        .top-info-bar { width: 100%; max-width: 800px; display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px; color: #00f2ff; }
+    </style>
+</head>
+<body>
+
+    <!-- MAP / MENU SCREEN -->
+    <div id="screen-menu" class="screen">
+        <h1 class="title">PAC-FIGHT</h1>
+        <div class="subtitle">EPIC TURN-BASED RPG</div>
+
+        <div class="top-info-bar">
+            <div>UNLOCKED STAGES: <span id="unlocked-count" style="color:#ffff00;">1</span>/100</div>
+            <div>STATUS: <span style="color:#00ff00;">READY FOR BATTLE</span></div>
+        </div>
+
+        <div class="map-container" id="map-grid"></div>
+    </div>
+
+    <!-- BATTLE SCREEN -->
+    <div id="screen-battle" class="screen">
+        <div id="canvas-container" style="width:100%; height:100%;"></div>
+
+        <div id="battle-ui">
+            <!-- Top Status -->
+            <div class="hud-top">
+                <div class="status-box">
+                    <h3>PAC-MAN <span id="hp-text">20/20 HP</span></h3>
+                    <div class="bar-bg"><div id="hp-bar" class="bar-fill"></div></div>
+                    <div style="font-size: 10px; margin-top: 6px; color: #ffff00;">POWER PELLET CHARGE</div>
+                    <div class="bar-bg"><div id="pellet-bar" class="bar-fill"></div></div>
+                </div>
+
+                <div id="stage-indicator">STAGE 1</div>
+
+                <div class="status-box" style="border-color: #ff0055;">
+                    <h3 style="color: #ff0055;">ENEMIES LEFT</h3>
+                    <div id="ghost-count-display" style="font-size: 20px; font-weight: bold; color: #fff; text-align: center; margin-top: 5px;">
+                        1 GHOST
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Panel Bottom -->
+            <div>
+                <div id="target-prompt" style="text-align: center; color: #ffff00; font-weight: bold; margin-bottom: 8px; text-shadow: 1px 1px 2px #000; display: none;">
+                    👆 TAP A GHOST TO TARGET
+                </div>
+                <div class="action-panel">
+                    <button id="btn-attack" class="cmd-btn interactive" onclick="selectAction('attack')">⚔️ ATTACK<br><span style="font-size:10px; opacity:0.8;">(1-3 DMG)</span></button>
+                    <button id="btn-heal" class="cmd-btn heal interactive" onclick="selectAction('heal')">💖 HEAL<br><span style="font-size:10px; opacity:0.8;">(+3-12 HP)</span></button>
+                    <button id="btn-pellet" class="cmd-btn power interactive" onclick="selectAction('power')" disabled>⚡ POWER PELLET<br><span style="font-size:10px; opacity:0.8;">(2 TURNS)</span></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Time Defense Overlay -->
+        <div id="shield-overlay" class="interactive">
+            <h2>🛡️ DEFEND NOW!</h2>
+            <div style="font-size: 12px; color: #00f2ff;">TAP SHIELD IN THE GREEN ZONE!</div>
+            <div class="timing-bar-container">
+                <div id="timing-zone" class="timing-zone"></div>
+                <div id="timing-indicator" class="timing-indicator"></div>
+            </div>
+            <button id="btn-shield" onclick="triggerShieldDefend()">BLOCK!</button>
+        </div>
+    </div>
+
+    <!-- VICTORY MODAL -->
+    <div id="modal-victory" class="modal">
+        <div class="modal-content">
+            <h2 style="color: #00ff00; text-shadow: 0 0 15px #00ff00;">VICTORY!</h2>
+            <p id="victory-text">Stage cleared successfully!</p>
+            <button class="modal-btn" style="background: #00ff00; color: #000;" onclick="returnToMenu()">CONTINUE MAP</button>
+        </div>
+    </div>
+
+    <!-- GAMEOVER MODAL -->
+    <div id="modal-gameover" class="modal">
+        <div class="modal-content" style="border-color: #ff0000;">
+            <h2 style="color: #ff0000; text-shadow: 0 0 15px #ff0000;">GAME OVER</h2>
+            <p>Pac-Man was defeated by the Ghosts!</p>
+            <button class="modal-btn" style="background: #ff0000; color: #fff;" onclick="retryLevel()">RETRY STAGE</button>
+        </div>
+    </div>
+
+    <!-- Three.js -->
+    <script type="importmap">
+        { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        // --- GAME ARCHITECTURE & STATE ---
+        let currentLevel = 1;
+        let unlockedLevel = 1;
+        
+        // Player Stats
+        let playerHp = 20;
+        const maxHp = 20;
+        let powerCharge = 0; // Requires 2 charges
+        let isPowerPelletActive = false;
+        let powerPelletTurnsLeft = 0;
+
+        // Turn Management
+        let battleState = 'IDLE'; // IDLE, PLAYER_SELECT_TARGET, ANIMATING, SHIELD_MINIGAME
+        let selectedAbility = null;
+        let activeGhosts = [];
+        let selectedGhostTarget = null;
+
+        // Quick Time Defense System
+        let shieldAnimFrame = null;
+        let timingPos = 0;
+        let timingSpeed = 2.5;
+        let timingDir = 1;
+        let currentAttackingGhost = null;
+
+        // Ghost Catalog (8 Characters)
+        const ghostTypes = [
+            { name: 'BLINKY', color: 0xff0000, hp: 5, atk: 2 },
+            { name: 'PINKY',  color: 0xffb8ff, hp: 6, atk: 2 },
+            { name: 'INKY',   color: 0x00ffff, hp: 7, atk: 3 },
+            { name: 'CLYDE',  color: 0xffb852, hp: 8, atk: 3 },
+            { name: 'TIM',    color: 0x800080, hp: 10, atk: 4 },
+            { name: 'SPIKE',  color: 0x00ff00, hp: 12, atk: 4 },
+            { name: 'GOLDY',  color: 0xffff00, hp: 14, atk: 5 },
+            { name: 'WHITY',  color: 0xffffff, hp: 16, atk: 5 }
+        ];
+
+        // --- LOCAL STORAGE DATA ---
+        function loadProgress() {
+            const saved = localStorage.getItem('PacFight_Level');
+            if (saved) unlockedLevel = parseInt(saved, 10);
+            renderMapGrid();
+        }
+
+        function saveProgress() {
+            if (currentLevel >= unlockedLevel && unlockedLevel < 100) {
+                unlockedLevel = currentLevel + 1;
+                localStorage.setItem('PacFight_Level', unlockedLevel);
+            }
+        }
+
+        // --- MAP GENERATION (100 Levels) ---
+        function renderMapGrid() {
+            const grid = document.getElementById('map-grid');
+            grid.innerHTML = '';
+            document.getElementById('unlocked-count').innerText = unlockedLevel;
+
+            for (let i = 1; i <= 100; i++) {
+                const btn = document.createElement('div');
+                const isBoss = (i % 10 === 0);
+                const isLocked = i > unlockedLevel;
+                const isCleared = i < unlockedLevel;
+
+                btn.className = `level-btn ${isBoss ? 'boss' : ''} ${isLocked ? 'locked' : ''} ${isCleared ? 'cleared' : ''}`;
+                
+                let icon = isBoss ? '👹' : i;
+                btn.innerHTML = `<div>${icon}</div>`;
+                
+                if (isCleared) {
+                    btn.innerHTML += `<div class="star-rating">⭐⭐⭐</div>`;
+                } else if (isBoss && !isLocked) {
+                    btn.innerHTML += `<div class="star-rating" style="color:#ff0000">BOSS</div>`;
+                }
+
+                if (!isLocked) {
+                    btn.onclick = () => startBattleLevel(i);
+                }
+
+                grid.appendChild(btn);
+            }
+        }
+
+        // --- AUDIO SYNTHESIS SYSTEM ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSfx(freq, duration = 0.1, type = 'sine', volume = 0.1) {
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) {}
+        }
+
+        function playBiteSfx() {
+            playSfx(180, 0.08, 'sawtooth', 0.15);
+            setTimeout(() => playSfx(320, 0.12, 'sawtooth', 0.15), 60);
+        }
+
+        function playHealSfx() {
+            [400, 520, 650, 780, 950].forEach((f, idx) => {
+                setTimeout(() => playSfx(f, 0.1, 'sine', 0.1), idx * 50);
+            });
+        }
+
+        function playPowerSfx() {
+            playSfx(300, 0.4, 'triangle', 0.2);
+            setTimeout(() => playSfx(600, 0.4, 'triangle', 0.2), 150);
+        }
+
+        function playShieldBlockSfx() {
+            playSfx(880, 0.15, 'square', 0.2);
+            setTimeout(() => playSfx(1200, 0.2, 'sine', 0.15), 80);
+        }
+
+        // --- THREE.JS BATTLE ARENA SETUP ---
+        let scene, camera, renderer;
+        let pacmanMesh, topHalf, bottomHalf, auraMesh;
+        let activeParticles = [];
+
+        function init3D() {
+            const container = document.getElementById('canvas-container');
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000411);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 12, 28);
+            camera.lookAt(0, 2, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0x00f2ff, 1.5);
+            dirLight.position.set(10, 20, 15);
+            scene.add(dirLight);
+
+            const pointLight = new THREE.PointLight(0xffff00, 1, 30);
+            pointLight.position.set(-8, 3, 5);
+            scene.add(pointLight);
+
+            // Arena Floor Grid
+            const floorGeo = new THREE.PlaneGeometry(60, 40);
+            const floorMat = new THREE.MeshPhongMaterial({ color: 0x001122, side: THREE.DoubleSide });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.y = 0;
+            scene.add(floor);
+
+            const gridHelper = new THREE.GridHelper(60, 30, 0x00f2ff, 0x002244);
+            gridHelper.position.y = 0.01;
+            scene.add(gridHelper);
+
+            // Create Pac-Man Model
+            createPacmanModel();
+
+            // Window Resize
+            window.addEventListener('resize', onWindowResize);
+            
+            // Raycaster for targeting ghosts
+            setupRaycaster();
+        }
+
+        function createPacmanModel() {
+            pacmanMesh = new THREE.Group();
+            const pmMat = new THREE.MeshPhongMaterial({ color: 0xffff00, shininess: 80 });
+
+            const topGeo = new THREE.SphereGeometry(2, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+            topHalf = new THREE.Mesh(topGeo, pmMat);
+
+            const botGeo = new THREE.SphereGeometry(2, 32, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
+            bottomHalf = new THREE.Mesh(botGeo, pmMat);
+
+            const eyeGeo = new THREE.SphereGeometry(0.3, 16, 16);
+            const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const rightEye = new THREE.Mesh(eyeGeo, eyeMat); rightEye.position.set(0.8, 0.9, 1.5);
+            const leftEye = new THREE.Mesh(eyeGeo, eyeMat); leftEye.position.set(-0.8, 0.9, 1.5);
+
+            topHalf.add(rightEye); topHalf.add(leftEye);
+            pacmanMesh.add(topHalf); pacmanMesh.add(bottomHalf);
+
+            // Aura mesh for Power Pellet state
+            const auraGeo = new THREE.SphereGeometry(2.6, 16, 16);
+            const auraMat = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true, transparent: true, opacity: 0.5 });
+            auraMesh = new THREE.Mesh(auraGeo, auraMat);
+            auraMesh.visible = false;
+            pacmanMesh.add(auraMesh);
+
+            pacmanMesh.position.set(-9, 2, 5);
+            pacmanMesh.rotation.y = Math.PI / 3;
+            scene.add(pacmanMesh);
+        }
+
+        function createGhostModel(config, isBoss = false) {
+            const group = new THREE.Group();
+            const scale = isBoss ? 2.2 : 1.2;
+
+            const bodyMat = new THREE.MeshPhongMaterial({ color: config.color, shininess: 50 });
+            const body = new THREE.Mesh(new THREE.CapsuleGeometry(1, 1.2, 4, 16), bodyMat);
+            body.position.y = 1.2;
+            group.add(body);
+
+            // Eyes
+            const eGeo = new THREE.SphereGeometry(0.25, 8, 8);
+            const pGeo = new THREE.SphereGeometry(0.12, 8, 8);
+            const eMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const pMat = new THREE.MeshBasicMaterial({ color: 0x0000ff });
+
+            const lE = new THREE.Mesh(eGeo, eMat); lE.position.set(0.4, 1.7, 0.8);
+            const lP = new THREE.Mesh(pGeo, pMat); lP.position.set(0.4, 1.7, 1.0);
+            const rE = new THREE.Mesh(eGeo, eMat); rE.position.set(-0.4, 1.7, 0.8);
+            const rP = new THREE.Mesh(pGeo, pMat); rP.position.set(-0.4, 1.7, 1.0);
+            group.add(lE, lP, rE, rP);
+
+            // Selection ring
+            const ringGeo = new THREE.RingGeometry(1.2, 1.5, 32);
+            const ringMat = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide, transparent: true, opacity: 0 });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = -Math.PI / 2;
+            ring.position.y = 0.05;
+            group.add(ring);
+
+            group.scale.setScalar(scale);
+            group.userData = {
+                name: config.name,
+                color: config.color,
+                hp: config.hp * (isBoss ? 4 : 1),
+                maxHp: config.hp * (isBoss ? 4 : 1),
+                atk: config.atk * (isBoss ? 2 : 1),
+                isBoss: isBoss,
+                selectionRing: ring,
+                bodyMesh: body
+            };
+
+            return group;
+        }
+
+        // Particle System
+        function spawnParticles(pos, color, count = 15) {
+            for (let i = 0; i < count; i++) {
+                const geo = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+                const mat = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 1 });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.copy(pos).add(new THREE.Vector3((Math.random()-0.5), (Math.random()-0.5)+0.5, (Math.random()-0.5)));
+                
+                const vel = new THREE.Vector3((Math.random()-0.5)*0.2, Math.random()*0.2+0.1, (Math.random()-0.5)*0.2);
+                scene.add(mesh);
+                activeParticles.push({ mesh, vel, life: 1.0 });
+            }
+        }
+
+        function updateParticles() {
+            for (let i = activeParticles.length - 1; i >= 0; i--) {
+                const p = activeParticles[i];
+                p.mesh.position.add(p.vel);
+                p.life -= 0.03;
+                p.mesh.material.opacity = p.life;
+                if (p.life <= 0) {
+                    scene.remove(p.mesh);
+                    p.mesh.geometry.dispose();
+                    p.mesh.material.dispose();
+                    activeParticles.splice(i, 1);
+                }
+            }
+        }
+
+        // Raycasting to tap/select target ghost
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        function setupRaycaster() {
+            const container = document.getElementById('canvas-container');
+            container.addEventListener('click', (e) => {
+                if (battleState !== 'PLAYER_SELECT_TARGET') return;
+
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+                const ghostMeshes = activeGhosts.map(g => g.userData.bodyMesh);
+                const intersects = raycaster.intersectObjects(ghostMeshes);
+
+                if (intersects.length > 0) {
+                    const hitBody = intersects[0].object;
+                    const ghostGroup = activeGhosts.find(g => g.userData.bodyMesh === hitBody);
+                    if (ghostGroup) {
+                        executePlayerAttack(ghostGroup);
+                    }
+                }
+            });
+        }
+
+        function highlightTargetGhosts(enable) {
+            activeGhosts.forEach(g => {
+                g.userData.selectionRing.material.opacity = enable ? 0.8 : 0;
+            });
+            document.getElementById('target-prompt').style.display = enable ? 'block' : 'none';
+        }
+
+        // --- BATTLE LOGIC ENGINE ---
+        window.startBattleLevel = function(levelNum) {
+            currentLevel = levelNum;
+            document.getElementById('screen-menu').style.display = 'none';
+            document.getElementById('screen-battle').style.display = 'block';
+            document.getElementById('stage-indicator').innerText = `STAGE ${currentLevel}${levelNum % 10 === 0 ? ' (BOSS)' : ''}`;
+
+            // Reset Player
+            playerHp = maxHp;
+            powerCharge = 0;
+            isPowerPelletActive = false;
+            powerPelletTurnsLeft = 0;
+            updateHUD();
+
+            // Clear old ghosts
+            activeGhosts.forEach(g => scene.remove(g));
+            activeGhosts = [];
+
+            // Spawn Ghosts for current level
+            const isBossStage = (levelNum % 10 === 0);
+            const ghostCount = isBossStage ? 1 : Math.min(8, 1 + Math.floor((levelNum - 1) / 12));
+
+            const radius = 8;
+            for (let i = 0; i < ghostCount; i++) {
+                const configIndex = (levelNum + i - 1) % ghostTypes.length;
+                const config = ghostTypes[configIndex];
+                const ghost = createGhostModel(config, isBossStage);
+
+                // Arrange ghosts in arc formation
+                const angle = (i - (ghostCount - 1) / 2) * 0.45;
+                ghost.position.set(6 + Math.sin(angle) * radius, 0, 0 + Math.cos(angle) * radius);
+                ghost.rotation.y = -Math.PI / 3;
+
+                scene.add(ghost);
+                activeGhosts.push(ghost);
+            }
+
+            updateGhostCountUI();
+            battleState = 'IDLE';
+            enableActionButtons(true);
+        };
+
+        function updateHUD() {
+            document.getElementById('hp-text').innerText = `${playerHp}/${maxHp} HP`;
+            const hpPct = Math.max(0, (playerHp / maxHp) * 100);
+            document.getElementById('hp-bar').style.width = `${hpPct}%`;
+
+            const pelletPct = Math.min(100, (powerCharge / 2) * 100);
+            document.getElementById('pellet-bar').style.width = `${pelletPct}%`;
+            document.getElementById('btn-pellet').disabled = (powerCharge < 2 || isPowerPelletActive);
+
+            auraMesh.visible = isPowerPelletActive;
+        }
+
+        function updateGhostCountUI() {
+            document.getElementById('ghost-count-display').innerText = `${activeGhosts.length} GHOST${activeGhosts.length > 1 ? 'S' : ''}`;
+        }
+
+        function showFloatingText(text, pos3D, color = '#ffff00') {
+            const div = document.createElement('div');
+            div.className = 'float-text';
+            div.innerText = text;
+            div.style.color = color;
+
+            const p = pos3D.clone().project(camera);
+            const x = (p.x * 0.5 + 0.5) * window.innerWidth;
+            const y = (p.y * -0.5 + 0.5) * window.innerHeight;
+
+            div.style.left = `${x}px`;
+            div.style.top = `${y}px`;
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 1000);
+        }
+
+        window.selectAction = function(action) {
+            if (battleState !== 'IDLE') return;
+
+            selectedAbility = action;
+
+            if (action === 'attack') {
+                if (activeGhosts.length === 1) {
+                    executePlayerAttack(activeGhosts[0]);
+                } else {
+                    battleState = 'PLAYER_SELECT_TARGET';
+                    highlightTargetGhosts(true);
+                }
+            } else if (action === 'heal') {
+                executePlayerHeal();
+            } else if (action === 'power') {
+                executePowerPellet();
+            }
+        };
+
+        function executePlayerAttack(targetGhost) {
+            highlightTargetGhosts(false);
+            battleState = 'ANIMATING';
+            enableActionButtons(false);
+
+            // Animate Pac-Man lunging forward to bite
+            const startPos = pacmanMesh.position.clone();
+            const targetPos = targetGhost.position.clone().add(new THREE.Vector3(-2, 0, 1));
+
+            let progress = 0;
+            function animateLunge() {
+                progress += 0.08;
+                if (progress < 0.5) {
+                    pacmanMesh.position.lerpVectors(startPos, targetPos, progress * 2);
+                    topHalf.rotation.x = -0.5;
+                    bottomHalf.rotation.x = 0.5;
+                } else if (progress < 1.0) {
+                    topHalf.rotation.x = 0;
+                    bottomHalf.rotation.x = 0;
+                    pacmanMesh.position.lerpVectors(targetPos, startPos, (progress - 0.5) * 2);
+                } else {
+                    pacmanMesh.position.copy(startPos);
+                    
+                    // Damage Logic
+                    let dmg = Math.floor(Math.random() * 3) + 1; // 1 to 3 DMG
+                    if (isPowerPelletActive) dmg *= 4; // Massive pellet multiplier
+
+                    targetGhost.userData.hp -= dmg;
+                    playBiteSfx();
+                    spawnParticles(targetGhost.position, targetGhost.userData.color, 20);
+                    showFloatingText(`-${dmg}`, targetGhost.position, '#ff0000');
+
+                    // Check if ghost died
+                    if (targetGhost.userData.hp <= 0) {
+                        spawnParticles(targetGhost.position, 0xffffff, 35);
+                        scene.remove(targetGhost);
+                        activeGhosts = activeGhosts.filter(g => g !== targetGhost);
+                        updateGhostCountUI();
+                    }
+
+                    // Check Victory
+                    if (activeGhosts.length === 0) {
+                        setTimeout(handleVictory, 800);
+                        return;
+                    }
+
+                    // Power Pellet turn decay & charge tick
+                    advanceTurnState();
+                    return;
+                }
+                requestAnimationFrame(animateLunge);
+            }
+            animateLunge();
+        }
+
+        function executePlayerHeal() {
+            battleState = 'ANIMATING';
+            enableActionButtons(false);
+
+            const healAmt = Math.floor(Math.random() * 10) + 3; // 3 to 12
+            playerHp = Math.min(maxHp, playerHp + healAmt);
+            updateHUD();
+
+            playHealSfx();
+            spawnParticles(pacmanMesh.position, 0x00ff00, 25);
+            showFloatingText(`+${healAmt} HP`, pacmanMesh.position, '#00ff00');
+
+            setTimeout(() => {
+                advanceTurnState();
+            }, 1000);
+        }
+
+        function executePowerPellet() {
+            battleState = 'ANIMATING';
+            enableActionButtons(false);
+
+            powerCharge = 0;
+            isPowerPelletActive = true;
+            powerPelletTurnsLeft = 2;
+            updateHUD();
+
+            playPowerSfx();
+            spawnParticles(pacmanMesh.position, 0xffff00, 30);
+            showFloatingText(`POWER PELLET ACTIVE!`, pacmanMesh.position, '#ffff00');
+
+            setTimeout(() => {
+                advanceTurnState();
+            }, 1000);
+        }
+
+        function advanceTurnState() {
+            // Update power pellet charge & turns
+            if (!isPowerPelletActive && powerCharge < 2) {
+                powerCharge++;
+            } else if (isPowerPelletActive) {
+                powerPelletTurnsLeft--;
+                if (powerPelletTurnsLeft <= 0) {
+                    isPowerPelletActive = false;
+                }
+            }
+            updateHUD();
+
+            // Ghosts Turn
+            setTimeout(processGhostsTurn, 600);
+        }
+
+        // --- ENEMY TURN & QUICK TIME DEFENSE ---
+        let currentGhostAttackIndex = 0;
+
+        function processGhostsTurn() {
+            if (activeGhosts.length === 0) return;
+            currentGhostAttackIndex = 0;
+            startNextGhostAttack();
+        }
+
+        function startNextGhostAttack() {
+            if (currentGhostAttackIndex >= activeGhosts.length) {
+                // End of Ghosts turn, back to player
+                battleState = 'IDLE';
+                enableActionButtons(true);
+                return;
+            }
+
+            currentAttackingGhost = activeGhosts[currentGhostAttackIndex];
+            setupQuickTimeShieldMinigame();
+        }
+
+        function setupQuickTimeShieldMinigame() {
+            battleState = 'SHIELD_MINIGAME';
+            const overlay = document.getElementById('shield-overlay');
+            overlay.style.display = 'block';
+
+            // Randomize timing green zone width and position
+            const zone = document.getElementById('timing-zone');
+            const zoneWidth = Math.floor(Math.random() * 20) + 20; // 20% - 40%
+            const zoneLeft = Math.floor(Math.random() * (100 - zoneWidth));
+            zone.style.width = `${zoneWidth}%`;
+            zone.style.left = `${zoneLeft}%`;
+
+            timingPos = 0;
+            timingDir = 1;
+            timingSpeed = 2.0 + Math.random() * 1.5;
+
+            function animateTimingBar() {
+                timingPos += timingSpeed * timingDir;
+                if (timingPos >= 100) { timingPos = 100; timingDir = -1; }
+                if (timingPos <= 0) { timingPos = 0; timingDir = 1; }
+
+                document.getElementById('timing-indicator').style.left = `${timingPos}%`;
+
+                if (battleState === 'SHIELD_MINIGAME') {
+                    shieldAnimFrame = requestAnimationFrame(animateTimingBar);
+                }
+            }
+            animateTimingBar();
+        }
+
+        window.triggerShieldDefend = function() {
+            if (battleState !== 'SHIELD_MINIGAME') return;
+            cancelAnimationFrame(shieldAnimFrame);
+
+            document.getElementById('shield-overlay').style.display = 'none';
+            battleState = 'ANIMATING';
+
+            const zone = document.getElementById('timing-zone');
+            const zoneLeft = parseFloat(zone.style.left);
+            const zoneWidth = parseFloat(zone.style.width);
+
+            // Determine block success
+            const isSuccess = (timingPos >= zoneLeft && timingPos <= (zoneLeft + zoneWidth));
+
+            // Animate attacking ghost
+            const g = currentAttackingGhost;
+            const startPos = g.position.clone();
+            const targetPos = pacmanMesh.position.clone().add(new THREE.Vector3(2, 0, -1));
+
+            let progress = 0;
+            function animateGhostLunge() {
+                progress += 0.08;
+                if (progress < 0.5) {
+                    g.position.lerpVectors(startPos, targetPos, progress * 2);
+                } else if (progress < 1.0) {
+                    g.position.lerpVectors(targetPos, startPos, (progress - 0.5) * 2);
+                } else {
+                    g.position.copy(startPos);
+
+                    if (isSuccess) {
+                        playShieldBlockSfx();
+                        spawnParticles(pacmanMesh.position, 0x00f2ff, 25);
+                        showFloatingText("BLOCKED!", pacmanMesh.position, '#00f2ff');
+                    } else {
+                        const incomingAtk = g.userData.atk;
+                        playerHp = Math.max(0, playerHp - incomingAtk);
+                        updateHUD();
+
+                        playSfx(120, 0.25, 'sawtooth', 0.2);
+                        spawnParticles(pacmanMesh.position, 0xff0000, 20);
+                        showFloatingText(`-${incomingAtk}`, pacmanMesh.position, '#ff0000');
+
+                        if (playerHp <= 0) {
+                            setTimeout(handleGameOver, 800);
+                            return;
+                        }
+                    }
+
+                    // Next ghost attacks
+                    currentGhostAttackIndex++;
+                    setTimeout(startNextGhostAttack, 500);
+                    return;
+                }
+                requestAnimationFrame(animateGhostLunge);
+            }
+            animateGhostLunge();
+        };
+
+        function enableActionButtons(enable) {
+            document.getElementById('btn-attack').disabled = !enable;
+            document.getElementById('btn-heal').disabled = !enable;
+            document.getElementById('btn-pellet').disabled = !enable || (powerCharge < 2 || isPowerPelletActive);
+        }
+
+        // --- VICTORY & GAMEOVER MODALS ---
+        function handleVictory() {
+            saveProgress();
+            document.getElementById('victory-text').innerText = `Stage ${currentLevel} cleared! Unlocked Level ${unlockedLevel}`;
+            document.getElementById('modal-victory').style.display = 'flex';
+            playSfx(523, 0.1, 'sine');
+            setTimeout(() => playSfx(659, 0.1, 'sine'), 80);
+            setTimeout(() => playSfx(784, 0.1, 'sine'), 160);
+            setTimeout(() => playSfx(1046, 0.3, 'sine'), 240);
+        }
+
+        function handleGameOver() {
+            document.getElementById('modal-gameover').style.display = 'flex';
+            playSfx(300, 0.3, 'sawtooth', 0.2);
+            setTimeout(() => playSfx(150, 0.5, 'sawtooth', 0.2), 250);
+        }
+
+        window.returnToMenu = function() {
+            document.getElementById('modal-victory').style.display = 'none';
+            document.getElementById('screen-battle').style.display = 'none';
+            document.getElementById('screen-menu').style.display = 'flex';
+            renderMapGrid();
+        };
+
+        window.retryLevel = function() {
+            document.getElementById('modal-gameover').style.display = 'none';
+            startBattleLevel(currentLevel);
+        };
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // --- MAIN RENDER LOOP ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Subtle floating idle motion for active ghosts
+            activeGhosts.forEach((g, idx) => {
+                g.position.y = Math.sin(Date.now() * 0.003 + idx) * 0.2 + 0.2;
+            });
+
+            // Particles
+            updateParticles();
+
+            renderer.render(scene, camera);
+        }
+
+        // Initialize application
+        init3D();
+        loadProgress();
+        animate();
+    </script>
+</body>
+</html>
+
