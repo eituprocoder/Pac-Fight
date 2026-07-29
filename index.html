@@ -25,37 +25,57 @@
 
         /* Header UI */
         h1.title { font-size: 38px; color: #ffff00; text-shadow: 0 0 15px #ffff00, 3px 3px 0 #ff0000; margin: 10px 0 5px 0; letter-spacing: 3px; text-align: center; }
-        .subtitle { color: #00f2ff; font-size: 14px; margin-bottom: 20px; text-shadow: 0 0 8px #00f2ff; text-align: center; }
+        .subtitle { color: #00f2ff; font-size: 14px; margin-bottom: 15px; text-shadow: 0 0 8px #00f2ff; text-align: center; }
+
+        /* Top Bar Info */
+        .top-info-bar { width: 100%; max-width: 800px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 13px; color: #00f2ff; background: rgba(0,0,0,0.5); padding: 10px 15px; border-radius: 10px; border: 1px solid #00f2ff; flex-wrap: wrap; gap: 10px; }
+        .lives-display { font-size: 16px; letter-spacing: 2px; color: #ff0055; text-shadow: 0 0 8px #ff0055; }
+        .rescued-display { color: #ffff00; font-weight: bold; }
 
         /* Level Map Screen */
-        .map-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 12px; width: 100%; max-width: 800px; background: rgba(0,0,0,0.6); border: 2px solid #00f2ff; border-radius: 12px; padding: 20px; box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); max-height: 60vh; overflow-y: auto; }
+        .map-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 12px; width: 100%; max-width: 800px; background: rgba(0,0,0,0.6); border: 2px solid #00f2ff; border-radius: 12px; padding: 20px; box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); max-height: 55vh; overflow-y: auto; }
         .level-btn { aspect-ratio: 1; border-radius: 10px; border: 2px solid #00f2ff; background: rgba(0, 242, 255, 0.1); color: #00f2ff; font-weight: bold; font-size: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; position: relative; }
         .level-btn:hover:not(.locked) { background: #00f2ff; color: #000; box-shadow: 0 0 15px #00f2ff; transform: scale(1.05); }
         .level-btn.locked { border-color: #444; color: #555; background: rgba(255,255,255,0.03); cursor: not-allowed; }
         .level-btn.boss { border-color: #ff0000; color: #ff0000; background: rgba(255,0,0,0.15); box-shadow: 0 0 10px rgba(255,0,0,0.3); }
         .level-btn.boss:hover:not(.locked) { background: #ff0000; color: #fff; box-shadow: 0 0 20px #ff0000; }
+        .level-btn.final-boss { border-color: #ff00ff; color: #ff00ff; background: rgba(255,0,255,0.2); box-shadow: 0 0 15px #ff00ff; animation: glitchPulse 1s infinite alternate; }
+        @keyframes glitchPulse { 0% { box-shadow: 0 0 10px #ff00ff; } 100% { box-shadow: 0 0 25px #00ffff; } }
         .level-btn.cleared { border-color: #00ff00; color: #00ff00; background: rgba(0,255,0,0.1); }
         .level-btn .star-rating { font-size: 9px; color: #ffff00; margin-top: 2px; }
 
+        /* Cutscene Overlay */
+        #cutscene-overlay { display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 5000; background: #000; }
+        #cutscene-subtitle { position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); width: 80%; max-width: 700px; background: rgba(0,0,0,0.85); border: 2px solid #ffff00; padding: 15px 25px; border-radius: 12px; text-align: center; color: #fff; font-size: 18px; line-height: 1.4; text-shadow: 0 0 10px #ffff00; box-shadow: 0 0 20px rgba(255,255,0,0.4); pointer-events: none; }
+        #skip-cutscene-btn { position: absolute; top: 20px; right: 20px; padding: 10px 20px; background: rgba(255,255,255,0.2); border: 2px solid #fff; color: #fff; font-weight: bold; border-radius: 8px; cursor: pointer; z-index: 5001; }
+        #skip-cutscene-btn:hover { background: #fff; color: #000; }
+
         /* Battle UI */
-        #battle-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 15px; }
+        #battle-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 15px; z-index: 20; }
         .interactive { pointer-events: auto; }
 
         /* HUD top */
-        .hud-top { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
-        .status-box { background: rgba(0, 4, 17, 0.85); border: 2px solid #00f2ff; border-radius: 10px; padding: 10px 15px; width: 220px; box-shadow: 0 0 10px rgba(0, 242, 255, 0.3); }
-        .status-box h3 { margin: 0 0 5px 0; font-size: 16px; color: #ffff00; display: flex; justify-content: space-between; }
+        .hud-top { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; flex-wrap: wrap; gap: 10px; }
+        .status-box { background: rgba(0, 4, 17, 0.85); border: 2px solid #00f2ff; border-radius: 10px; padding: 10px 15px; min-width: 200px; box-shadow: 0 0 10px rgba(0, 242, 255, 0.3); }
+        .status-box h3 { margin: 0 0 5px 0; font-size: 15px; color: #ffff00; display: flex; justify-content: space-between; }
         .bar-bg { width: 100%; height: 14px; background: #222; border: 1px solid #fff; border-radius: 7px; overflow: hidden; position: relative; margin-top: 4px; }
         .bar-fill { height: 100%; transition: width 0.3s ease; }
         #hp-bar { background: linear-gradient(90deg, #ff0000, #00ff00); width: 100%; }
         #pellet-bar { background: #ffff00; width: 0%; }
 
         /* Floating Info overlay */
-        #stage-indicator { text-align: center; font-size: 20px; color: #ffff00; font-weight: bold; text-shadow: 0 0 8px #000; background: rgba(0,0,0,0.6); padding: 6px 16px; border-radius: 20px; border: 1px solid #ffff00; }
+        #stage-indicator { text-align: center; font-size: 18px; color: #ffff00; font-weight: bold; text-shadow: 0 0 8px #000; background: rgba(0,0,0,0.7); padding: 6px 16px; border-radius: 20px; border: 1px solid #ffff00; }
+
+        /* Ghost Health Bar Dynamic Containers */
+        #ghost-hp-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 15; }
+        .ghost-hp-bar-wrap { position: absolute; transform: translate(-50%, -100%); width: 90px; text-align: center; font-size: 10px; font-weight: bold; text-shadow: 1px 1px 2px #000; transition: opacity 0.2s; }
+        .ghost-hp-name { color: #fff; margin-bottom: 2px; }
+        .ghost-hp-bg { width: 100%; height: 8px; background: rgba(0,0,0,0.8); border: 1px solid #fff; border-radius: 4px; overflow: hidden; }
+        .ghost-hp-fill { height: 100%; background: #00ff00; width: 100%; transition: width 0.2s linear, background-color 0.2s; }
 
         /* Action Menu Bottom */
-        .action-panel { display: flex; justify-content: center; gap: 15px; width: 100%; margin-bottom: 10px; }
-        .cmd-btn { width: 120px; padding: 12px; border: 2px solid #00f2ff; border-radius: 12px; background: rgba(0, 242, 255, 0.15); color: #00f2ff; font-weight: bold; font-family: inherit; font-size: 14px; cursor: pointer; transition: all 0.2s ease; text-align: center; box-shadow: 0 0 10px rgba(0,242,255,0.2); }
+        .action-panel { display: flex; justify-content: center; gap: 15px; width: 100%; margin-bottom: 10px; flex-wrap: wrap; }
+        .cmd-btn { width: 120px; padding: 12px; border: 2px solid #00f2ff; border-radius: 12px; background: rgba(0, 242, 255, 0.15); color: #00f2ff; font-weight: bold; font-family: inherit; font-size: 13px; cursor: pointer; transition: all 0.2s ease; text-align: center; box-shadow: 0 0 10px rgba(0,242,255,0.2); }
         .cmd-btn:hover:not(:disabled) { background: #00f2ff; color: #000; box-shadow: 0 0 20px #00f2ff; transform: translateY(-3px); }
         .cmd-btn:disabled { opacity: 0.4; border-color: #555; color: #777; cursor: not-allowed; transform: none; box-shadow: none; }
         .cmd-btn.power { border-color: #ffff00; color: #ffff00; background: rgba(255, 255, 0, 0.15); }
@@ -64,8 +84,9 @@
         .cmd-btn.heal:hover:not(:disabled) { background: #00ff00; color: #000; box-shadow: 0 0 20px #00ff00; }
 
         /* Quick-Time Shield Overlay */
-        #shield-overlay { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; background: rgba(0,0,0,0.9); border: 3px solid #00f2ff; border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 0 30px #00f2ff; z-index: 500; }
-        #shield-overlay h2 { margin: 0 0 10px 0; color: #ffff00; font-size: 18px; }
+        #shield-overlay { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 320px; background: rgba(0,0,0,0.92); border: 3px solid #00f2ff; border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 0 30px #00f2ff; z-index: 500; }
+        #shield-overlay h2 { margin: 0 0 8px 0; color: #ffff00; font-size: 18px; }
+        #attack-name-banner { color: #ff0055; font-size: 14px; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; }
         .timing-bar-container { width: 100%; height: 26px; background: #222; border: 2px solid #fff; border-radius: 13px; position: relative; overflow: hidden; margin: 15px 0; }
         .timing-zone { position: absolute; top: 0; height: 100%; background: #00ff00; opacity: 0.6; }
         .timing-indicator { position: absolute; top: 0; width: 6px; height: 100%; background: #ffffff; box-shadow: 0 0 10px #fff; left: 0%; }
@@ -73,17 +94,19 @@
         #btn-shield:active { transform: scale(0.96); }
 
         /* Floating Damage Text */
-        .float-text { position: absolute; font-weight: bold; font-size: 24px; pointer-events: none; animation: floatUp 1s ease-out forwards; text-shadow: 2px 2px 0 #000; z-index: 1000; }
-        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-60px) scale(1.4); } }
+        .float-text { position: absolute; font-weight: bold; font-size: 24px; pointer-events: none; animation: floatUp 1.2s ease-out forwards; text-shadow: 2px 2px 0 #000; z-index: 1000; }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-70px) scale(1.4); } }
 
         /* Modals */
         .modal { display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); flex-direction: column; align-items: center; justify-content: center; z-index: 2000; }
-        .modal-content { background: #001133; border: 3px solid #00f2ff; border-radius: 15px; padding: 30px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 0 30px #00f2ff; }
+        .modal-content { background: #001133; border: 3px solid #00f2ff; border-radius: 15px; padding: 30px; text-align: center; max-width: 420px; width: 90%; box-shadow: 0 0 30px #00f2ff; }
         .modal h2 { font-size: 32px; margin: 0 0 15px 0; }
-        .modal-btn { padding: 12px 30px; font-size: 18px; font-weight: bold; border-radius: 10px; border: none; cursor: pointer; margin-top: 20px; font-family: inherit; }
+        .modal-btn { padding: 12px 30px; font-size: 16px; font-weight: bold; border-radius: 10px; border: none; cursor: pointer; margin-top: 15px; font-family: inherit; }
 
-        /* Top Bar Info */
-        .top-info-bar { width: 100%; max-width: 800px; display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px; color: #00f2ff; }
+        /* Menu Actions */
+        .menu-btn-group { display: flex; gap: 10px; margin-bottom: 15px; }
+        .menu-sub-btn { padding: 8px 16px; border: 2px solid #00f2ff; border-radius: 8px; background: rgba(0,242,255,0.1); color: #00f2ff; font-weight: bold; cursor: pointer; font-family: inherit; font-size: 12px; }
+        .menu-sub-btn:hover { background: #00f2ff; color: #000; }
     </style>
 </head>
 <body>
@@ -91,19 +114,33 @@
     <!-- MAP / MENU SCREEN -->
     <div id="screen-menu" class="screen">
         <h1 class="title">PAC-FIGHT</h1>
-        <div class="subtitle">EPIC TURN-BASED RPG</div>
+        <div class="subtitle">EPIC RPG: RESCUE PAC-CITY</div>
+
+        <div class="menu-btn-group">
+            <button class="menu-sub-btn" style="border-color:#ff0055; color:#ff0055;" onclick="confirmResetAll()">🔄 RESET ALL PROGRESS</button>
+        </div>
 
         <div class="top-info-bar">
-            <div>UNLOCKED STAGES: <span id="unlocked-count" style="color:#ffff00;">1</span>/100</div>
-            <div>STATUS: <span style="color:#00ff00;">READY FOR BATTLE</span></div>
+            <div>STAGES: <span id="unlocked-count" style="color:#ffff00;">1</span>/100</div>
+            <div>LIVES: <span id="menu-lives-display" class="lives-display">❤️❤️❤️</span></div>
+            <div class="rescued-display">🟡 RESCUED: <span id="menu-rescued-count">0</span>/300</div>
         </div>
 
         <div class="map-container" id="map-grid"></div>
     </div>
 
+    <!-- CUTSCENE OVERLAY -->
+    <div id="cutscene-overlay">
+        <button id="skip-cutscene-btn" onclick="endCutscene()">SKIP ⏭️</button>
+        <div id="cutscene-subtitle">...</div>
+    </div>
+
     <!-- BATTLE SCREEN -->
     <div id="screen-battle" class="screen">
         <div id="canvas-container" style="width:100%; height:100%;"></div>
+
+        <!-- Ghost Health Bars HTML Layer -->
+        <div id="ghost-hp-container"></div>
 
         <div id="battle-ui">
             <!-- Top Status -->
@@ -115,11 +152,16 @@
                     <div class="bar-bg"><div id="pellet-bar" class="bar-fill"></div></div>
                 </div>
 
-                <div id="stage-indicator">STAGE 1</div>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                    <div id="stage-indicator">STAGE 1</div>
+                    <div style="font-size: 12px; background: rgba(0,0,0,0.7); padding: 4px 10px; border-radius: 10px; border: 1px solid #ff0055;">
+                        LIVES: <span id="battle-lives-display" class="lives-display">❤️❤️❤️</span>
+                    </div>
+                </div>
 
                 <div class="status-box" style="border-color: #ff0055;">
                     <h3 style="color: #ff0055;">ENEMIES LEFT</h3>
-                    <div id="ghost-count-display" style="font-size: 20px; font-weight: bold; color: #fff; text-align: center; margin-top: 5px;">
+                    <div id="ghost-count-display" style="font-size: 18px; font-weight: bold; color: #fff; text-align: center; margin-top: 4px;">
                         1 GHOST
                     </div>
                 </div>
@@ -141,6 +183,7 @@
         <!-- Quick Time Defense Overlay -->
         <div id="shield-overlay" class="interactive">
             <h2>🛡️ DEFEND NOW!</h2>
+            <div id="attack-name-banner">GHOST ATTACK</div>
             <div style="font-size: 12px; color: #00f2ff;">TAP SHIELD IN THE GREEN ZONE!</div>
             <div class="timing-bar-container">
                 <div id="timing-zone" class="timing-zone"></div>
@@ -155,6 +198,9 @@
         <div class="modal-content">
             <h2 style="color: #00ff00; text-shadow: 0 0 15px #00ff00;">VICTORY!</h2>
             <p id="victory-text">Stage cleared successfully!</p>
+            <div style="font-size: 16px; color: #ffff00; margin: 10px 0; font-weight: bold;">
+                🔓 RESCUED 3 PAC-MANS! (<span id="modal-total-rescued">0</span>/300)
+            </div>
             <button class="modal-btn" style="background: #00ff00; color: #000;" onclick="returnToMenu()">CONTINUE MAP</button>
         </div>
     </div>
@@ -162,9 +208,9 @@
     <!-- GAMEOVER MODAL -->
     <div id="modal-gameover" class="modal">
         <div class="modal-content" style="border-color: #ff0000;">
-            <h2 style="color: #ff0000; text-shadow: 0 0 15px #ff0000;">GAME OVER</h2>
-            <p>Pac-Man was defeated by the Ghosts!</p>
-            <button class="modal-btn" style="background: #ff0000; color: #fff;" onclick="retryLevel()">RETRY STAGE</button>
+            <h2 style="color: #ff0000; text-shadow: 0 0 15px #ff0000;" id="gameover-title">DEFEATED</h2>
+            <p id="gameover-desc">Pac-Man was defeated by the Ghosts!</p>
+            <button class="modal-btn" id="gameover-btn" style="background: #ff0000; color: #fff;" onclick="handleGameOverAction()">RETRY STAGE</button>
         </div>
     </div>
 
@@ -179,6 +225,8 @@
         // --- GAME ARCHITECTURE & STATE ---
         let currentLevel = 1;
         let unlockedLevel = 1;
+        let playerLives = 3;
+        let rescuedPacmen = 0;
         
         // Player Stats
         let playerHp = 20;
@@ -188,9 +236,11 @@
         let powerPelletTurnsLeft = 0;
 
         // Turn Management
-        let battleState = 'IDLE'; // IDLE, PLAYER_SELECT_TARGET, ANIMATING, SHIELD_MINIGAME
+        let battleState = 'IDLE'; // IDLE, PLAYER_SELECT_TARGET, ANIMATING, SHIELD_MINIGAME, CUTSCENE
         let selectedAbility = null;
         let activeGhosts = [];
+        let cageObjects = [];
+        let cagedPacmenMeshes = [];
         let selectedGhostTarget = null;
 
         // Quick Time Defense System
@@ -199,8 +249,9 @@
         let timingSpeed = 2.5;
         let timingDir = 1;
         let currentAttackingGhost = null;
+        let currentSpecialAttackName = "Standard Attack";
 
-        // Ghost Catalog (8 Characters)
+        // Ghost Catalog (8 Characters + Final Boss GLITCHY)
         const ghostTypes = [
             { name: 'BLINKY', color: 0xff0000, hp: 5, atk: 2 },
             { name: 'PINKY',  color: 0xffb8ff, hp: 6, atk: 2 },
@@ -212,39 +263,80 @@
             { name: 'WHITY',  color: 0xffffff, hp: 16, atk: 5 }
         ];
 
+        // GLITCHY - Level 100 Final Boss Special Attacks
+        const glitchyAttacks = [
+            { name: "⚡ GLITCH CORRUPTION", atk: 5, speed: 2.8 },
+            { name: "🌀 MATRIX DISTORTION", atk: 6, speed: 4.2 },
+            { name: "👥 PHANTOM GLITCH CLONE", atk: 5, speed: 3.2 },
+            { name: "🩸 CAGE SIPHON", atk: 4, speed: 2.5, healGlitchy: 6 },
+            { name: "💥 REALITY ERASE", atk: 8, speed: 3.8 }
+        ];
+
         // --- LOCAL STORAGE DATA ---
         function loadProgress() {
-            const saved = localStorage.getItem('PacFight_Level');
-            if (saved) unlockedLevel = parseInt(saved, 10);
+            const savedLvl = localStorage.getItem('PacFight_Level');
+            if (savedLvl) unlockedLevel = parseInt(savedLvl, 10);
+
+            const savedLives = localStorage.getItem('PacFight_Lives');
+            if (savedLives !== null) playerLives = parseInt(savedLives, 10);
+
+            const savedRescued = localStorage.getItem('PacFight_Rescued');
+            if (savedRescued !== null) rescuedPacmen = parseInt(savedRescued, 10);
+
+            updateMenuDisplay();
             renderMapGrid();
         }
 
         function saveProgress() {
-            if (currentLevel >= unlockedLevel && unlockedLevel < 100) {
-                unlockedLevel = currentLevel + 1;
-                localStorage.setItem('PacFight_Level', unlockedLevel);
+            localStorage.setItem('PacFight_Level', unlockedLevel);
+            localStorage.setItem('PacFight_Lives', playerLives);
+            localStorage.setItem('PacFight_Rescued', rescuedPacmen);
+        }
+
+        function updateMenuDisplay() {
+            document.getElementById('unlocked-count').innerText = unlockedLevel;
+            document.getElementById('menu-lives-display').innerText = '❤️'.repeat(Math.max(0, playerLives));
+            document.getElementById('battle-lives-display').innerText = '❤️'.repeat(Math.max(0, playerLives));
+            document.getElementById('menu-rescued-count').innerText = rescuedPacmen;
+        }
+
+        window.confirmResetAll = function() {
+            if (confirm("Are you sure you want to reset all progress, lives, and rescued Pac-Mans back to Stage 1?")) {
+                resetAllProgress();
             }
+        };
+
+        function resetAllProgress() {
+            unlockedLevel = 1;
+            playerLives = 3;
+            rescuedPacmen = 0;
+            saveProgress();
+            updateMenuDisplay();
+            renderMapGrid();
         }
 
         // --- MAP GENERATION (100 Levels) ---
         function renderMapGrid() {
             const grid = document.getElementById('map-grid');
             grid.innerHTML = '';
-            document.getElementById('unlocked-count').innerText = unlockedLevel;
+            updateMenuDisplay();
 
             for (let i = 1; i <= 100; i++) {
                 const btn = document.createElement('div');
-                const isBoss = (i % 10 === 0);
+                const isFinalBoss = (i === 100);
+                const isBoss = (i % 10 === 0 && !isFinalBoss);
                 const isLocked = i > unlockedLevel;
                 const isCleared = i < unlockedLevel;
 
-                btn.className = `level-btn ${isBoss ? 'boss' : ''} ${isLocked ? 'locked' : ''} ${isCleared ? 'cleared' : ''}`;
+                btn.className = `level-btn ${isFinalBoss ? 'final-boss' : (isBoss ? 'boss' : '')} ${isLocked ? 'locked' : ''} ${isCleared ? 'cleared' : ''}`;
                 
-                let icon = isBoss ? '👹' : i;
+                let icon = isFinalBoss ? '👾' : (isBoss ? '👹' : i);
                 btn.innerHTML = `<div>${icon}</div>`;
                 
                 if (isCleared) {
                     btn.innerHTML += `<div class="star-rating">⭐⭐⭐</div>`;
+                } else if (isFinalBoss && !isLocked) {
+                    btn.innerHTML += `<div class="star-rating" style="color:#ff00ff">GLITCHY</div>`;
                 } else if (isBoss && !isLocked) {
                     btn.innerHTML += `<div class="star-rating" style="color:#ff0000">BOSS</div>`;
                 }
@@ -296,9 +388,15 @@
             setTimeout(() => playSfx(1200, 0.2, 'sine', 0.15), 80);
         }
 
+        function playGlitchSfx() {
+            playSfx(100 + Math.random()*800, 0.05, 'sawtooth', 0.2);
+            setTimeout(() => playSfx(900 - Math.random()*600, 0.05, 'square', 0.2), 40);
+        }
+
         // --- THREE.JS BATTLE ARENA SETUP ---
         let scene, camera, renderer;
         let pacmanMesh, topHalf, bottomHalf, auraMesh;
+        let cutsceneGroup = null;
         let activeParticles = [];
 
         function init3D() {
@@ -339,7 +437,7 @@
             gridHelper.position.y = 0.01;
             scene.add(gridHelper);
 
-            // Create Pac-Man Model
+            // Create Hero Pac-Man Model
             createPacmanModel();
 
             // Window Resize
@@ -349,50 +447,74 @@
             setupRaycaster();
         }
 
-        function createPacmanModel() {
-            pacmanMesh = new THREE.Group();
+        function createPacmanModel(scale = 1) {
+            const mesh = new THREE.Group();
             const pmMat = new THREE.MeshPhongMaterial({ color: 0xffff00, shininess: 80 });
 
-            const topGeo = new THREE.SphereGeometry(2, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
-            topHalf = new THREE.Mesh(topGeo, pmMat);
+            const topGeo = new THREE.SphereGeometry(2 * scale, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+            const top = new THREE.Mesh(topGeo, pmMat);
 
-            const botGeo = new THREE.SphereGeometry(2, 32, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
-            bottomHalf = new THREE.Mesh(botGeo, pmMat);
+            const botGeo = new THREE.SphereGeometry(2 * scale, 32, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
+            const bot = new THREE.Mesh(botGeo, pmMat);
 
-            const eyeGeo = new THREE.SphereGeometry(0.3, 16, 16);
+            const eyeGeo = new THREE.SphereGeometry(0.3 * scale, 16, 16);
             const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-            const rightEye = new THREE.Mesh(eyeGeo, eyeMat); rightEye.position.set(0.8, 0.9, 1.5);
-            const leftEye = new THREE.Mesh(eyeGeo, eyeMat); leftEye.position.set(-0.8, 0.9, 1.5);
+            const rightEye = new THREE.Mesh(eyeGeo, eyeMat); rightEye.position.set(0.8 * scale, 0.9 * scale, 1.5 * scale);
+            const leftEye = new THREE.Mesh(eyeGeo, eyeMat); leftEye.position.set(-0.8 * scale, 0.9 * scale, 1.5 * scale);
 
-            topHalf.add(rightEye); topHalf.add(leftEye);
-            pacmanMesh.add(topHalf); pacmanMesh.add(bottomHalf);
+            top.add(rightEye); top.add(leftEye);
+            mesh.add(top); mesh.add(bot);
 
-            // Aura mesh for Power Pellet state
-            const auraGeo = new THREE.SphereGeometry(2.6, 16, 16);
-            const auraMat = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true, transparent: true, opacity: 0.5 });
-            auraMesh = new THREE.Mesh(auraGeo, auraMat);
-            auraMesh.visible = false;
-            pacmanMesh.add(auraMesh);
+            if (scale === 1) {
+                pacmanMesh = mesh;
+                topHalf = top;
+                bottomHalf = bot;
 
-            pacmanMesh.position.set(-9, 2, 5);
-            pacmanMesh.rotation.y = Math.PI / 3;
-            scene.add(pacmanMesh);
+                // Aura mesh for Power Pellet state
+                const auraGeo = new THREE.SphereGeometry(2.6, 16, 16);
+                const auraMat = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true, transparent: true, opacity: 0.5 });
+                auraMesh = new THREE.Mesh(auraGeo, auraMat);
+                auraMesh.visible = false;
+                pacmanMesh.add(auraMesh);
+
+                pacmanMesh.position.set(-9, 2, 5);
+                pacmanMesh.rotation.y = Math.PI / 3;
+                scene.add(pacmanMesh);
+            }
+            return mesh;
         }
 
-        function createGhostModel(config, isBoss = false) {
+        function createGhostModel(config, isBoss = false, isGlitchy = false) {
             const group = new THREE.Group();
-            const scale = isBoss ? 2.2 : 1.2;
+            const scale = isGlitchy ? 3.0 : (isBoss ? 2.2 : 1.2);
 
-            const bodyMat = new THREE.MeshPhongMaterial({ color: config.color, shininess: 50 });
+            let bodyMat;
+            if (isGlitchy) {
+                bodyMat = new THREE.MeshPhongMaterial({ color: 0x111111, emissive: 0xff00ff, wireframe: false, shininess: 100 });
+            } else {
+                bodyMat = new THREE.MeshPhongMaterial({ color: config.color, shininess: 50 });
+            }
+
             const body = new THREE.Mesh(new THREE.CapsuleGeometry(1, 1.2, 4, 16), bodyMat);
             body.position.y = 1.2;
             group.add(body);
 
+            // Glitchy spikes
+            if (isGlitchy) {
+                const spikeGeo = new THREE.ConeGeometry(0.4, 1.5, 4);
+                const spikeMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+                for(let i=0; i<6; i++) {
+                    const spike = new THREE.Mesh(spikeGeo, spikeMat);
+                    spike.position.set((Math.random()-0.5)*1.5, 1.5 + Math.random(), (Math.random()-0.5)*1.5);
+                    group.add(spike);
+                }
+            }
+
             // Eyes
             const eGeo = new THREE.SphereGeometry(0.25, 8, 8);
             const pGeo = new THREE.SphereGeometry(0.12, 8, 8);
-            const eMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-            const pMat = new THREE.MeshBasicMaterial({ color: 0x0000ff });
+            const eMat = new THREE.MeshBasicMaterial({ color: isGlitchy ? 0xff0000 : 0xffffff });
+            const pMat = new THREE.MeshBasicMaterial({ color: isGlitchy ? 0xffff00 : 0x0000ff });
 
             const lE = new THREE.Mesh(eGeo, eMat); lE.position.set(0.4, 1.7, 0.8);
             const lP = new THREE.Mesh(pGeo, pMat); lP.position.set(0.4, 1.7, 1.0);
@@ -409,18 +531,86 @@
             group.add(ring);
 
             group.scale.setScalar(scale);
+
+            let hpVal = config.hp * (isBoss ? 4 : 1);
+            if (isGlitchy) hpVal = 80;
+
             group.userData = {
-                name: config.name,
-                color: config.color,
-                hp: config.hp * (isBoss ? 4 : 1),
-                maxHp: config.hp * (isBoss ? 4 : 1),
-                atk: config.atk * (isBoss ? 2 : 1),
+                id: Math.random().toString(36).substring(2, 9),
+                name: isGlitchy ? "GLITCHY" : config.name,
+                color: isGlitchy ? 0xff00ff : config.color,
+                hp: hpVal,
+                maxHp: hpVal,
+                atk: isGlitchy ? 5 : (config.atk * (isBoss ? 2 : 1)),
                 isBoss: isBoss,
+                isGlitchy: isGlitchy,
                 selectionRing: ring,
                 bodyMesh: body
             };
 
             return group;
+        }
+
+        // --- CAGE MODEL SETUP ---
+        function createCageWithPacman(pos) {
+            const cageGroup = new THREE.Group();
+            
+            // Cage bars (Box wireframe / Cylinder bars)
+            const cageBoxGeo = new THREE.BoxGeometry(2.2, 2.8, 2.2);
+            const cageBoxMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.9, roughness: 0.2, wireframe: true });
+            const cageBox = new THREE.Mesh(cageBoxGeo, cageBoxMat);
+            cageBox.position.y = 1.4;
+            cageGroup.add(cageBox);
+
+            // Small trapped Pac-Man
+            const miniPac = createPacmanModel(0.4);
+            miniPac.position.set(0, 0.8, 0);
+            cageGroup.add(miniPac);
+
+            cageGroup.position.copy(pos);
+            scene.add(cageGroup);
+
+            cageObjects.push(cageGroup);
+            cagedPacmenMeshes.push(miniPac);
+        }
+
+        function spawnStageCages() {
+            clearCages();
+            // Spawn 3 cages behind the ghost battle area
+            createCageWithPacman(new THREE.Vector3(2, 0, -8));
+            createCageWithPacman(new THREE.Vector3(6, 0, -8));
+            createCageWithPacman(new THREE.Vector3(10, 0, -8));
+        }
+
+        function clearCages() {
+            cageObjects.forEach(c => scene.remove(c));
+            cageObjects = [];
+            cagedPacmenMeshes = [];
+        }
+
+        function animateRescueCages(callback) {
+            let elapsed = 0;
+            function runAnim() {
+                elapsed += 0.04;
+                cageObjects.forEach((cage, idx) => {
+                    if (elapsed < 1.0) {
+                        // Lift cage up
+                        cage.children[0].position.y += 0.08;
+                    } else if (elapsed < 2.0) {
+                        // Pac-man jumps out happily
+                        cage.children[1].position.y = 0.8 + Math.abs(Math.sin(elapsed * 10)) * 1.2;
+                        cage.children[1].rotation.y += 0.1;
+                    }
+                });
+
+                if (elapsed < 2.0) {
+                    requestAnimationFrame(runAnim);
+                } else {
+                    if (callback) callback();
+                }
+            }
+            playHealSfx();
+            runAnim();
         }
 
         // Particle System
@@ -485,12 +675,197 @@
             document.getElementById('target-prompt').style.display = enable ? 'block' : 'none';
         }
 
+        // --- GHOST DYNAMIC HEALTH BARS (PROJECTED 3D -> 2D) ---
+        function renderGhostHpBars() {
+            const container = document.getElementById('ghost-hp-container');
+            
+            if (battleState === 'CUTSCENE' || activeGhosts.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            activeGhosts.forEach(ghost => {
+                let bar = document.getElementById(`hp-bar-${ghost.userData.id}`);
+                if (!bar) {
+                    bar = document.createElement('div');
+                    bar.id = `hp-bar-${ghost.userData.id}`;
+                    bar.className = 'ghost-hp-bar-wrap';
+                    bar.innerHTML = `
+                        <div class="ghost-hp-name" style="color: #${ghost.userData.color.toString(16).padStart(6, '0')}">${ghost.userData.name}</div>
+                        <div class="ghost-hp-bg"><div class="ghost-hp-fill" id="hp-fill-${ghost.userData.id}"></div></div>
+                    `;
+                    container.appendChild(bar);
+                }
+
+                // Project 3D position to screen
+                const worldPos = ghost.position.clone().add(new THREE.Vector3(0, ghost.userData.isGlitchy ? 5 : (ghost.userData.isBoss ? 3.5 : 2.2), 0));
+                const projected = worldPos.project(camera);
+
+                const x = (projected.x * 0.5 + 0.5) * window.innerWidth;
+                const y = (projected.y * -0.5 + 0.5) * window.innerHeight;
+
+                bar.style.left = `${x}px`;
+                bar.style.top = `${y}px`;
+
+                const pct = Math.max(0, (ghost.userData.hp / ghost.userData.maxHp) * 100);
+                const fill = document.getElementById(`hp-fill-${ghost.userData.id}`);
+                if (fill) {
+                    fill.style.width = `${pct}%`;
+                    fill.style.backgroundColor = pct > 50 ? '#00ff00' : (pct > 25 ? '#ffff00' : '#ff0000');
+                }
+            });
+
+            // Clean up removed ghost bars
+            Array.from(container.children).forEach(child => {
+                const id = child.id.replace('hp-bar-', '');
+                if (!activeGhosts.some(g => g.userData.id === id)) {
+                    child.remove();
+                }
+            });
+        }
+
+        // --- STORY CUTSCENE SYSTEM ---
+        let cutsceneStep = 0;
+        let cutsceneTimer = null;
+
+        window.playOpeningCinematic = function(manual = false) {
+            battleState = 'CUTSCENE';
+            document.getElementById('screen-menu').style.display = 'none';
+            document.getElementById('screen-battle').style.display = 'block';
+            document.getElementById('battle-ui').style.display = 'none';
+            document.getElementById('cutscene-overlay').style.display = 'block';
+
+            // Clear Scene
+            activeGhosts.forEach(g => scene.remove(g));
+            activeGhosts = [];
+            clearCages();
+
+            cutsceneGroup = new THREE.Group();
+            scene.add(cutsceneGroup);
+
+            // Build Mini Pac-City
+            const cityFloor = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshPhongMaterial({ color: 0x000511 }));
+            cityFloor.rotation.x = -Math.PI / 2;
+            cutsceneGroup.add(cityFloor);
+
+            // Add Mini Cages with Pac-Mans
+            for(let i=0; i<6; i++) {
+                const angle = (i / 6) * Math.PI * 2;
+                const radius = 10;
+                const cagePos = new THREE.Vector3(Math.cos(angle)*radius, 0, Math.sin(angle)*radius);
+                createCageWithPacman(cagePos);
+            }
+
+            // Place Glitchy & Ghosts in center
+            const glitchyCut = createGhostModel({}, false, true);
+            glitchyCut.position.set(0, 0, 0);
+            cutsceneGroup.add(glitchyCut);
+
+            // Place Hero Pac-Man on hill
+            pacmanMesh.position.set(0, 2, 22);
+            pacmanMesh.rotation.y = 0;
+
+            cutsceneStep = 0;
+            nextCutsceneStep();
+        };
+
+        function nextCutsceneStep() {
+            const sub = document.getElementById('cutscene-subtitle');
+            
+            if (cutsceneStep === 0) {
+                camera.position.set(0, 25, 35);
+                camera.lookAt(0, 0, 0);
+                sub.innerText = "LONGBALL CITY WAS PEACEFUL... UNTIL GLITCHY AND THE GHOST ARMY ATTACKED!";
+                playGlitchSfx();
+                cutsceneTimer = setTimeout(() => { cutsceneStep++; nextCutsceneStep(); }, 4000);
+            } else if (cutsceneStep === 1) {
+                camera.position.set(0, 8, 15);
+                camera.lookAt(0, 2, 0);
+                sub.innerText = "GLITCHY LOCKED ALL 300 PAC-MAN CITIZENS INSIDE ENERGY CAGES ACROSS 100 STAGES!";
+                playGlitchSfx();
+                cutsceneTimer = setTimeout(() => { cutsceneStep++; nextCutsceneStep(); }, 4500);
+            } else if (cutsceneStep === 2) {
+                camera.position.set(0, 5, 28);
+                camera.lookAt(pacmanMesh.position);
+                sub.innerText = "YOU ARE THE LAST SURVIVING HERO! FIGHT THROUGH ALL 100 STAGES AND RESCUE EVERYONE!";
+                playPowerSfx();
+                cutsceneTimer = setTimeout(() => { endCutscene(); }, 5000);
+            }
+        }
+
+        window.endCutscene = function() {
+            clearTimeout(cutsceneTimer);
+            if (cutsceneGroup) {
+                scene.remove(cutsceneGroup);
+                cutsceneGroup = null;
+            }
+            document.getElementById('cutscene-overlay').style.display = 'none';
+            document.getElementById('battle-ui').style.display = 'flex';
+            
+            // Camera reset
+            camera.position.set(0, 12, 28);
+            camera.lookAt(0, 2, 0);
+
+            returnToMenu();
+        };
+
+        // --- FINAL VICTORY CINEMATIC (LEVEL 100) ---
+        function playFinalVictoryCinematic() {
+            battleState = 'CUTSCENE';
+            document.getElementById('battle-ui').style.display = 'none';
+            document.getElementById('cutscene-overlay').style.display = 'block';
+
+            const sub = document.getElementById('cutscene-subtitle');
+            sub.innerText = "ALL 300 PAC-MANS UNITE! MASSIVE FINAL CHARGE!";
+
+            // Spawn swarm of mini pacmans behind hero
+            const pacSwarm = new THREE.Group();
+            for (let i = 0; i < 40; i++) {
+                const pm = createPacmanModel(0.3);
+                pm.position.set((Math.random() - 0.5) * 18, 0.6, 12 + Math.random() * 8);
+                pacSwarm.add(pm);
+            }
+            scene.add(pacSwarm);
+
+            let progress = 0;
+            function runChargeAnim() {
+                progress += 0.02;
+                pacmanMesh.position.z -= 0.2;
+                pacSwarm.position.z -= 0.2;
+
+                camera.position.set(0, 10, pacmanMesh.position.z + 15);
+                camera.lookAt(pacmanMesh.position);
+
+                if (progress < 1.0) {
+                    requestAnimationFrame(runChargeAnim);
+                } else {
+                    spawnParticles(new THREE.Vector3(0, 2, 0), 0xff00ff, 100);
+                    playGlitchSfx();
+                    playPowerSfx();
+
+                    sub.innerText = "GLITCHY IS BANISHED FOREVER! PAC-CITY IS SAVED!";
+                    setTimeout(() => {
+                        scene.remove(pacSwarm);
+                        document.getElementById('cutscene-overlay').style.display = 'none';
+                        document.getElementById('battle-ui').style.display = 'flex';
+                        handleVictory();
+                    }, 4000);
+                }
+            }
+            runChargeAnim();
+        }
+
         // --- BATTLE LOGIC ENGINE ---
         window.startBattleLevel = function(levelNum) {
             currentLevel = levelNum;
             document.getElementById('screen-menu').style.display = 'none';
             document.getElementById('screen-battle').style.display = 'block';
-            document.getElementById('stage-indicator').innerText = `STAGE ${currentLevel}${levelNum % 10 === 0 ? ' (BOSS)' : ''}`;
+            document.getElementById('battle-ui').style.display = 'flex';
+            
+            const isFinalBoss = (levelNum === 100);
+            const isBossStage = (levelNum % 10 === 0 && !isFinalBoss);
+            
+            document.getElementById('stage-indicator').innerText = `STAGE ${currentLevel}${isFinalBoss ? ' (FINAL BOSS: GLITCHY)' : (isBossStage ? ' (BOSS)' : '')}`;
 
             // Reset Player
             playerHp = maxHp;
@@ -503,23 +878,31 @@
             activeGhosts.forEach(g => scene.remove(g));
             activeGhosts = [];
 
+            // Spawn Cages holding 3 Pac-Mans
+            spawnStageCages();
+
             // Spawn Ghosts for current level
-            const isBossStage = (levelNum % 10 === 0);
-            const ghostCount = isBossStage ? 1 : Math.min(8, 1 + Math.floor((levelNum - 1) / 12));
+            if (isFinalBoss) {
+                const glitchyBoss = createGhostModel({}, false, true);
+                glitchyBoss.position.set(0, 0, 0);
+                scene.add(glitchyBoss);
+                activeGhosts.push(glitchyBoss);
+            } else {
+                const ghostCount = isBossStage ? 1 : Math.min(8, 1 + Math.floor((levelNum - 1) / 12));
+                const radius = 8;
+                for (let i = 0; i < ghostCount; i++) {
+                    const configIndex = (levelNum + i - 1) % ghostTypes.length;
+                    const config = ghostTypes[configIndex];
+                    const ghost = createGhostModel(config, isBossStage, false);
 
-            const radius = 8;
-            for (let i = 0; i < ghostCount; i++) {
-                const configIndex = (levelNum + i - 1) % ghostTypes.length;
-                const config = ghostTypes[configIndex];
-                const ghost = createGhostModel(config, isBossStage);
+                    // Arrange ghosts in arc formation
+                    const angle = (i - (ghostCount - 1) / 2) * 0.45;
+                    ghost.position.set(6 + Math.sin(angle) * radius, 0, 0 + Math.cos(angle) * radius);
+                    ghost.rotation.y = -Math.PI / 3;
 
-                // Arrange ghosts in arc formation
-                const angle = (i - (ghostCount - 1) / 2) * 0.45;
-                ghost.position.set(6 + Math.sin(angle) * radius, 0, 0 + Math.cos(angle) * radius);
-                ghost.rotation.y = -Math.PI / 3;
-
-                scene.add(ghost);
-                activeGhosts.push(ghost);
+                    scene.add(ghost);
+                    activeGhosts.push(ghost);
+                }
             }
 
             updateGhostCountUI();
@@ -536,6 +919,7 @@
             document.getElementById('pellet-bar').style.width = `${pelletPct}%`;
             document.getElementById('btn-pellet').disabled = (powerCharge < 2 || isPowerPelletActive);
 
+            document.getElementById('battle-lives-display').innerText = '❤️'.repeat(Math.max(0, playerLives));
             auraMesh.visible = isPowerPelletActive;
         }
 
@@ -556,7 +940,7 @@
             div.style.left = `${x}px`;
             div.style.top = `${y}px`;
             document.body.appendChild(div);
-            setTimeout(() => div.remove(), 1000);
+            setTimeout(() => div.remove(), 1200);
         }
 
         window.selectAction = function(action) {
@@ -612,7 +996,7 @@
 
                     // Check if ghost died
                     if (targetGhost.userData.hp <= 0) {
-                        spawnParticles(targetGhost.position, 0xffffff, 35);
+                        spawnParticles(targetGhost.position, 0xffffff, 40);
                         scene.remove(targetGhost);
                         activeGhosts = activeGhosts.filter(g => g !== targetGhost);
                         updateGhostCountUI();
@@ -620,7 +1004,15 @@
 
                     // Check Victory
                     if (activeGhosts.length === 0) {
-                        setTimeout(handleVictory, 800);
+                        if (currentLevel === 100) {
+                            setTimeout(playFinalVictoryCinematic, 800);
+                        } else {
+                            setTimeout(() => {
+                                animateRescueCages(() => {
+                                    handleVictory();
+                                });
+                            }, 600);
+                        }
                         return;
                     }
 
@@ -710,16 +1102,30 @@
             const overlay = document.getElementById('shield-overlay');
             overlay.style.display = 'block';
 
+            const isGlitchy = currentAttackingGhost.userData.isGlitchy;
+            let currentAtkObj = null;
+
+            if (isGlitchy) {
+                // Pick one of Glitchy's 5 special attacks
+                currentAtkObj = glitchyAttacks[Math.floor(Math.random() * glitchyAttacks.length)];
+                currentSpecialAttackName = currentAtkObj.name;
+                playGlitchSfx();
+            } else {
+                currentSpecialAttackName = "GHOST ATTACK";
+            }
+
+            document.getElementById('attack-name-banner').innerText = currentSpecialAttackName;
+
             // Randomize timing green zone width and position
             const zone = document.getElementById('timing-zone');
-            const zoneWidth = Math.floor(Math.random() * 20) + 20; // 20% - 40%
+            const zoneWidth = Math.floor(Math.random() * 15) + (isGlitchy ? 15 : 20); // Narrower for Glitchy
             const zoneLeft = Math.floor(Math.random() * (100 - zoneWidth));
             zone.style.width = `${zoneWidth}%`;
             zone.style.left = `${zoneLeft}%`;
 
             timingPos = 0;
             timingDir = 1;
-            timingSpeed = 2.0 + Math.random() * 1.5;
+            timingSpeed = currentAtkObj ? currentAtkObj.speed : (2.0 + Math.random() * 1.5);
 
             function animateTimingBar() {
                 timingPos += timingSpeed * timingDir;
@@ -769,7 +1175,14 @@
                         spawnParticles(pacmanMesh.position, 0x00f2ff, 25);
                         showFloatingText("BLOCKED!", pacmanMesh.position, '#00f2ff');
                     } else {
-                        const incomingAtk = g.userData.atk;
+                        let incomingAtk = g.userData.atk;
+                        
+                        // Check Glitchy Siphon Heal
+                        if (g.userData.isGlitchy && currentSpecialAttackName.includes("CAGE SIPHON")) {
+                            g.userData.hp = Math.min(g.userData.maxHp, g.userData.hp + 6);
+                            showFloatingText("+6 HP (SIPHON)", g.position, '#00ff00');
+                        }
+
                         playerHp = Math.max(0, playerHp - incomingAtk);
                         updateHUD();
 
@@ -801,9 +1214,16 @@
 
         // --- VICTORY & GAMEOVER MODALS ---
         function handleVictory() {
+            rescuedPacmen = Math.min(300, rescuedPacmen + 3);
+            if (currentLevel >= unlockedLevel && unlockedLevel < 100) {
+                unlockedLevel = currentLevel + 1;
+            }
             saveProgress();
+
+            document.getElementById('modal-total-rescued').innerText = rescuedPacmen;
             document.getElementById('victory-text').innerText = `Stage ${currentLevel} cleared! Unlocked Level ${unlockedLevel}`;
             document.getElementById('modal-victory').style.display = 'flex';
+            
             playSfx(523, 0.1, 'sine');
             setTimeout(() => playSfx(659, 0.1, 'sine'), 80);
             setTimeout(() => playSfx(784, 0.1, 'sine'), 160);
@@ -811,21 +1231,44 @@
         }
 
         function handleGameOver() {
+            playerLives--;
+            saveProgress();
+            updateHUD();
+
+            const titleEl = document.getElementById('gameover-title');
+            const descEl = document.getElementById('gameover-desc');
+            const btnEl = document.getElementById('gameover-btn');
+
+            if (playerLives <= 0) {
+                titleEl.innerText = "ALL LIVES LOST!";
+                descEl.innerText = "Pac-Man ran out of lives! Stage progress reset to Level 1.";
+                btnEl.innerText = "RESTART GAME";
+            } else {
+                titleEl.innerText = "STAGE FAILED";
+                descEl.innerText = `Pac-Man was defeated! You have ${playerLives} lives remaining.`;
+                btnEl.innerText = "RETRY STAGE";
+            }
+
             document.getElementById('modal-gameover').style.display = 'flex';
             playSfx(300, 0.3, 'sawtooth', 0.2);
             setTimeout(() => playSfx(150, 0.5, 'sawtooth', 0.2), 250);
         }
+
+        window.handleGameOverAction = function() {
+            document.getElementById('modal-gameover').style.display = 'none';
+            if (playerLives <= 0) {
+                resetAllProgress();
+                returnToMenu();
+            } else {
+                startBattleLevel(currentLevel);
+            }
+        };
 
         window.returnToMenu = function() {
             document.getElementById('modal-victory').style.display = 'none';
             document.getElementById('screen-battle').style.display = 'none';
             document.getElementById('screen-menu').style.display = 'flex';
             renderMapGrid();
-        };
-
-        window.retryLevel = function() {
-            document.getElementById('modal-gameover').style.display = 'none';
-            startBattleLevel(currentLevel);
         };
 
         function onWindowResize() {
@@ -841,10 +1284,14 @@
             // Subtle floating idle motion for active ghosts
             activeGhosts.forEach((g, idx) => {
                 g.position.y = Math.sin(Date.now() * 0.003 + idx) * 0.2 + 0.2;
+                if (g.userData.isGlitchy) {
+                    g.rotation.y += 0.02; // Rotate glitchy model
+                }
             });
 
-            // Particles
+            // Particles & Ghost HP HUD updating
             updateParticles();
+            renderGhostHpBars();
 
             renderer.render(scene, camera);
         }
