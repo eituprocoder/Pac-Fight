@@ -4,16 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pac-Fight - Epic RPG</title>
-    <script>
-    if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js')
-      .then(() => console.log('Service Worker registrado correctamente'))
-      .catch(err => console.log('Error al registrar:', err));
-  }
-</script>
-
-<!-- No olvides vincular el manifest en el <head> -->
-<link rel="manifest" href="manifest.json">
     <style>
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         body { margin: 0; overflow: hidden; background: #000411; font-family: 'Courier New', monospace; color: #fff; }
@@ -140,7 +130,7 @@
     </div>
 
     <!-- BATTLE SCREEN -->
-    <div id="screen-battle" class="screen" style="background: transparent;">
+    <div id="screen-battle" class="screen" style="background: transparent; pointer-events: none;">
         <!-- Ghost HP UI overlay -->
         <div id="ghost-hp-overlay"></div>
 
@@ -638,6 +628,36 @@
                     if (ghostGroup) executePlayerAttack(ghostGroup);
                 }
             });
+
+            // ADDED: Fallback listeners on the window to bypass UI blocking
+            const handleGlobalTargetSelect = (clientX, clientY) => {
+                if (battleState !== 'PLAYER_SELECT_TARGET') return;
+                mouse.x = (clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+                const ghostMeshes = activeGhosts.map(g => g.userData.bodyMesh);
+                const intersects = raycaster.intersectObjects(ghostMeshes);
+
+                if (intersects.length > 0) {
+                    const hitBody = intersects[0].object;
+                    const ghostGroup = activeGhosts.find(g => g.userData.bodyMesh === hitBody);
+                    if (ghostGroup) executePlayerAttack(ghostGroup);
+                }
+            };
+            
+            window.addEventListener('click', (e) => {
+                // Ensure we don't duplicate processing if the user clicked a UI button
+                if (e.target.closest && e.target.closest('.interactive')) return; 
+                handleGlobalTargetSelect(e.clientX, e.clientY);
+            });
+            
+            window.addEventListener('touchstart', (e) => {
+                if (e.target.closest && e.target.closest('.interactive')) return;
+                if (e.touches && e.touches.length > 0) {
+                    handleGlobalTargetSelect(e.touches[0].clientX, e.touches[0].clientY);
+                }
+            }, { passive: true });
         }
 
         function highlightTargetGhosts(enable) {
@@ -1177,5 +1197,4 @@
     </script>
 </body>
 </html>
-
 
