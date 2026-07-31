@@ -4,16 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pac-Fight - Epic RPG</title>
-    <script>
-    if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js')
-      .then(() => console.log('Service Worker registrado correctamente'))
-      .catch(err => console.log('Error al registrar:', err));
-  }
-</script>
-
-<!-- No olvides vincular el manifest en el <head> -->
-<link rel="manifest" href="manifest.json">
     <style>
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         body { margin: 0; overflow: hidden; background: #000411; font-family: 'Courier New', monospace; color: #fff; }
@@ -25,15 +15,10 @@
 
         /* Header UI */
         h1.title { font-size: 38px; color: #ffff00; text-shadow: 0 0 15px #ffff00, 3px 3px 0 #ff0000; margin: 10px 0 5px 0; letter-spacing: 3px; text-align: center; }
-        .subtitle { color: #00f2ff; font-size: 14px; margin-bottom: 15px; text-shadow: 0 0 8px #00f2ff; text-align: center; }
-
-        /* Mode Selector */
-        .mode-selector { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 15px; background: rgba(0,242,255,0.1); padding: 8px 16px; border-radius: 20px; border: 1px solid #00f2ff; }
-        .mode-selector label { font-size: 13px; font-weight: bold; color: #ffff00; }
-        .mode-selector select { background: #001133; color: #00f2ff; border: 1px solid #00f2ff; padding: 5px 12px; border-radius: 8px; font-family: inherit; font-size: 14px; font-weight: bold; cursor: pointer; outline: none; }
+        .subtitle { color: #00f2ff; font-size: 14px; margin-bottom: 20px; text-shadow: 0 0 8px #00f2ff; text-align: center; }
 
         /* Level Map Screen */
-        .map-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 12px; width: 100%; max-width: 800px; background: rgba(0,0,0,0.6); border: 2px solid #00f2ff; border-radius: 12px; padding: 20px; box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); max-height: 55vh; overflow-y: auto; }
+        .map-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 12px; width: 100%; max-width: 800px; background: rgba(0,0,0,0.6); border: 2px solid #00f2ff; border-radius: 12px; padding: 20px; box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); max-height: 60vh; overflow-y: auto; }
         .level-btn { aspect-ratio: 1; border-radius: 10px; border: 2px solid #00f2ff; background: rgba(0, 242, 255, 0.1); color: #00f2ff; font-weight: bold; font-size: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; position: relative; }
         .level-btn:hover:not(.locked) { background: #00f2ff; color: #000; box-shadow: 0 0 15px #00f2ff; transform: scale(1.05); }
         .level-btn.locked { border-color: #444; color: #555; background: rgba(255,255,255,0.03); cursor: not-allowed; }
@@ -49,28 +34,22 @@
         .interactive { pointer-events: auto; }
 
         /* HUD top */
-        .hud-top { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; gap: 10px; }
-        .players-hud-list { display: flex; flex-direction: column; gap: 8px; max-height: 45vh; overflow-y: auto; pointer-events: auto; }
-        .status-box { background: rgba(0, 4, 17, 0.85); border: 2px solid #00f2ff; border-radius: 10px; padding: 8px 12px; width: 210px; box-shadow: 0 0 10px rgba(0, 242, 255, 0.3); transition: border-color 0.3s ease; }
-        .status-box.active-turn { border-color: #ffff00; box-shadow: 0 0 15px #ffff00; }
-        .status-box.downed { border-color: #555; opacity: 0.6; }
-        .status-box h3 { margin: 0 0 4px 0; font-size: 13px; color: #ffff00; display: flex; justify-content: space-between; align-items: center; }
-        .bar-bg { width: 100%; height: 12px; background: #222; border: 1px solid #fff; border-radius: 6px; overflow: hidden; position: relative; margin-top: 3px; }
+        .hud-top { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
+        .status-box { background: rgba(0, 4, 17, 0.85); border: 2px solid #00f2ff; border-radius: 10px; padding: 10px 15px; width: 220px; box-shadow: 0 0 10px rgba(0, 242, 255, 0.3); }
+        .status-box h3 { margin: 0 0 5px 0; font-size: 16px; color: #ffff00; display: flex; justify-content: space-between; }
+        .bar-bg { width: 100%; height: 14px; background: #222; border: 1px solid #fff; border-radius: 7px; overflow: hidden; position: relative; margin-top: 4px; }
         .bar-fill { height: 100%; transition: width 0.3s ease; }
-        .hp-bar-fill { background: linear-gradient(90deg, #ff0000, #00ff00); width: 100%; }
-        .pellet-bar-fill { background: #ffff00; width: 0%; }
+        #hp-bar { background: linear-gradient(90deg, #ff0000, #00ff00); width: 100%; }
+        #pellet-bar { background: #ffff00; width: 0%; }
 
         /* Floating Info overlay */
-        #stage-indicator { text-align: center; font-size: 18px; color: #ffff00; font-weight: bold; text-shadow: 0 0 8px #000; background: rgba(0,0,0,0.6); padding: 6px 16px; border-radius: 20px; border: 1px solid #ffff00; display: flex; flex-direction: column; align-items: center; }
-        #boss-timer-display { font-size: 16px; color: #ff3333; margin-top: 4px; font-weight: bold; display: none; text-shadow: 0 0 10px #ff0000; }
-
-        /* Sound Control Button */
-        #audio-toggle-btn { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.7); border: 1px solid #00f2ff; border-radius: 50%; width: 36px; height: 36px; color: #00f2ff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; pointer-events: auto; z-index: 50; }
-        #audio-toggle-btn:hover { background: #00f2ff; color: #000; }
+        #stage-indicator { text-align: center; font-size: 20px; color: #ffff00; font-weight: bold; text-shadow: 0 0 8px #000; background: rgba(0,0,0,0.6); padding: 6px 16px; border-radius: 20px; border: 1px solid #ffff00; display: flex; flex-direction: column; }
+        #boss-timer-display { display: none; margin-top: 4px; font-size: 14px; color: #ff0055; text-shadow: 0 0 10px #ff0000; letter-spacing: 1px; font-weight: bold; animation: pulse 1s infinite alternate; }
+        @keyframes pulse { 0% { opacity: 0.8; } 100% { opacity: 1; transform: scale(1.05); } }
 
         /* Action Menu Bottom */
-        .action-panel { display: flex; justify-content: center; gap: 12px; width: 100%; margin-bottom: 10px; }
-        .cmd-btn { width: 120px; padding: 12px; border: 2px solid #00f2ff; border-radius: 12px; background: rgba(0, 242, 255, 0.15); color: #00f2ff; font-weight: bold; font-family: inherit; font-size: 13px; cursor: pointer; transition: all 0.2s ease; text-align: center; box-shadow: 0 0 10px rgba(0,242,255,0.2); }
+        .action-panel { display: flex; justify-content: center; gap: 15px; width: 100%; margin-bottom: 10px; }
+        .cmd-btn { width: 120px; padding: 12px; border: 2px solid #00f2ff; border-radius: 12px; background: rgba(0, 242, 255, 0.15); color: #00f2ff; font-weight: bold; font-family: inherit; font-size: 14px; cursor: pointer; transition: all 0.2s ease; text-align: center; box-shadow: 0 0 10px rgba(0,242,255,0.2); }
         .cmd-btn:hover:not(:disabled) { background: #00f2ff; color: #000; box-shadow: 0 0 20px #00f2ff; transform: translateY(-3px); }
         .cmd-btn:disabled { opacity: 0.4; border-color: #555; color: #777; cursor: not-allowed; transform: none; box-shadow: none; }
         .cmd-btn.power { border-color: #ffff00; color: #ffff00; background: rgba(255, 255, 0, 0.15); }
@@ -100,16 +79,12 @@
         /* Top Bar Info */
         .top-info-bar { width: 100%; max-width: 800px; display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px; color: #00f2ff; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; border: 1px solid #00f2ff; }
 
-        /* HP Bars Overlay */
+        /* Ghost HP Bars Overlay */
         #ghost-hp-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 15; }
-        .ghost-hp-wrapper { position: absolute; width: 44px; height: 6px; background: #222; border: 1px solid #fff; border-radius: 3px; transform: translate(-50%, -50%); overflow: hidden; }
+        .ghost-hp-wrapper { position: absolute; width: 40px; height: 6px; background: #222; border: 1px solid #fff; border-radius: 3px; transform: translate(-50%, -50%); overflow: hidden; }
         .ghost-hp-fill { height: 100%; background: #ff0000; transition: width 0.2s; }
-        .boss-hp-wrapper { width: 110px; height: 10px; border: 2px solid #ff0000; }
-        .boss-hp-wrapper.enraged { border-color: #ff00ff; box-shadow: 0 0 10px #ff0000; }
+        .boss-hp-wrapper { width: 100px; height: 10px; border: 2px solid #ff0000; }
         .glitchy-hp-wrapper { width: 140px; height: 12px; border: 2px solid #ff00ff; box-shadow: 0 0 10px #ff00ff; }
-
-        /* Downed Player Overhead Status */
-        .player-status-wrapper { position: absolute; font-size: 11px; font-weight: bold; color: #ff3333; background: rgba(0,0,0,0.85); border: 1px solid #ff3333; border-radius: 6px; padding: 2px 6px; transform: translate(-50%, -100%); text-shadow: 0 0 4px #000; white-space: nowrap; pointer-events: none; }
 
         /* Cutscene Overlays */
         .cutscene-ui { display: none; position: absolute; z-index: 150; top: 0; left: 0; width: 100vw; height: 100vh; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 50px; background: radial-gradient(circle, transparent 40%, #000 100%); pointer-events: none; }
@@ -124,13 +99,6 @@
     <div id="screen-menu" class="screen">
         <h1 class="title">PAC-FIGHT</h1>
         <div class="subtitle">EPIC TURN-BASED RPG</div>
-
-        <!-- Mode Selector -->
-        <div class="mode-selector">
-            <label for="select-player-count">Multiplayer mode (coming soon!)</label>
-            <select id="select-player-count" onchange="updatePlayerMode(this.value)">
-            </select>
-        </div>
 
         <div class="top-info-bar">
             <div>STAGES: <span id="unlocked-count" style="color:#ffff00;">1</span>/100</div>
@@ -165,26 +133,29 @@
 
     <!-- BATTLE SCREEN -->
     <div id="screen-battle" class="screen" style="background: transparent; pointer-events: none;">
-        <button id="audio-toggle-btn" title="Toggle Audio" onclick="toggleAudioMute()">🔊</button>
-        <!-- Ghost & Downed HP UI overlay -->
+        <!-- Ghost HP UI overlay -->
         <div id="ghost-hp-overlay"></div>
 
         <div id="battle-ui">
             <!-- Top Status -->
             <div class="hud-top">
-                <div class="players-hud-list" id="players-hud-container">
-                    <!-- Dynamic HUD boxes for 1P-8P -->
+                <div class="status-box">
+                    <h3>PAC-MAN <span id="hp-text">20/20 HP</span></h3>
+                    <div class="bar-bg"><div id="hp-bar" class="bar-fill"></div></div>
+                    <div style="font-size: 10px; margin-top: 6px; color: #ffff00;">POWER PELLET CHARGE</div>
+                    <div class="bar-bg"><div id="pellet-bar" class="bar-fill"></div></div>
                 </div>
 
                 <div id="stage-indicator">
                     <span id="stage-title">STAGE 1</span>
-                    <span style="font-size: 11px; color: #ff0055; margin-top: 4px;" id="battle-lives-display">LIVES: ❤️❤️❤️</span>
-                    <div id="boss-timer-display">⏳ 15:00</div>
+                    <span style="font-size: 12px; color: #ff0055; margin-top: 4px;" id="battle-lives-display">LIVES: ❤️❤️❤️</span>
+                    <!-- 15 MINUTE BOSS TIMER DISPLAY -->
+                    <div id="boss-timer-display">⏱️ 15:00</div>
                 </div>
 
                 <div class="status-box" style="border-color: #ff0055;">
                     <h3 style="color: #ff0055;">ENEMIES LEFT</h3>
-                    <div id="ghost-count-display" style="font-size: 18px; font-weight: bold; color: #fff; text-align: center; margin-top: 5px;">
+                    <div id="ghost-count-display" style="font-size: 20px; font-weight: bold; color: #fff; text-align: center; margin-top: 5px;">
                         1 GHOST
                     </div>
                 </div>
@@ -205,8 +176,8 @@
 
         <!-- Quick Time Defense Overlay -->
         <div id="shield-overlay" class="interactive">
-            <h2 id="shield-title">🛡️ DEFEND NOW!</h2>
-            <div id="shield-subtitle" style="font-size: 12px; color: #00f2ff;">TAP SHIELD IN THE GREEN ZONE!</div>
+            <h2>🛡️ DEFEND NOW!</h2>
+            <div style="font-size: 12px; color: #00f2ff;">TAP SHIELD IN THE GREEN ZONE!</div>
             <div class="timing-bar-container">
                 <div id="timing-zone" class="timing-zone"></div>
                 <div id="timing-indicator" class="timing-indicator"></div>
@@ -245,23 +216,13 @@
         // --- GAME ARCHITECTURE & STATE ---
         let currentLevel = 1;
         let unlockedLevel = 1;
-        let playerCount = 1; // 1 to 8 players
-
-        // Player Palettes (P1-P8)
-        const playerColors = [
-            { name: "P1", color: 0xffff00, hex: "#ffff00" }, // Yellow
-            { name: "P2", color: 0x00ffff, hex: "#00ffff" }, // Cyan
-            { name: "P3", color: 0xffb8ff, hex: "#ffb8ff" }, // Pink
-            { name: "P4", color: 0xff3333, hex: "#ff3333" }, // Red
-            { name: "P5", color: 0x00ff66, hex: "#00ff66" }, // Green
-            { name: "P6", color: 0xff9900, hex: "#ff9900" }, // Orange
-            { name: "P7", color: 0xaa00ff, hex: "#aa00ff" }, // Purple
-            { name: "P8", color: 0xffffff, hex: "#ffffff" }  // White
-        ];
-
-        // Active Player Roster
-        let players = [];
-        let activePlayerIndex = 0;
+        
+        // Player Stats
+        let playerHp = 20;
+        const maxHp = 20;
+        let powerCharge = 0; // Requires 2 charges
+        let isPowerPelletActive = false;
+        let powerPelletTurnsLeft = 0;
 
         // Meta Progress
         let playerLives = 3;
@@ -273,13 +234,32 @@
         let backgroundCages = [];
 
         // Turn Management
-        let battleState = 'IDLE'; // IDLE, PLAYER_SELECT_TARGET, ANIMATING, SHIELD_MINIGAME, VICTORY, GAMEOVER
+        let battleState = 'IDLE'; // IDLE, PLAYER_SELECT_TARGET, ANIMATING, SHIELD_MINIGAME, DEFEAT_ANIMATION, VICTORY
         let selectedAbility = null;
         let activeGhosts = [];
 
-        // Boss Timer (15 mins)
+        // Boss Timer State (15 Minutes)
+        let bossTimerSeconds = 900;
         let bossTimerInterval = null;
-        let bossTimeRemaining = 900; // 15 minutes in seconds
+
+        // Background Audio OST Management
+        const bgAudio = new Audio();
+        bgAudio.loop = true;
+
+        function playBattleOST(isBoss) {
+            bgAudio.pause();
+            bgAudio.currentTime = 0;
+            // Play boss OST for boss levels, classic battle OST for normal levels
+            bgAudio.src = isBoss ? 'Pac-Fight boss ost.mp3' : 'Pac-Fight battle ost.mp3';
+            bgAudio.play().catch(e => {
+                console.log('Audio autoplay prevented or file not found in directory:', e);
+            });
+        }
+
+        function stopBattleOST() {
+            bgAudio.pause();
+            bgAudio.currentTime = 0;
+        }
 
         // Quick Time Defense System
         let shieldAnimFrame = null;
@@ -287,14 +267,6 @@
         let timingSpeed = 2.5;
         let timingDir = 1;
         let currentAttackingGhost = null;
-
-        // BGM Sound System
-        let battleOstAudio = new Audio('Pac-Fight battle ost.mp3');
-        let bossOstAudio = new Audio('Pac-Fight BossFight ost.mp3');
-        battleOstAudio.loop = true;
-        bossOstAudio.loop = true;
-        let currentAudioTrack = null;
-        let isMuted = false;
 
         // Ghost Catalog
         const ghostTypes = [
@@ -320,6 +292,7 @@
             if (savedLives) {
                 playerLives = parseInt(savedLives, 10);
                 if (playerLives <= 0) {
+                    // Fail safe if reloaded on 0 lives
                     hardReset();
                     return;
                 }
@@ -328,6 +301,7 @@
             updateGlobalHUD();
             renderMapGrid();
 
+            // Intro Check
             if (unlockedLevel === 1 && playerLives === 3 && !sessionStorage.getItem('PacFight_IntroSeen')) {
                 startIntroCutscene();
                 sessionStorage.setItem('PacFight_IntroSeen', 'true');
@@ -364,10 +338,6 @@
             document.getElementById('menu-rescued-display').innerText = rescuedCount;
             document.getElementById('unlocked-count').innerText = Math.min(100, unlockedLevel);
         }
-
-        window.updatePlayerMode = function(val) {
-            playerCount = parseInt(val, 10);
-        };
 
         // --- MAP GENERATION ---
         function renderMapGrid() {
@@ -408,11 +378,10 @@
             }
         }
 
-        // --- AUDIO SYNTHESIS & BGM ENGINE ---
+        // --- AUDIO SYNTHESIS SYSTEM ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSfx(freq, duration = 0.1, type = 'sine', volume = 0.1) {
             try {
-                if (isMuted) return;
                 if (audioCtx.state === 'suspended') audioCtx.resume();
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
@@ -446,43 +415,19 @@
             setTimeout(() => playSfx(1200, 0.2, 'sine', 0.15), 80);
         }
 
-        function playPacmanDeathSfx() {
-            const freqs = [600, 560, 520, 480, 440, 400, 360, 320, 280, 240, 200, 160];
-            freqs.forEach((f, i) => setTimeout(() => playSfx(f, 0.08, 'sawtooth', 0.2), i * 65));
+        function playDeathSfx() {
+            const freqs = [600, 550, 500, 450, 400, 350, 300, 250, 200, 150, 100];
+            freqs.forEach((f, idx) => {
+                setTimeout(() => playSfx(f, 0.08, 'sawtooth', 0.2), idx * 70);
+            });
         }
-
-        function startBgm(isBossStage) {
-            stopBgm();
-            currentAudioTrack = isBossStage ? bossOstAudio : battleOstAudio;
-            if (!isMuted && currentAudioTrack) {
-                currentAudioTrack.currentTime = 0;
-                currentAudioTrack.play().catch(e => {
-                    // Silent catch if browser restricts unprompted audio start
-                });
-            }
-        }
-
-        function stopBgm() {
-            if (battleOstAudio) { battleOstAudio.pause(); battleOstAudio.currentTime = 0; }
-            if (bossOstAudio) { bossOstAudio.pause(); bossOstAudio.currentTime = 0; }
-            currentAudioTrack = null;
-        }
-
-        window.toggleAudioMute = function() {
-            isMuted = !isMuted;
-            const btn = document.getElementById('audio-toggle-btn');
-            btn.innerText = isMuted ? '🔇' : '🔊';
-            if (isMuted) {
-                if (currentAudioTrack) currentAudioTrack.pause();
-            } else {
-                if (currentAudioTrack) currentAudioTrack.play().catch(e=>{});
-            }
-        };
 
         // --- THREE.JS SCENE SETUP ---
         let scene, camera, renderer;
+        let pacmanMesh, topHalf, bottomHalf, auraMesh;
         let activeParticles = [];
         
+        // Shared assets for citizens to keep rendering smooth for 300 models
         let citizenTopGeo, citizenBotGeo, citizenEyeGeo, citizenMat, citizenEyeMat;
 
         function init3D() {
@@ -491,7 +436,7 @@
             scene.background = new THREE.Color(0x000411);
 
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 14, 32);
+            camera.position.set(0, 12, 28);
             camera.lookAt(0, 2, 0);
 
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -512,19 +457,22 @@
             scene.add(pointLight);
 
             // Arena Floor Grid
-            const floorGeo = new THREE.PlaneGeometry(65, 45);
+            const floorGeo = new THREE.PlaneGeometry(60, 40);
             const floorMat = new THREE.MeshPhongMaterial({ color: 0x001122, side: THREE.DoubleSide });
             const floor = new THREE.Mesh(floorGeo, floorMat);
             floor.rotation.x = -Math.PI / 2;
             floor.position.y = 0;
             scene.add(floor);
 
-            const gridHelper = new THREE.GridHelper(65, 30, 0x00f2ff, 0x002244);
+            const gridHelper = new THREE.GridHelper(60, 30, 0x00f2ff, 0x002244);
             gridHelper.position.y = 0.01;
             scene.add(gridHelper);
 
+            // Initialize Models
             initCitizenAssets();
+            createPacmanModel();
 
+            // Resize and Raycaster
             window.addEventListener('resize', onWindowResize);
             setupRaycaster();
         }
@@ -538,6 +486,7 @@
             citizenEyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
         }
 
+        // Identical design to Pac-Man but optimized for 300 copies
         function createPacCitizen() {
             const group = new THREE.Group();
             const top = new THREE.Mesh(citizenTopGeo, citizenMat);
@@ -554,32 +503,33 @@
             return group;
         }
 
-        function createPacmanModelForPlayer(pData) {
-            const group = new THREE.Group();
-            const pmMat = new THREE.MeshPhongMaterial({ color: pData.color, shininess: 80 });
+        function createPacmanModel() {
+            pacmanMesh = new THREE.Group();
+            const pmMat = new THREE.MeshPhongMaterial({ color: 0xffff00, shininess: 80 });
 
             const topGeo = new THREE.SphereGeometry(2, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
-            const top = new THREE.Mesh(topGeo, pmMat);
+            topHalf = new THREE.Mesh(topGeo, pmMat);
 
             const botGeo = new THREE.SphereGeometry(2, 32, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
-            const bot = new THREE.Mesh(botGeo, pmMat);
+            bottomHalf = new THREE.Mesh(botGeo, pmMat);
 
             const eyeGeo = new THREE.SphereGeometry(0.3, 16, 16);
             const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
             const rightEye = new THREE.Mesh(eyeGeo, eyeMat); rightEye.position.set(0.8, 0.9, 1.5);
             const leftEye = new THREE.Mesh(eyeGeo, eyeMat); leftEye.position.set(-0.8, 0.9, 1.5);
 
-            top.add(rightEye); top.add(leftEye);
-            group.add(top); group.add(bot);
+            topHalf.add(rightEye); topHalf.add(leftEye);
+            pacmanMesh.add(topHalf); pacmanMesh.add(bottomHalf);
 
             const auraGeo = new THREE.SphereGeometry(2.6, 16, 16);
-            const auraMat = new THREE.MeshBasicMaterial({ color: pData.color, wireframe: true, transparent: true, opacity: 0.5 });
-            const auraMesh = new THREE.Mesh(auraGeo, auraMat);
+            const auraMat = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true, transparent: true, opacity: 0.5 });
+            auraMesh = new THREE.Mesh(auraGeo, auraMat);
             auraMesh.visible = false;
-            group.add(auraMesh);
+            pacmanMesh.add(auraMesh);
 
-            group.userData = { topHalf: top, bottomHalf: bot, auraMesh: auraMesh };
-            return group;
+            pacmanMesh.position.set(-9, 2, 5);
+            pacmanMesh.rotation.y = Math.PI / 3;
+            scene.add(pacmanMesh);
         }
 
         function createGhostModel(config, isBoss = false) {
@@ -627,9 +577,6 @@
                 atk: config.atk * (isBoss ? 2 : 1),
                 isBoss: isBoss,
                 isGlitchy: config.isGlitchy,
-                isEnraged: false,
-                eyeMat: eMat,
-                pupilMat: pMat,
                 selectionRing: ring,
                 bodyMesh: body,
                 basePos: new THREE.Vector3()
@@ -654,7 +601,7 @@
                 
                 cageGroup.add(cage);
                 cageGroup.add(citizen);
-                cageGroup.position.set(i * 7, 0, -14);
+                cageGroup.position.set(i * 6, 0, -12);
                 scene.add(cageGroup);
                 backgroundCages.push({ group: cageGroup, cage: cage, citizen: citizen, active: true });
             }
@@ -669,11 +616,11 @@
 
         function spawnParticles(pos, color, count = 15) {
             for (let i = 0; i < count; i++) {
-                const geo = new THREE.BoxGeometry(0.25, 0.25, 0.25);
+                const geo = new THREE.BoxGeometry(0.2, 0.2, 0.2);
                 const mat = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 1 });
                 const mesh = new THREE.Mesh(geo, mat);
-                mesh.position.copy(pos).add(new THREE.Vector3((Math.random()-0.5)*1.5, (Math.random()-0.5)+0.8, (Math.random()-0.5)*1.5));
-                const vel = new THREE.Vector3((Math.random()-0.5)*0.25, Math.random()*0.25+0.1, (Math.random()-0.5)*0.25);
+                mesh.position.copy(pos).add(new THREE.Vector3((Math.random()-0.5), (Math.random()-0.5)+0.5, (Math.random()-0.5)));
+                const vel = new THREE.Vector3((Math.random()-0.5)*0.2, Math.random()*0.2+0.1, (Math.random()-0.5)*0.2);
                 scene.add(mesh);
                 activeParticles.push({ mesh, vel, life: 1.0 });
             }
@@ -699,7 +646,25 @@
         const mouse = new THREE.Vector2();
 
         function setupRaycaster() {
-            const handleTargetSelect = (clientX, clientY) => {
+            const container = document.getElementById('canvas-container');
+            container.addEventListener('click', (e) => {
+                if (battleState !== 'PLAYER_SELECT_TARGET') return;
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+                const ghostMeshes = activeGhosts.map(g => g.userData.bodyMesh);
+                const intersects = raycaster.intersectObjects(ghostMeshes);
+
+                if (intersects.length > 0) {
+                    const hitBody = intersects[0].object;
+                    const ghostGroup = activeGhosts.find(g => g.userData.bodyMesh === hitBody);
+                    if (ghostGroup) executePlayerAttack(ghostGroup);
+                }
+            });
+
+            // Fallback listeners on the window to bypass UI blocking
+            const handleGlobalTargetSelect = (clientX, clientY) => {
                 if (battleState !== 'PLAYER_SELECT_TARGET') return;
                 mouse.x = (clientX / window.innerWidth) * 2 - 1;
                 mouse.y = -(clientY / window.innerHeight) * 2 + 1;
@@ -714,16 +679,16 @@
                     if (ghostGroup) executePlayerAttack(ghostGroup);
                 }
             };
-
+            
             window.addEventListener('click', (e) => {
                 if (e.target.closest && e.target.closest('.interactive')) return; 
-                handleTargetSelect(e.clientX, e.clientY);
+                handleGlobalTargetSelect(e.clientX, e.clientY);
             });
             
             window.addEventListener('touchstart', (e) => {
                 if (e.target.closest && e.target.closest('.interactive')) return;
                 if (e.touches && e.touches.length > 0) {
-                    handleTargetSelect(e.touches[0].clientX, e.touches[0].clientY);
+                    handleGlobalTargetSelect(e.touches[0].clientX, e.touches[0].clientY);
                 }
             }, { passive: true });
         }
@@ -736,9 +701,11 @@
         // --- CUTSCENES ---
         window.startIntroCutscene = function() {
             cutsceneMode = 'intro';
+            stopBattleOST();
             document.getElementById('screen-menu').style.display = 'none';
             document.getElementById('screen-intro').style.display = 'flex';
             
+            // Generate Cages in distance
             for(let i=0; i<40; i++) {
                 const cageMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, wireframe: true });
                 const cage = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), cageMat);
@@ -749,6 +716,7 @@
                 cutsceneObjects.push(cage, cit);
             }
             
+            // Add Glitchy and Team
             const glitchy = createGhostModel(glitchyConfig, true);
             glitchy.scale.set(4, 4, 4);
             glitchy.position.set(0, 0, -25);
@@ -764,6 +732,7 @@
             
             camera.position.set(0, 35, 45);
             camera.lookAt(0, 0, -10);
+            pacmanMesh.visible = false;
         };
 
         window.endIntroCutscene = function() {
@@ -772,22 +741,26 @@
             cutsceneObjects = [];
             document.getElementById('screen-intro').style.display = 'none';
             document.getElementById('screen-menu').style.display = 'flex';
+            pacmanMesh.visible = true;
         };
 
         window.startEndingCutscene = function() {
             cutsceneMode = 'ending';
             battleState = 'VICTORY';
-            stopBgm();
+            stopBattleOST();
+            stopBossTimer();
             document.getElementById('battle-ui').style.display = 'none';
             document.getElementById('screen-ending').style.display = 'flex';
             document.getElementById('ghost-hp-overlay').innerHTML = '';
             
+            // Spawn Glitchy
             const glitchy = createGhostModel(glitchyConfig, true);
             glitchy.scale.set(5, 5, 5);
             glitchy.position.set(0, 0, 0);
             scene.add(glitchy);
             cutsceneObjects.push(glitchy);
             
+            // Spawn all 300 rescued citizens
             for(let i=0; i<300; i++) {
                 const cit = createPacCitizen();
                 const angle = Math.random() * Math.PI * 2;
@@ -800,7 +773,7 @@
             
             camera.position.set(0, 35, 40);
             camera.lookAt(0, 0, 0);
-            players.forEach(p => p.mesh.visible = false);
+            pacmanMesh.visible = false;
             backgroundCages.forEach(c => scene.remove(c.group));
         };
 
@@ -812,6 +785,46 @@
             document.getElementById('modal-victory').style.display = 'flex';
             saveProgress();
         };
+
+        // --- BOSS TIMER MANAGEMENT ---
+        function startBossTimer() {
+            stopBossTimer();
+            bossTimerSeconds = 900; // 15 Minutes = 900 Seconds
+            updateBossTimerUI();
+            document.getElementById('boss-timer-display').style.display = 'block';
+
+            bossTimerInterval = setInterval(() => {
+                if (battleState === 'VICTORY' || battleState === 'DEFEAT_ANIMATION') {
+                    stopBossTimer();
+                    return;
+                }
+                bossTimerSeconds--;
+                updateBossTimerUI();
+
+                if (bossTimerSeconds <= 0) {
+                    stopBossTimer();
+                    showFloatingText("TIME EXPIRED!", pacmanMesh.position, '#ff0000');
+                    playerHp = 0;
+                    updateHUD();
+                    setTimeout(animatePacmanDeath, 500);
+                }
+            }, 1000);
+        }
+
+        function stopBossTimer() {
+            if (bossTimerInterval) {
+                clearInterval(bossTimerInterval);
+                bossTimerInterval = null;
+            }
+            document.getElementById('boss-timer-display').style.display = 'none';
+        }
+
+        function updateBossTimerUI() {
+            const mins = Math.floor(Math.max(0, bossTimerSeconds) / 60);
+            const secs = Math.max(0, bossTimerSeconds) % 60;
+            const formatted = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            document.getElementById('boss-timer-display').innerText = `⏱️ ${formatted}`;
+        }
 
         // --- BATTLE LOGIC ENGINE ---
         window.startBattleLevel = function(levelNum) {
@@ -826,64 +839,27 @@
             else if(isBoss) title += ' (BOSS)';
             document.getElementById('stage-title').innerText = title;
 
-            // OST audio start
-            startBgm(isBoss || isGlitchy);
+            // Start standard battle OST or Boss battle OST
+            playBattleOST(isBoss || isGlitchy);
 
-            // Boss Timer
-            clearInterval(bossTimerInterval);
-            const timerEl = document.getElementById('boss-timer-display');
+            // Handle 15 min Boss Timer
             if (isBoss || isGlitchy) {
-                bossTimeRemaining = 900; // 15 mins
-                timerEl.style.display = 'block';
-                updateTimerUI();
-                bossTimerInterval = setInterval(() => {
-                    bossTimeRemaining--;
-                    updateTimerUI();
-                    if (bossTimeRemaining <= 0) {
-                        clearInterval(bossTimerInterval);
-                        handleBossTimeout();
-                    }
-                }, 1000);
+                startBossTimer();
             } else {
-                timerEl.style.display = 'none';
+                stopBossTimer();
             }
 
-            // Reset Players Roster
-            players.forEach(p => { if (p.mesh) scene.remove(p.mesh); });
-            players = [];
-            activePlayerIndex = 0;
+            playerHp = maxHp;
+            powerCharge = 0;
+            isPowerPelletActive = false;
+            powerPelletTurnsLeft = 0;
+            updateHUD();
 
-            const spacing = Math.min(3.2, 18 / Math.max(1, playerCount));
-            const startX = -((playerCount - 1) * spacing) / 2 - 8;
-
-            for (let i = 0; i < playerCount; i++) {
-                const colorInfo = playerColors[i % playerColors.length];
-                const pData = {
-                    id: i,
-                    name: playerCount > 1 ? `P${i+1}` : "PAC-MAN",
-                    color: colorInfo.color,
-                    hex: colorInfo.hex,
-                    hp: 20,
-                    maxHp: 20,
-                    powerCharge: 0,
-                    isPowerActive: false,
-                    powerTurns: 0,
-                    downed: false,
-                    reviveCounter: 0,
-                    mesh: null
-                };
-                pData.mesh = createPacmanModelForPlayer(pData);
-                pData.mesh.position.set(startX + i * spacing, 2, 5 + (i % 2) * 1.5);
-                pData.mesh.rotation.y = Math.PI / 3;
-                scene.add(pData.mesh);
-                players.push(pData);
-            }
-
-            // Spawn Enemies
             activeGhosts.forEach(g => scene.remove(g));
             activeGhosts = [];
             document.getElementById('ghost-hp-overlay').innerHTML = '';
 
+            // Spawn Enemies
             let ghostCount = isGlitchy ? 1 : (isBoss ? 1 : Math.min(8, 1 + Math.floor((levelNum - 1) / 12)));
             const radius = 8;
             for (let i = 0; i < ghostCount; i++) {
@@ -898,78 +874,26 @@
             }
 
             createLevelCages();
-            buildPlayersHUD();
-            updateHUD();
             updateGhostCountUI();
-
             battleState = 'IDLE';
             enableActionButtons(true);
             
-            camera.position.set(0, 14, 32);
+            camera.position.set(0, 12, 28);
             camera.lookAt(0, 2, 0);
+            pacmanMesh.visible = true;
+            pacmanMesh.scale.set(1, 1, 1);
+            topHalf.rotation.x = 0;
+            bottomHalf.rotation.x = 0;
+            pacmanMesh.rotation.set(0, Math.PI / 3, 0);
+            pacmanMesh.position.set(-9, 2, 5);
         };
 
-        function updateTimerUI() {
-            const m = Math.floor(bossTimeRemaining / 60).toString().padStart(2, '0');
-            const s = (bossTimeRemaining % 60).toString().padStart(2, '0');
-            document.getElementById('boss-timer-display').innerText = `⏳ ${m}:${s}`;
-        }
-
-        function handleBossTimeout() {
-            battleState = 'GAMEOVER';
-            showFloatingText("TIME EXPIRED!", new THREE.Vector3(0, 5, 0), "#ff0000");
-            setTimeout(() => {
-                handleGameOver("TIME EXPIRED!\nThe Boss destroyed Pac-City!");
-            }, 1000);
-        }
-
-        function buildPlayersHUD() {
-            const container = document.getElementById('players-hud-container');
-            container.innerHTML = '';
-            players.forEach((p, idx) => {
-                const box = document.createElement('div');
-                box.id = `player-hud-${idx}`;
-                box.className = `status-box ${idx === activePlayerIndex ? 'active-turn' : ''}`;
-                box.style.borderColor = p.hex;
-                box.innerHTML = `
-                    <h3 style="color:${p.hex};">${p.name} <span id="php-text-${idx}">${p.hp}/${p.maxHp} HP</span></h3>
-                    <div class="bar-bg"><div id="php-bar-${idx}" class="bar-fill hp-bar-fill"></div></div>
-                    <div style="font-size: 9px; margin-top: 4px; color: #ffff00;">POWER PELLET</div>
-                    <div class="bar-bg"><div id="ppellet-bar-${idx}" class="bar-fill pellet-bar-fill"></div></div>
-                `;
-                container.appendChild(box);
-            });
-        }
-
         function updateHUD() {
-            players.forEach((p, idx) => {
-                const box = document.getElementById(`player-hud-${idx}`);
-                const hpText = document.getElementById(`php-text-${idx}`);
-                const hpBar = document.getElementById(`php-bar-${idx}`);
-                const pelletBar = document.getElementById(`ppellet-bar-${idx}`);
-                
-                if (p.downed) {
-                    hpText.innerText = `KO (${p.reviveCounter}T)`;
-                    hpBar.style.width = `0%`;
-                    pelletBar.style.width = `0%`;
-                    box.classList.add('downed');
-                    box.classList.remove('active-turn');
-                } else {
-                    hpText.innerText = `${p.hp}/${p.maxHp} HP`;
-                    hpBar.style.width = `${Math.max(0, (p.hp / p.maxHp) * 100)}%`;
-                    pelletBar.style.width = `${Math.min(100, (p.powerCharge / 2) * 100)}%`;
-                    box.classList.remove('downed');
-                    if (idx === activePlayerIndex) box.classList.add('active-turn');
-                    else box.classList.remove('active-turn');
-                }
-                
-                p.mesh.userData.auraMesh.visible = p.isPowerActive;
-            });
-
-            const currP = players[activePlayerIndex];
-            if (currP && !currP.downed) {
-                document.getElementById('btn-pellet').disabled = (currP.powerCharge < 2 || currP.isPowerActive);
-            }
+            document.getElementById('hp-text').innerText = `${playerHp}/${maxHp} HP`;
+            document.getElementById('hp-bar').style.width = `${Math.max(0, (playerHp / maxHp) * 100)}%`;
+            document.getElementById('pellet-bar').style.width = `${Math.min(100, (powerCharge / 2) * 100)}%`;
+            document.getElementById('btn-pellet').disabled = (powerCharge < 2 || isPowerPelletActive);
+            auraMesh.visible = isPowerPelletActive;
         }
 
         function updateGhostCountUI() {
@@ -979,8 +903,6 @@
         function updateGhostHPBars() {
             if(cutsceneMode) return;
             const overlay = document.getElementById('ghost-hp-overlay');
-            
-            // Ghost HP
             activeGhosts.forEach(g => {
                 let bar = g.userData.hpBar;
                 if (!bar) {
@@ -995,10 +917,6 @@
                     g.userData.hpBar = bar;
                 }
                 
-                if (g.userData.isEnraged && g.userData.isBoss) {
-                    bar.classList.add('enraged');
-                }
-
                 const pos = g.position.clone();
                 pos.y += (g.userData.isGlitchy ? 5.5 : (g.userData.isBoss ? 4.5 : 3.0));
                 pos.project(camera);
@@ -1009,28 +927,6 @@
                 bar.style.left = `${x}px`;
                 bar.style.top = `${y}px`;
                 bar.querySelector('.ghost-hp-fill').style.width = `${Math.max(0, g.userData.hp / g.userData.maxHp) * 100}%`;
-            });
-
-            // Downed Player Overheads
-            players.forEach(p => {
-                let tag = p.statusTag;
-                if (p.downed) {
-                    if (!tag) {
-                        tag = document.createElement('div');
-                        tag.className = 'player-status-wrapper';
-                        overlay.appendChild(tag);
-                        p.statusTag = tag;
-                    }
-                    tag.innerText = `💀 REVIVE IN ${p.reviveCounter} TURNS`;
-                    const pos = p.mesh.position.clone();
-                    pos.y += 2.2;
-                    pos.project(camera);
-                    tag.style.left = `${(pos.x * .5 + .5) * window.innerWidth}px`;
-                    tag.style.top = `${(pos.y * -.5 + .5) * window.innerHeight}px`;
-                } else if (tag) {
-                    tag.remove();
-                    p.statusTag = null;
-                }
             });
         }
 
@@ -1050,10 +946,8 @@
 
         window.selectAction = function(action) {
             if (battleState !== 'IDLE') return;
-            const curP = players[activePlayerIndex];
-            if (!curP || curP.downed) return;
-
             selectedAbility = action;
+
             if (action === 'attack') {
                 if (activeGhosts.length === 1) executePlayerAttack(activeGhosts[0]);
                 else { battleState = 'PLAYER_SELECT_TARGET'; highlightTargetGhosts(true); }
@@ -1066,39 +960,28 @@
             battleState = 'ANIMATING';
             enableActionButtons(false);
 
-            const p = players[activePlayerIndex];
-            const startPos = p.mesh.position.clone();
+            const startPos = pacmanMesh.position.clone();
             const targetPos = targetGhost.position.clone().add(new THREE.Vector3(-2, 0, 1));
 
             let progress = 0;
             function animateLunge() {
                 progress += 0.08;
                 if (progress < 0.5) {
-                    p.mesh.position.lerpVectors(startPos, targetPos, progress * 2);
-                    p.mesh.userData.topHalf.rotation.x = -0.5; p.mesh.userData.bottomHalf.rotation.x = 0.5;
+                    pacmanMesh.position.lerpVectors(startPos, targetPos, progress * 2);
+                    topHalf.rotation.x = -0.5; bottomHalf.rotation.x = 0.5;
                 } else if (progress < 1.0) {
-                    p.mesh.userData.topHalf.rotation.x = 0; p.mesh.userData.bottomHalf.rotation.x = 0;
-                    p.mesh.position.lerpVectors(targetPos, startPos, (progress - 0.5) * 2);
+                    topHalf.rotation.x = 0; bottomHalf.rotation.x = 0;
+                    pacmanMesh.position.lerpVectors(targetPos, startPos, (progress - 0.5) * 2);
                 } else {
-                    p.mesh.position.copy(startPos);
+                    pacmanMesh.position.copy(startPos);
                     
                     let dmg = Math.floor(Math.random() * 3) + 1; 
-                    if (p.isPowerActive) dmg *= 4; 
+                    if (isPowerPelletActive) dmg *= 4; 
 
                     targetGhost.userData.hp -= dmg;
                     playBiteSfx();
                     spawnParticles(targetGhost.position, targetGhost.userData.color, 20);
                     showFloatingText(`-${dmg}`, targetGhost.position, '#ff0000');
-
-                    // Check Boss Enrage (<50% HP)
-                    if (targetGhost.userData.isBoss && !targetGhost.userData.isEnraged && targetGhost.userData.hp <= targetGhost.userData.maxHp * 0.5 && targetGhost.userData.hp > 0) {
-                        targetGhost.userData.isEnraged = true;
-                        targetGhost.userData.atk = Math.floor(targetGhost.userData.atk * 1.5);
-                        targetGhost.userData.eyeMat.color.setHex(0xff0000);
-                        targetGhost.userData.pupilMat.color.setHex(0xffff00);
-                        spawnParticles(targetGhost.position, 0xff0000, 40);
-                        showFloatingText("👹 BOSS IS ENRAGED! (+50% ATK)", targetGhost.position, '#ff0000');
-                    }
 
                     if (targetGhost.userData.hp <= 0) {
                         spawnParticles(targetGhost.position, 0xffffff, 35);
@@ -1109,7 +992,7 @@
                     }
 
                     if (activeGhosts.length === 0) {
-                        clearInterval(bossTimerInterval);
+                        stopBossTimer();
                         if (currentLevel === 100) setTimeout(startEndingCutscene, 1000);
                         else setTimeout(handleVictory, 800);
                         return;
@@ -1126,85 +1009,36 @@
         function executePlayerHeal() {
             battleState = 'ANIMATING';
             enableActionButtons(false);
-            const p = players[activePlayerIndex];
             const healAmt = Math.floor(Math.random() * 10) + 3;
-            p.hp = Math.min(p.maxHp, p.hp + healAmt);
+            playerHp = Math.min(maxHp, playerHp + healAmt);
             updateHUD();
             playHealSfx();
-            spawnParticles(p.mesh.position, 0x00ff00, 25);
-            showFloatingText(`+${healAmt} HP`, p.mesh.position, '#00ff00');
+            spawnParticles(pacmanMesh.position, 0x00ff00, 25);
+            showFloatingText(`+${healAmt} HP`, pacmanMesh.position, '#00ff00');
             setTimeout(() => advanceTurnState(), 1000);
         }
 
         function executePowerPellet() {
             battleState = 'ANIMATING';
             enableActionButtons(false);
-            const p = players[activePlayerIndex];
-            p.powerCharge = 0;
-            p.isPowerActive = true;
-            p.powerTurns = 2;
+            powerCharge = 0;
+            isPowerPelletActive = true;
+            powerPelletTurnsLeft = 2;
             updateHUD();
             playPowerSfx();
-            spawnParticles(p.mesh.position, 0xffff00, 30);
-            showFloatingText(`POWER PELLET ACTIVE!`, p.mesh.position, p.hex);
+            spawnParticles(pacmanMesh.position, 0xffff00, 30);
+            showFloatingText(`POWER PELLET ACTIVE!`, pacmanMesh.position, '#ffff00');
             setTimeout(() => advanceTurnState(), 1000);
         }
 
         function advanceTurnState() {
-            const p = players[activePlayerIndex];
-            if (!p.isPowerActive && p.powerCharge < 2) p.powerCharge++;
-            else if (p.isPowerActive) {
-                p.powerTurns--;
-                if (p.powerTurns <= 0) p.isPowerActive = false;
+            if (!isPowerPelletActive && powerCharge < 2) powerCharge++;
+            else if (isPowerPelletActive) {
+                powerPelletTurnsLeft--;
+                if (powerPelletTurnsLeft <= 0) isPowerPelletActive = false;
             }
-
-            // Find next alive player
-            let foundNext = false;
-            for (let i = 1; i <= players.length; i++) {
-                const nextIdx = (activePlayerIndex + i) % players.length;
-                if (nextIdx === 0) {
-                    // Full round completed -> tick downed revive counters for team!
-                    tickTeamReviveCounters();
-                }
-                if (!players[nextIdx].downed) {
-                    activePlayerIndex = nextIdx;
-                    foundNext = true;
-                    break;
-                }
-            }
-
             updateHUD();
-
-            if (!foundNext) {
-                // All players downed -> Defeat
-                setTimeout(() => handleGameOver(), 800);
-                return;
-            }
-
-            // If we looped back to turn 0 or after players act, let ghosts attack!
-            if (activePlayerIndex === 0) {
-                setTimeout(processGhostsTurn, 600);
-            } else {
-                battleState = 'IDLE';
-                enableActionButtons(true);
-            }
-        }
-
-        function tickTeamReviveCounters() {
-            players.forEach(p => {
-                if (p.downed) {
-                    p.reviveCounter--;
-                    if (p.reviveCounter <= 0) {
-                        p.downed = false;
-                        p.hp = Math.floor(p.maxHp / 2); // Revive with 50% HP
-                        p.mesh.visible = true;
-                        p.mesh.scale.set(1, 1, 1);
-                        p.mesh.rotation.x = 0;
-                        spawnParticles(p.mesh.position, 0x00ff00, 35);
-                        showFloatingText(`${p.name} REVIVED!`, p.mesh.position, '#00ff00');
-                    }
-                }
-            });
+            setTimeout(processGhostsTurn, 600);
         }
 
         let currentGhostAttackIndex = 0;
@@ -1216,11 +1050,6 @@
 
         function startNextGhostAttack() {
             if (currentGhostAttackIndex >= activeGhosts.length) {
-                // Ensure current active player is alive
-                while (players[activePlayerIndex].downed) {
-                    activePlayerIndex = (activePlayerIndex + 1) % players.length;
-                }
-                updateHUD();
                 battleState = 'IDLE';
                 enableActionButtons(true);
                 return;
@@ -1232,20 +1061,15 @@
         function setupQuickTimeShieldMinigame() {
             battleState = 'SHIELD_MINIGAME';
             const overlay = document.getElementById('shield-overlay');
-            const targetP = players[activePlayerIndex];
-            
-            document.getElementById('shield-title').innerText = `🛡️ DEFEND ${targetP.name}!`;
             overlay.style.display = 'block';
 
             const zone = document.getElementById('timing-zone');
-            const zoneWidth = Math.floor(Math.random() * 18) + 18;
+            const zoneWidth = Math.floor(Math.random() * 20) + 20;
             const zoneLeft = Math.floor(Math.random() * (100 - zoneWidth));
             zone.style.width = `${zoneWidth}%`;
             zone.style.left = `${zoneLeft}%`;
 
-            timingPos = 0; timingDir = 1; 
-            const speedBoost = currentAttackingGhost.userData.isEnraged ? 1.5 : 1.0;
-            timingSpeed = (2.0 + Math.random() * 1.5) * speedBoost;
+            timingPos = 0; timingDir = 1; timingSpeed = 2.0 + Math.random() * 1.5;
 
             function animateTimingBar() {
                 timingPos += timingSpeed * timingDir;
@@ -1270,9 +1094,8 @@
             const isSuccess = (timingPos >= zoneLeft && timingPos <= (zoneLeft + zoneWidth));
 
             const g = currentAttackingGhost;
-            const targetP = players[activePlayerIndex];
             const startPos = g.position.clone();
-            const targetPos = targetP.mesh.position.clone().add(new THREE.Vector3(2, 0, -1));
+            const targetPos = pacmanMesh.position.clone().add(new THREE.Vector3(2, 0, -1));
 
             let progress = 0;
             function animateGhostLunge() {
@@ -1284,30 +1107,19 @@
 
                     if (isSuccess) {
                         playShieldBlockSfx();
-                        spawnParticles(targetP.mesh.position, 0x00f2ff, 25);
-                        showFloatingText("BLOCKED!", targetP.mesh.position, '#00f2ff');
+                        spawnParticles(pacmanMesh.position, 0x00f2ff, 25);
+                        showFloatingText("BLOCKED!", pacmanMesh.position, '#00f2ff');
                     } else {
                         const incomingAtk = g.userData.atk;
-                        targetP.hp = Math.max(0, targetP.hp - incomingAtk);
+                        playerHp = Math.max(0, playerHp - incomingAtk);
                         updateHUD();
 
                         playSfx(120, 0.25, 'sawtooth', 0.2);
-                        spawnParticles(targetP.mesh.position, 0xff0000, 20);
-                        showFloatingText(`-${incomingAtk}`, targetP.mesh.position, '#ff0000');
+                        spawnParticles(pacmanMesh.position, 0xff0000, 20);
+                        showFloatingText(`-${incomingAtk}`, pacmanMesh.position, '#ff0000');
 
-                        if (targetP.hp <= 0) {
-                            // Player downed!
-                            targetP.downed = true;
-                            targetP.reviveCounter = 10; // 10 turns counter
-                            playPacmanDeathAnimation(targetP, () => {
-                                const livingPlayers = players.filter(p => !p.downed);
-                                if (livingPlayers.length === 0) {
-                                    setTimeout(() => handleGameOver(), 600);
-                                    return;
-                                }
-                                currentGhostAttackIndex++;
-                                setTimeout(startNextGhostAttack, 400);
-                            });
+                        if (playerHp <= 0) {
+                            setTimeout(animatePacmanDeath, 600);
                             return;
                         }
                     }
@@ -1320,51 +1132,59 @@
             animateGhostLunge();
         };
 
-        // --- PAC-MAN 3D DEATH ANIMATION ---
-        function playPacmanDeathAnimation(pData, callback) {
-            playPacmanDeathSfx();
-            const mesh = pData.mesh;
-            const top = mesh.userData.topHalf;
-            const bot = mesh.userData.bottomHalf;
-            
-            let frame = 0;
+        function enableActionButtons(enable) {
+            document.getElementById('btn-attack').disabled = !enable;
+            document.getElementById('btn-heal').disabled = !enable;
+            document.getElementById('btn-pellet').disabled = !enable || (powerCharge < 2 || isPowerPelletActive);
+        }
+
+        // --- PAC-MAN LOSE ANIMATION ---
+        function animatePacmanDeath() {
+            battleState = 'DEFEAT_ANIMATION';
+            enableActionButtons(false);
+            stopBossTimer();
+            playDeathSfx();
+
+            let phaseProgress = 0;
+            const duration = 120; // ~2 seconds @ 60fps
+
             function deathLoop() {
-                frame++;
-                mesh.rotation.y += 0.25;
-                mesh.rotation.x = Math.min(Math.PI / 2, frame * 0.04);
-                
-                top.rotation.x = -Math.min(Math.PI * 0.9, frame * 0.08);
-                bot.rotation.x = Math.min(Math.PI * 0.9, frame * 0.08);
+                phaseProgress++;
+                const ratio = phaseProgress / duration;
 
-                const scale = Math.max(0, 1 - (frame / 45));
-                mesh.scale.setScalar(scale);
+                // Rotate towards screen & spin rapidly around Y and Z
+                pacmanMesh.rotation.y += 0.25;
+                pacmanMesh.rotation.z += 0.15;
 
-                if (frame % 3 === 0) {
-                    spawnParticles(mesh.position, pData.color, 4);
+                // Open jaws wider and wider until 180 degrees
+                topHalf.rotation.x = -Math.min(Math.PI * 0.9, ratio * Math.PI * 1.1);
+                bottomHalf.rotation.x = Math.min(Math.PI * 0.9, ratio * Math.PI * 1.1);
+
+                // Shrink pacman to zero
+                const scale = Math.max(0, 1 - ratio);
+                pacmanMesh.scale.set(scale, scale, scale);
+
+                // Burst particles periodically
+                if (phaseProgress % 6 === 0) {
+                    spawnParticles(pacmanMesh.position, 0xffff00, 8);
                 }
 
-                if (frame < 50) {
+                if (phaseProgress < duration) {
                     requestAnimationFrame(deathLoop);
                 } else {
-                    mesh.visible = false;
-                    spawnParticles(mesh.position, pData.color, 30);
-                    if (callback) callback();
+                    pacmanMesh.visible = false;
+                    spawnParticles(pacmanMesh.position, 0xffff00, 40);
+                    setTimeout(handleGameOver, 500);
                 }
             }
             deathLoop();
         }
 
-        function enableActionButtons(enable) {
-            const curP = players[activePlayerIndex];
-            document.getElementById('btn-attack').disabled = !enable;
-            document.getElementById('btn-heal').disabled = !enable;
-            document.getElementById('btn-pellet').disabled = !enable || (!curP || curP.powerCharge < 2 || curP.isPowerActive);
-        }
-
         // --- VICTORY & GAMEOVER MODALS ---
         function handleVictory() {
             battleState = 'VICTORY';
-            stopBgm();
+            stopBossTimer();
+            stopBattleOST();
             breakCagesOpen();
             saveProgress();
             
@@ -1381,10 +1201,9 @@
             }, 1500);
         }
 
-        function handleGameOver(customText) {
-            battleState = 'GAMEOVER';
-            stopBgm();
-            clearInterval(bossTimerInterval);
+        function handleGameOver() {
+            stopBossTimer();
+            stopBattleOST();
             playerLives--;
             updateGlobalHUD();
             
@@ -1393,7 +1212,7 @@
 
             if (playerLives <= 0) {
                 document.getElementById('gameover-title').innerText = "GAME OVER";
-                document.getElementById('gameover-text').innerText = customText || "ALL LIVES LOST!\nTHE GHOSTS HAVE TAKEN OVER PAC-CITY.";
+                document.getElementById('gameover-text').innerText = "ALL LIVES LOST!\nTHE GHOSTS HAVE TAKEN OVER PAC-CITY.";
                 document.getElementById('btn-retry').innerText = "START OVER";
                 document.getElementById('btn-retry').onclick = () => {
                     document.getElementById('modal-gameover').style.display = 'none';
@@ -1403,7 +1222,7 @@
                 };
             } else {
                 document.getElementById('gameover-title').innerText = "DEFEATED";
-                document.getElementById('gameover-text').innerText = customText || `The Pac-Team was defeated!\nLIVES REMAINING: ${playerLives}`;
+                document.getElementById('gameover-text').innerText = `Pac-Man went down!\nLIVES REMAINING: ${playerLives}`;
                 document.getElementById('btn-retry').innerText = "RETRY STAGE";
                 document.getElementById('btn-retry').onclick = retryLevel;
             }
@@ -1411,8 +1230,8 @@
         }
 
         window.returnToMenu = function() {
-            stopBgm();
-            clearInterval(bossTimerInterval);
+            stopBossTimer();
+            stopBattleOST();
             document.getElementById('modal-victory').style.display = 'none';
             document.getElementById('screen-battle').style.display = 'none';
             document.getElementById('screen-menu').style.display = 'flex';
@@ -1420,8 +1239,6 @@
         };
 
         window.retryLevel = function() {
-            stopBgm();
-            clearInterval(bossTimerInterval);
             document.getElementById('modal-gameover').style.display = 'none';
             startBattleLevel(currentLevel);
         };
@@ -1454,9 +1271,11 @@
                 cutsceneObjects.forEach(obj => {
                     if (obj.userData.isCitizen && obj.visible) {
                         citizensActive++;
+                        // Move toward Glitchy
                         const dir = new THREE.Vector3().subVectors(glitchy.position, obj.position).normalize();
                         obj.position.add(dir.multiplyScalar(obj.userData.speed));
                         
+                        // Chomping animation
                         obj.children[0].rotation.x = -Math.abs(Math.sin(time * 0.01 + obj.userData.offset)) * 0.5;
                         obj.children[1].rotation.x = Math.abs(Math.sin(time * 0.01 + obj.userData.offset)) * 0.5;
                         
@@ -1476,7 +1295,7 @@
                 }
             } 
             else {
-                // Battle Idle Animations for Ghosts
+                // Battle Idle Animations
                 activeGhosts.forEach((g, idx) => {
                     if (g.userData.isGlitchy) {
                         if(Math.random() > 0.4) {
@@ -1486,9 +1305,6 @@
                             g.position.x = g.userData.basePos.x;
                             g.position.z = g.userData.basePos.z;
                         }
-                    } else if (g.userData.isEnraged) {
-                        g.position.y = Math.sin(time * 0.008 + idx) * 0.4 + 0.3;
-                        if (Math.random() > 0.6) spawnParticles(g.position, 0xff0000, 1);
                     } else {
                         g.position.y = Math.sin(time * 0.003 + idx) * 0.2 + 0.2;
                     }
@@ -1500,6 +1316,7 @@
                         c.cage.position.y += 0.05;
                         c.cage.material.opacity -= 0.03;
                         c.citizen.position.y = 0.8 + Math.abs(Math.sin(time * 0.01)) * 1.5;
+                        // Chomping when free
                         c.citizen.children[0].rotation.x = -Math.abs(Math.sin(time * 0.015)) * 0.6;
                         c.citizen.children[1].rotation.x = Math.abs(Math.sin(time * 0.015)) * 0.6;
                     }
