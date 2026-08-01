@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pac-Fight - Epic RPG</title>
-    <!-- PeerJS for Backend-less Multiplayer -->
+    <!-- Inject PeerJS for Multiplayer -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script>
     if ('serviceWorker' in navigator) {
@@ -30,7 +30,7 @@
         .subtitle { color: #00f2ff; font-size: 14px; margin-bottom: 20px; text-shadow: 0 0 8px #00f2ff; text-align: center; }
 
         /* Level Map Screen */
-        .map-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 12px; width: 100%; max-width: 800px; background: rgba(0,0,0,0.6); border: 2px solid #00f2ff; border-radius: 12px; padding: 20px; box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); max-height: 50vh; overflow-y: auto; }
+        .map-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 12px; width: 100%; max-width: 800px; background: rgba(0,0,0,0.6); border: 2px solid #00f2ff; border-radius: 12px; padding: 20px; box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); max-height: 60vh; overflow-y: auto; }
         .level-btn { aspect-ratio: 1; border-radius: 10px; border: 2px solid #00f2ff; background: rgba(0, 242, 255, 0.1); color: #00f2ff; font-weight: bold; font-size: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; position: relative; }
         .level-btn:hover:not(.locked) { background: #00f2ff; color: #000; box-shadow: 0 0 15px #00f2ff; transform: scale(1.05); }
         .level-btn.locked { border-color: #444; color: #555; background: rgba(255,255,255,0.03); cursor: not-allowed; }
@@ -40,10 +40,6 @@
         .level-btn .star-rating { font-size: 9px; color: #ffff00; margin-top: 2px; }
         .level-btn.glitchy-btn { border-color: #ff00ff; color: #ff00ff; background: rgba(255,0,255,0.15); box-shadow: 0 0 15px rgba(255,0,255,0.5); }
         .level-btn.glitchy-btn:hover:not(.locked) { background: #ff00ff; color: #fff; box-shadow: 0 0 30px #ff00ff; }
-
-        /* PVP Button */
-        .pvp-btn { width: 100%; max-width: 800px; padding: 15px; margin: 15px 0; border: 2px solid #ff00ff; border-radius: 12px; background: rgba(255, 0, 255, 0.2); color: #ff00ff; font-weight: bold; font-family: inherit; font-size: 18px; cursor: pointer; transition: all 0.2s ease; text-align: center; box-shadow: 0 0 15px rgba(255,0,255,0.4); text-shadow: 0 0 5px #000; }
-        .pvp-btn:hover { background: #ff00ff; color: #fff; box-shadow: 0 0 30px #ff00ff; transform: scale(1.02); }
 
         /* Battle UI */
         #battle-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 15px; z-index: 20; }
@@ -72,6 +68,8 @@
         .cmd-btn.power:hover:not(:disabled) { background: #ffff00; color: #000; box-shadow: 0 0 20px #ffff00; }
         .cmd-btn.heal { border-color: #00ff00; color: #00ff00; background: rgba(0, 255, 0, 0.15); }
         .cmd-btn.heal:hover:not(:disabled) { background: #00ff00; color: #000; box-shadow: 0 0 20px #00ff00; }
+        .cmd-btn.pvp-btn { border-color: #ff00ff; color: #ff00ff; background: rgba(255, 0, 255, 0.15); margin: 0 auto 20px auto; width: 250px; padding: 15px; font-size: 18px; display: block; box-shadow: 0 0 15px rgba(255,0,255,0.4); animation: pulse 2s infinite alternate;}
+        .cmd-btn.pvp-btn:hover { background: #ff00ff; color: #fff; box-shadow: 0 0 30px #ff00ff; }
 
         /* Quick-Time Shield Overlay */
         #shield-overlay { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; background: rgba(0,0,0,0.9); border: 3px solid #00f2ff; border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 0 30px #00f2ff; z-index: 500; }
@@ -93,9 +91,8 @@
         .modal-btn { padding: 12px 30px; font-size: 18px; font-weight: bold; border-radius: 10px; border: none; cursor: pointer; margin-top: 20px; font-family: inherit; }
 
         /* Top Bar Info */
-        .top-info-bar { width: 100%; max-width: 800px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 14px; color: #00f2ff; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; border: 1px solid #00f2ff; gap: 10px; }
-        .username-input { background: transparent; border: none; border-bottom: 1px solid #00f2ff; color: #ffff00; font-family: inherit; width: 120px; font-weight: bold; text-align: center; font-size: 14px; outline: none; }
-        
+        .top-info-bar { width: 100%; max-width: 800px; display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px; color: #00f2ff; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; border: 1px solid #00f2ff; }
+
         /* Ghost HP Bars Overlay */
         #ghost-hp-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 15; }
         .ghost-hp-wrapper { position: absolute; width: 40px; height: 6px; background: #222; border: 1px solid #fff; border-radius: 3px; transform: translate(-50%, -50%); overflow: hidden; }
@@ -108,9 +105,10 @@
         .cutscene-text { background: rgba(0,0,0,0.85); border: 2px solid #00f2ff; color: #ffff00; padding: 20px 30px; font-size: 18px; text-align: center; border-radius: 10px; max-width: 600px; margin-bottom: 20px; box-shadow: 0 0 20px #00f2ff; font-weight: bold; line-height: 1.5; pointer-events: auto; }
         .skip-btn { pointer-events: auto; background: #ff0055; color: white; border: none; padding: 12px 24px; border-radius: 5px; font-family: inherit; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 0 15px #ff0055; }
         .skip-btn:hover { background: #ff3377; }
-        
-        /* PVP Search Animation */
-        @keyframes pvpSearchAnim { 0% { left: 0%; } 100% { left: 80%; } }
+
+        /* Loader */
+        .loader { border: 4px solid rgba(0, 242, 255, 0.3); border-top: 4px solid #00f2ff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -121,26 +119,22 @@
         <div class="subtitle">EPIC TURN-BASED RPG</div>
 
         <div class="top-info-bar">
-            <div>USER: <input type="text" id="username-input" class="username-input" value="Player" onchange="saveUsername()" maxlength="10"></div>
             <div>STAGES: <span id="unlocked-count" style="color:#ffff00;">1</span>/100</div>
             <div>LIVES: <span id="menu-lives-display">❤️❤️❤️</span></div>
             <div>RESCUED: <span id="menu-rescued-display" style="color:#00ff00;">0</span>/300</div>
         </div>
 
-        <button class="pvp-btn" onclick="startPvPMatchmaking()">⚔️ ENTER PVP ARENA ⚔️</button>
+        <!-- NEW: Username System -->
+        <div id="username-section" style="width: 100%; max-width: 800px; display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 20px; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; border: 1px solid #ff00ff;">
+            <span style="color: #ffb8ff; font-weight: bold;">PLAYER:</span>
+            <input type="text" id="username-input" placeholder="Enter Username" style="padding: 8px; border-radius: 5px; background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid #ff00ff; font-family: inherit; font-weight: bold; text-align: center; outline: none; width: 150px;">
+            <button id="btn-save-user" class="cmd-btn" style="padding: 8px 15px; width: auto; border-color: #ff00ff; color: #ff00ff; margin: 0;" onclick="saveUsername()">SAVE</button>
+        </div>
+
+        <!-- NEW: PvP Arena Button -->
+        <button id="btn-enter-pvp" class="cmd-btn pvp-btn" onclick="startPvpSearch()">⚔️ ENTER PVP ARENA ⚔️</button>
 
         <div class="map-container" id="map-grid"></div>
-    </div>
-
-    <!-- PVP MATCHMAKING MODAL -->
-    <div id="screen-pvp-search" class="modal" style="z-index: 5000;">
-        <div class="modal-content" style="border-color: #ff00ff; box-shadow: 0 0 30px #ff00ff;">
-            <h2 id="pvp-search-text" style="color: #ff00ff; font-size: 24px; text-shadow: 0 0 10px #ff00ff;">SEARCHING FOR OPPONENT...</h2>
-            <div class="timing-indicator" style="position:relative; width:100%; height:10px; background:#222; margin: 20px 0; border-radius: 5px; overflow: hidden;">
-                <div style="position: absolute; width:20%; height:100%; background:#ff00ff; animation: pvpSearchAnim 0.8s infinite alternate; box-shadow: 0 0 15px #ff00ff;"></div>
-            </div>
-            <button class="modal-btn" style="background: #ff0055; color: #fff;" onclick="cancelPvPSearch()">CANCEL SEARCH</button>
-        </div>
     </div>
 
     <!-- 3D CANVAS LAYER (Behind UI) -->
@@ -174,7 +168,7 @@
             <!-- Top Status -->
             <div class="hud-top">
                 <div class="status-box">
-                    <h3><span id="my-name-display">PAC-MAN</span> <span id="hp-text">20/20 HP</span></h3>
+                    <h3><span id="player-name-label">PAC-MAN</span> <span id="hp-text">20/20 HP</span></h3>
                     <div class="bar-bg"><div id="hp-bar" class="bar-fill"></div></div>
                     <div style="font-size: 10px; margin-top: 6px; color: #ffff00;">POWER PELLET CHARGE</div>
                     <div class="bar-bg"><div id="pellet-bar" class="bar-fill"></div></div>
@@ -187,18 +181,10 @@
                     <div id="boss-timer-display">⏱️ 15:00</div>
                 </div>
 
-                <div class="status-box" id="enemy-status-box" style="border-color: #ff0055;">
+                <div class="status-box" style="border-color: #ff0055;" id="enemy-status-box">
                     <h3 style="color: #ff0055;" id="enemy-status-title">ENEMIES LEFT</h3>
                     <div id="ghost-count-display" style="font-size: 20px; font-weight: bold; color: #fff; text-align: center; margin-top: 5px;">
                         1 GHOST
-                    </div>
-                    <!-- PVP OPPONENT HP BAR -->
-                    <div id="pvp-enemy-hp-container" style="display:none; margin-top:10px;">
-                        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #fff; margin-bottom: 2px;">
-                            <span>HP</span>
-                            <span id="pvp-enemy-hp-text">20/20</span>
-                        </div>
-                        <div class="bar-bg"><div id="pvp-enemy-hp-bar" class="bar-fill" style="background: linear-gradient(90deg, #ff0000, #ff00ff); width: 100%;"></div></div>
                     </div>
                 </div>
             </div>
@@ -209,7 +195,7 @@
                     👆 TAP A GHOST TO TARGET
                 </div>
                 <div class="action-panel">
-                    <button id="btn-attack" class="cmd-btn interactive" onclick="selectAction('attack')">⚔️ ATTACK<br><span style="font-size:10px; opacity:0.8;">(1-3 DMG)</span></button>
+                    <button id="btn-attack" class="cmd-btn interactive" onclick="selectAction('attack')">⚔️ ATTACK<br><span id="atk-desc" style="font-size:10px; opacity:0.8;">(1-3 DMG)</span></button>
                     <button id="btn-heal" class="cmd-btn heal interactive" onclick="selectAction('heal')">💖 HEAL<br><span style="font-size:10px; opacity:0.8;">(+3-12 HP)</span></button>
                     <button id="btn-pellet" class="cmd-btn power interactive" onclick="selectAction('power')" disabled>⚡ POWER PELLET<br><span style="font-size:10px; opacity:0.8;">(2 TURNS)</span></button>
                 </div>
@@ -228,13 +214,32 @@
         </div>
     </div>
 
+    <!-- NEW: PvP Matchmaking Modal -->
+    <div id="modal-pvp-search" class="modal">
+        <div class="modal-content" style="border-color: #ff00ff; box-shadow: 0 0 30px #ff00ff;">
+            <h2 style="color: #ffb8ff; text-shadow: 0 0 15px #ff00ff;">PVP ARENA</h2>
+            <div class="loader" id="pvp-loader"></div>
+            <p id="pvp-search-text" style="font-size: 16px; margin-bottom: 20px;">Connecting to Matchmaking...</p>
+            <button class="modal-btn" style="background: #333; color: #fff; border: 1px solid #777;" onclick="cancelPvpSearch()">CANCEL</button>
+        </div>
+    </div>
+
+    <!-- NEW: PvP Result Modal -->
+    <div id="modal-pvp-result" class="modal">
+        <div class="modal-content" id="pvp-result-content">
+            <h2 id="pvp-result-title">MATCH FINISHED</h2>
+            <p id="pvp-result-text">Good game!</p>
+            <button class="modal-btn" style="background: #00f2ff; color: #000;" onclick="exitPvpArena()">LEAVE ARENA</button>
+        </div>
+    </div>
+
     <!-- VICTORY MODAL -->
     <div id="modal-victory" class="modal">
         <div class="modal-content">
             <h2 id="victory-title" style="color: #00ff00; text-shadow: 0 0 15px #00ff00;">VICTORY!</h2>
             <p id="victory-text">Stage cleared successfully!</p>
             <p id="rescued-text" style="color: #ffff00; font-weight: bold;">+3 Pac-Citizens Rescued!</p>
-            <button class="modal-btn" style="background: #00ff00; color: #000;" onclick="returnToMenu()">CONTINUE</button>
+            <button class="modal-btn" style="background: #00ff00; color: #000;" onclick="returnToMenu()">CONTINUE MAP</button>
         </div>
     </div>
 
@@ -243,7 +248,7 @@
         <div class="modal-content" style="border-color: #ff0000;">
             <h2 id="gameover-title" style="color: #ff0000; text-shadow: 0 0 15px #ff0000;">GAME OVER</h2>
             <p id="gameover-text">Pac-Man was defeated by the Ghosts!</p>
-            <button id="btn-retry" class="modal-btn" style="background: #ff0000; color: #fff;" onclick="retryLevel()">RETRY</button>
+            <button id="btn-retry" class="modal-btn" style="background: #ff0000; color: #fff;" onclick="retryLevel()">RETRY STAGE</button>
         </div>
     </div>
 
@@ -261,7 +266,7 @@
         
         // Player Stats
         let playerHp = 20;
-        const maxHp = 20;
+        let maxHp = 20; // Changed to let to allow scaling for PvP
         let powerCharge = 0; // Requires 2 charges
         let isPowerPelletActive = false;
         let powerPelletTurnsLeft = 0;
@@ -276,29 +281,49 @@
         let backgroundCages = [];
 
         // Turn Management
-        let battleState = 'IDLE'; // IDLE, PLAYER_SELECT_TARGET, ANIMATING, SHIELD_MINIGAME, DEFEAT_ANIMATION, VICTORY, PVP_WAITING
+        let battleState = 'IDLE'; // IDLE, PLAYER_SELECT_TARGET, ANIMATING, SHIELD_MINIGAME, DEFEAT_ANIMATION, VICTORY, PVP_WAIT
         let selectedAbility = null;
         let activeGhosts = [];
-
-        // PVP Systems
-        let isPvPMode = false;
-        let myUsername = 'Player';
-        let opponentUsername = 'Opponent';
-        let pvpOpponentHp = 20;
-        let pvpIncomingDmg = 0;
-        let opponentMesh = null;
-        let opponentTopHalf, opponentBottomHalf;
-        
-        // PeerJS Matching System variables
-        const MAX_PVP_SLOTS = 15;
-        let peer = null;
-        let pvpConn = null;
-        let pvpRole = null; // 'host' or 'guest'
-        let pvpSearchTimeout = null;
 
         // Boss Timer State (15 Minutes)
         let bossTimerSeconds = 900;
         let bossTimerInterval = null;
+
+        // --- NEW: PVP STATE ---
+        let isPvPMode = false;
+        let pvpPeer = null;
+        let pvpConn = null;
+        let pvpRole = null; // 'HOST' or 'CLIENT'
+        let myUsername = 'Player' + Math.floor(Math.random()*1000);
+        let opponentName = 'Challenger';
+        let isMyTurn = false;
+        let pvpEnemyHp = 30;
+        const maxPvpHp = 30;
+        let isEnemyPowerPelletActive = false;
+        
+        // --- Username Loading ---
+        function loadUsername() {
+            const savedName = localStorage.getItem('PacFight_Username');
+            if(savedName) myUsername = savedName;
+            document.getElementById('username-input').value = myUsername;
+        }
+
+        window.saveUsername = function() {
+            const input = document.getElementById('username-input').value.trim();
+            if (input) {
+                myUsername = input;
+                localStorage.setItem('PacFight_Username', myUsername);
+                const btn = document.getElementById('btn-save-user');
+                btn.innerText = "SAVED!";
+                btn.style.background = "#ff00ff";
+                btn.style.color = "#fff";
+                setTimeout(() => {
+                    btn.innerText = "SAVE";
+                    btn.style.background = "transparent";
+                    btn.style.color = "#ff00ff";
+                }, 1500);
+            }
+        };
 
         // Background Audio OST Management
         const bgAudio = new Audio();
@@ -342,34 +367,19 @@
         const glitchyConfig = { name: 'GLITCHY', color: 0x110022, hp: 60, atk: 8, isGlitchy: true };
 
         // --- LOCAL STORAGE DATA ---
-        window.saveUsername = function() {
-            const inputVal = document.getElementById('username-input').value.trim();
-            myUsername = inputVal || 'Player';
-            localStorage.setItem('PacFight_Username', myUsername);
-            document.getElementById('my-name-display').innerText = myUsername;
-        };
-
         function loadProgress() {
+            loadUsername(); // Load user profile
             const savedLevel = localStorage.getItem('PacFight_Level');
             const savedLives = localStorage.getItem('PacFight_Lives');
-            const savedName = localStorage.getItem('PacFight_Username');
             
             if (savedLevel) unlockedLevel = parseInt(savedLevel, 10);
             if (savedLives) {
                 playerLives = parseInt(savedLives, 10);
                 if (playerLives <= 0) {
+                    // Fail safe if reloaded on 0 lives
                     hardReset();
                     return;
                 }
-            }
-            if (savedName) {
-                myUsername = savedName;
-                document.getElementById('username-input').value = myUsername;
-                document.getElementById('my-name-display').innerText = myUsername;
-            } else {
-                myUsername = 'Player' + Math.floor(Math.random()*1000);
-                document.getElementById('username-input').value = myUsername;
-                document.getElementById('my-name-display').innerText = myUsername;
             }
             
             updateGlobalHUD();
@@ -385,7 +395,7 @@
         }
 
         function saveProgress() {
-            if (currentLevel >= unlockedLevel && unlockedLevel <= 100 && !isPvPMode) {
+            if (currentLevel >= unlockedLevel && unlockedLevel <= 100) {
                 unlockedLevel = currentLevel + 1;
                 localStorage.setItem('PacFight_Level', Math.min(100, unlockedLevel));
             }
@@ -499,8 +509,10 @@
         // --- THREE.JS SCENE SETUP ---
         let scene, camera, renderer;
         let pacmanMesh, topHalf, bottomHalf, auraMesh;
+        let enemyPacmanMesh, enemyTopHalf, enemyBottomHalf, enemyAuraMesh; // NEW for PvP
         let activeParticles = [];
         
+        // Shared assets for citizens to keep rendering smooth for 300 models
         let citizenTopGeo, citizenBotGeo, citizenEyeGeo, citizenMat, citizenEyeMat;
 
         function init3D() {
@@ -544,7 +556,7 @@
             // Initialize Models
             initCitizenAssets();
             createPacmanModel();
-            createOpponentPacmanModel(); // Pre-create PvP model
+            createEnemyPacmanModel(); // NEW for PvP
 
             // Resize and Raycaster
             window.addEventListener('resize', onWindowResize);
@@ -560,6 +572,7 @@
             citizenEyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
         }
 
+        // Identical design to Pac-Man but optimized for 300 copies
         function createPacCitizen() {
             const group = new THREE.Group();
             const top = new THREE.Mesh(citizenTopGeo, citizenMat);
@@ -605,29 +618,37 @@
             scene.add(pacmanMesh);
         }
 
-        function createOpponentPacmanModel() {
-            opponentMesh = new THREE.Group();
-            const pmMat = new THREE.MeshPhongMaterial({ color: 0xff3355, shininess: 80 }); // Red tinted for opponent
+        // NEW: Enemy model for PvP Mode
+        function createEnemyPacmanModel() {
+            enemyPacmanMesh = new THREE.Group();
+            const pmMat = new THREE.MeshPhongMaterial({ color: 0xff00ff, shininess: 80 }); // Pinkish/Purple for opponent
 
             const topGeo = new THREE.SphereGeometry(2, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
-            opponentTopHalf = new THREE.Mesh(topGeo, pmMat);
+            enemyTopHalf = new THREE.Mesh(topGeo, pmMat);
 
             const botGeo = new THREE.SphereGeometry(2, 32, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
-            opponentBottomHalf = new THREE.Mesh(botGeo, pmMat);
+            enemyBottomHalf = new THREE.Mesh(botGeo, pmMat);
 
             const eyeGeo = new THREE.SphereGeometry(0.3, 16, 16);
             const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
             const rightEye = new THREE.Mesh(eyeGeo, eyeMat); rightEye.position.set(0.8, 0.9, 1.5);
             const leftEye = new THREE.Mesh(eyeGeo, eyeMat); leftEye.position.set(-0.8, 0.9, 1.5);
 
-            opponentTopHalf.add(rightEye); opponentTopHalf.add(leftEye);
-            opponentMesh.add(opponentTopHalf); opponentMesh.add(opponentBottomHalf);
+            enemyTopHalf.add(rightEye); enemyTopHalf.add(leftEye);
+            enemyPacmanMesh.add(enemyTopHalf); enemyPacmanMesh.add(enemyBottomHalf);
 
-            opponentMesh.position.set(5, 2, -5);
-            opponentMesh.lookAt(-9, 2, 5); // Look at player
-            opponentMesh.visible = false;
-            scene.add(opponentMesh);
+            const auraGeo = new THREE.SphereGeometry(2.6, 16, 16);
+            const auraMat = new THREE.MeshBasicMaterial({ color: 0xff00ff, wireframe: true, transparent: true, opacity: 0.5 });
+            enemyAuraMesh = new THREE.Mesh(auraGeo, auraMat);
+            enemyAuraMesh.visible = false;
+            enemyPacmanMesh.add(enemyAuraMesh);
+
+            enemyPacmanMesh.position.set(9, 2, 5); // Opposite side
+            enemyPacmanMesh.rotation.y = -Math.PI / 3;
+            enemyPacmanMesh.visible = false; // Hidden by default
+            scene.add(enemyPacmanMesh);
         }
+
 
         function createGhostModel(config, isBoss = false) {
             const group = new THREE.Group();
@@ -744,8 +765,26 @@
 
         function setupRaycaster() {
             const container = document.getElementById('canvas-container');
-            
+            container.addEventListener('click', (e) => {
+                if (isPvPMode) return; // Disable standard targeting in PvP
+                if (battleState !== 'PLAYER_SELECT_TARGET') return;
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+                const ghostMeshes = activeGhosts.map(g => g.userData.bodyMesh);
+                const intersects = raycaster.intersectObjects(ghostMeshes);
+
+                if (intersects.length > 0) {
+                    const hitBody = intersects[0].object;
+                    const ghostGroup = activeGhosts.find(g => g.userData.bodyMesh === hitBody);
+                    if (ghostGroup) executePlayerAttack(ghostGroup);
+                }
+            });
+
+            // Fallback listeners on the window to bypass UI blocking
             const handleGlobalTargetSelect = (clientX, clientY) => {
+                if (isPvPMode) return;
                 if (battleState !== 'PLAYER_SELECT_TARGET') return;
                 mouse.x = (clientX / window.innerWidth) * 2 - 1;
                 mouse.y = -(clientY / window.innerHeight) * 2 + 1;
@@ -786,6 +825,7 @@
             document.getElementById('screen-menu').style.display = 'none';
             document.getElementById('screen-intro').style.display = 'flex';
             
+            // Generate Cages in distance
             for(let i=0; i<40; i++) {
                 const cageMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, wireframe: true });
                 const cage = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), cageMat);
@@ -796,6 +836,7 @@
                 cutsceneObjects.push(cage, cit);
             }
             
+            // Add Glitchy and Team
             const glitchy = createGhostModel(glitchyConfig, true);
             glitchy.scale.set(4, 4, 4);
             glitchy.position.set(0, 0, -25);
@@ -812,6 +853,7 @@
             camera.position.set(0, 35, 45);
             camera.lookAt(0, 0, -10);
             pacmanMesh.visible = false;
+            enemyPacmanMesh.visible = false;
         };
 
         window.endIntroCutscene = function() {
@@ -832,12 +874,14 @@
             document.getElementById('screen-ending').style.display = 'flex';
             document.getElementById('ghost-hp-overlay').innerHTML = '';
             
+            // Spawn Glitchy
             const glitchy = createGhostModel(glitchyConfig, true);
             glitchy.scale.set(5, 5, 5);
             glitchy.position.set(0, 0, 0);
             scene.add(glitchy);
             cutsceneObjects.push(glitchy);
             
+            // Spawn all 300 rescued citizens
             for(let i=0; i<300; i++) {
                 const cit = createPacCitizen();
                 const angle = Math.random() * Math.PI * 2;
@@ -865,8 +909,9 @@
 
         // --- BOSS TIMER MANAGEMENT ---
         function startBossTimer() {
+            if (isPvPMode) return;
             stopBossTimer();
-            bossTimerSeconds = 900; 
+            bossTimerSeconds = 900; // 15 Minutes = 900 Seconds
             updateBossTimerUI();
             document.getElementById('boss-timer-display').style.display = 'block';
 
@@ -903,126 +948,385 @@
             document.getElementById('boss-timer-display').innerText = `⏱️ ${formatted}`;
         }
 
-        // --- MATCHMAKING & PVP NETWORK LOGIC ---
-        window.startPvPMatchmaking = function() {
-            saveUsername();
-            document.getElementById('screen-menu').style.display = 'none';
-            document.getElementById('screen-pvp-search').style.display = 'flex';
-            document.getElementById('pvp-search-text').innerText = "SEARCHING ARENA...";
-            tryPvPGuest(1);
-        };
 
-        window.cancelPvPSearch = function() {
-            if (peer) { peer.destroy(); peer = null; }
-            clearTimeout(pvpSearchTimeout);
-            document.getElementById('screen-pvp-search').style.display = 'none';
-            document.getElementById('screen-menu').style.display = 'flex';
-        };
+        // --- PVP MULTIPLAYER LOGIC (PEERJS) ---
 
-        function tryPvPGuest(slot) {
-            if (slot > MAX_PVP_SLOTS) {
-                tryPvPHost(1);
-                return;
-            }
-            document.getElementById('pvp-search-text').innerText = `JOINING ARENA (${slot}/${MAX_PVP_SLOTS})...`;
+        window.startPvpSearch = function() {
+            document.getElementById('modal-pvp-search').style.display = 'flex';
+            document.getElementById('pvp-search-text').innerText = 'Initializing Network...';
             
-            peer = new Peer(); // Random ID
-            peer.on('open', () => {
-                const conn = peer.connect(`pacfight-arena-slot-${slot}`);
-                conn.on('open', () => {
-                    clearTimeout(pvpSearchTimeout);
-                    setupPvP(conn, 'guest');
-                });
-                conn.on('error', () => {
-                    peer.destroy();
-                    tryPvPGuest(slot + 1);
-                });
-                
-                pvpSearchTimeout = setTimeout(() => {
-                    if (!pvpConn) {
-                        peer.destroy();
-                        tryPvPGuest(slot + 1);
-                    }
-                }, 1000);
+            pvpPeer = new Peer(null, { debug: 1 });
+            
+            pvpPeer.on('open', (id) => {
+                searchForPvpOpponent();
             });
-            peer.on('error', () => {
-                peer.destroy();
-                tryPvPGuest(slot + 1);
+
+            pvpPeer.on('error', (err) => {
+                console.error("PeerJS Error:", err);
+                document.getElementById('pvp-search-text').innerText = 'Network Error. Try again.';
+            });
+        };
+
+        window.cancelPvpSearch = function() {
+            if (pvpPeer) { pvpPeer.destroy(); pvpPeer = null; }
+            if (pvpConn) { pvpConn.close(); pvpConn = null; }
+            document.getElementById('modal-pvp-search').style.display = 'none';
+        };
+
+        async function searchForPvpOpponent() {
+            for(let i = 0; i < 10; i++) {
+                if (pvpConn) return; // Already connected
+                document.getElementById('pvp-search-text').innerText = `Scanning Arena Sector ${i+1}/10...`;
+                let slotId = 'pacfight-arena-slot-' + i;
+                let success = await tryConnectPvpSlot(slotId);
+                if (success) return;
+            }
+            
+            // If all 10 fail, host our own lobby on the first available slot
+            if (pvpPeer) pvpPeer.destroy();
+            hostPvpLobby(0);
+        }
+
+        function tryConnectPvpSlot(slotId) {
+            return new Promise((resolve) => {
+                let c = pvpPeer.connect(slotId);
+                let timeout = setTimeout(() => { c.close(); resolve(false); }, 1200);
+
+                c.on('open', () => {
+                    clearTimeout(timeout);
+                    c.send({ type: 'HELLO', name: myUsername });
+                    
+                    c.on('data', (data) => {
+                        if (data.type === 'WELCOME') {
+                            pvpConn = c;
+                            pvpRole = 'CLIENT';
+                            opponentName = data.name;
+                            setupPvpConnection();
+                            resolve(true);
+                        } else if (data.type === 'BUSY') {
+                            c.close();
+                            resolve(false);
+                        }
+                    });
+                });
+
+                c.on('error', () => { clearTimeout(timeout); resolve(false); });
             });
         }
 
-        function tryPvPHost(slot) {
-            if (slot > MAX_PVP_SLOTS) {
-                document.getElementById('pvp-search-text').innerText = "NO OPEN ARENAS. TRY LATER.";
-                setTimeout(cancelPvPSearch, 2000);
+        function hostPvpLobby(slotIndex) {
+            if (slotIndex > 9) {
+                document.getElementById('pvp-search-text').innerText = 'All arenas full. Please try again later.';
+                setTimeout(() => cancelPvpSearch(), 3000);
                 return;
             }
-            document.getElementById('pvp-search-text').innerText = `HOSTING ARENA (${slot}). WAITING...`;
-            peer = new Peer(`pacfight-arena-slot-${slot}`);
-            peer.on('open', () => {
-                peer.on('connection', (conn) => {
-                    setupPvP(conn, 'host');
-                });
+            document.getElementById('pvp-search-text').innerText = `Establishing Arena ${slotIndex+1}... Waiting for Challenger.`;
+            
+            pvpPeer = new Peer('pacfight-arena-slot-' + slotIndex);
+            
+            pvpPeer.on('error', (err) => {
+                if (err.type === 'unavailable-id') {
+                    hostPvpLobby(slotIndex + 1);
+                }
             });
-            peer.on('error', (err) => {
-                peer.destroy();
-                tryPvPHost(slot + 1);
+
+            pvpPeer.on('connection', (c) => {
+                if (pvpConn) {
+                    c.on('open', () => { c.send({ type: 'BUSY' }); setTimeout(() => c.close(), 500); });
+                    return;
+                }
+                c.on('open', () => {
+                    c.on('data', (data) => {
+                        if (data.type === 'HELLO') {
+                            pvpConn = c;
+                            pvpRole = 'HOST';
+                            opponentName = data.name;
+                            c.send({ type: 'WELCOME', name: myUsername });
+                            setupPvpConnection();
+                        }
+                    });
+                });
             });
         }
 
-        function setupPvP(conn, role) {
-            if (pvpConn) return; 
-            pvpConn = conn;
-            pvpRole = role;
+        function setupPvpConnection() {
+            document.getElementById('pvp-search-text').innerText = `Opponent Found: ${opponentName}!\nStarting Battle...`;
             
-            pvpConn.on('data', receivePvPMessage);
-            pvpConn.on('close', handlePvPDisconnect);
+            pvpConn.on('data', handlePvpData);
+            pvpConn.on('close', handlePvpDisconnect);
+            pvpConn.on('error', handlePvpDisconnect);
             
             setTimeout(() => {
-                document.getElementById('screen-pvp-search').style.display = 'none';
-                pvpConn.send({ type: 'init', username: myUsername });
-                startPvPBattle();
-            }, 500);
+                startPvpBattle();
+            }, 1500);
         }
 
-        function handlePvPDisconnect() {
-            if (battleState === 'VICTORY' || battleState === 'DEFEAT_ANIMATION') return;
+        function handlePvpDisconnect() {
+            if (!isPvPMode) return;
             alert("Opponent disconnected!");
-            endPvPBattle();
+            exitPvpArena();
         }
 
-        function endPvPBattle() {
-            if (peer) { peer.destroy(); peer = null; }
-            pvpConn = null;
+        window.exitPvpArena = function() {
             isPvPMode = false;
-            stopBattleOST();
+            if (pvpPeer) { pvpPeer.destroy(); pvpPeer = null; }
+            if (pvpConn) { pvpConn.close(); pvpConn = null; }
+            document.getElementById('modal-pvp-result').style.display = 'none';
             document.getElementById('screen-battle').style.display = 'none';
+            enemyPacmanMesh.visible = false;
+            stopBattleOST();
             document.getElementById('screen-menu').style.display = 'flex';
-            
-            // Revert UI changes
-            document.getElementById('enemy-status-title').innerText = "ENEMIES LEFT";
-            document.getElementById('ghost-count-display').style.display = 'block';
-            document.getElementById('pvp-enemy-hp-container').style.display = 'none';
-            document.getElementById('battle-lives-display').style.display = 'inline';
-            opponentMesh.visible = false;
-            
-            renderMapGrid();
+        };
+
+        function startPvpBattle() {
+            document.getElementById('modal-pvp-search').style.display = 'none';
+            document.getElementById('screen-menu').style.display = 'none';
+            document.getElementById('screen-battle').style.display = 'block';
+
+            isPvPMode = true;
+            maxHp = 30; // Scale up for PvP
+            playerHp = maxHp;
+            pvpEnemyHp = maxPvpHp;
+            powerCharge = 0;
+            isPowerPelletActive = false;
+            powerPelletTurnsLeft = 0;
+            isEnemyPowerPelletActive = false;
+
+            document.getElementById('stage-title').innerText = `⚔️ ${myUsername} VS ${opponentName} ⚔️`;
+            document.getElementById('player-name-label').innerText = myUsername.toUpperCase();
+            document.getElementById('enemy-status-title').innerText = opponentName.toUpperCase();
+            document.getElementById('atk-desc').innerText = "(2-4 DMG)"; // Different dmg for PvP
+            document.getElementById('battle-lives-display').style.display = 'none';
+
+            stopBossTimer();
+            playBattleOST(true); // Epic boss music
+
+            // Setup 3D Scene safely removing ghosts
+            activeGhosts.forEach(g => scene.remove(g));
+            backgroundCages.forEach(c => scene.remove(c.group));
+            document.getElementById('ghost-hp-overlay').innerHTML = '';
+
+            pacmanMesh.visible = true;
+            pacmanMesh.position.set(-9, 2, 5);
+            pacmanMesh.rotation.y = Math.PI / 3;
+            topHalf.rotation.x = 0; bottomHalf.rotation.x = 0;
+
+            enemyPacmanMesh.visible = true;
+            enemyPacmanMesh.position.set(9, 2, 5);
+            enemyPacmanMesh.rotation.y = -Math.PI / 3;
+            enemyTopHalf.rotation.x = 0; enemyBottomHalf.rotation.x = 0;
+
+            updatePvpUI();
+
+            battleState = 'IDLE';
+            if (pvpRole === 'HOST') {
+                switchPvpTurn(true);
+            } else {
+                switchPvpTurn(false);
+            }
         }
 
-        // --- BATTLE LOGIC ENGINE ---
+        function updatePvpUI() {
+            document.getElementById('hp-text').innerText = `${playerHp}/${maxHp} HP`;
+            document.getElementById('hp-bar').style.width = `${Math.max(0, (playerHp / maxHp) * 100)}%`;
+            document.getElementById('pellet-bar').style.width = `${Math.min(100, (powerCharge / 2) * 100)}%`;
+            document.getElementById('btn-pellet').disabled = (powerCharge < 2 || isPowerPelletActive || !isMyTurn);
+            auraMesh.visible = isPowerPelletActive;
+            enemyAuraMesh.visible = isEnemyPowerPelletActive;
+
+            // Repurpose Ghost Counter for Enemy HP
+            document.getElementById('ghost-count-display').innerText = `HP: ${pvpEnemyHp}/${maxPvpHp}`;
+        }
+
+        function switchPvpTurn(nowMyTurn) {
+            isMyTurn = nowMyTurn;
+            battleState = 'IDLE';
+
+            if (nowMyTurn) {
+                if (!isPowerPelletActive && powerCharge < 2) powerCharge++;
+                else if (isPowerPelletActive) {
+                    powerPelletTurnsLeft--;
+                    if (powerPelletTurnsLeft <= 0) isPowerPelletActive = false;
+                }
+                showFloatingText("YOUR TURN!", pacmanMesh.position, '#00ff00');
+                enableActionButtons(true);
+            } else {
+                showFloatingText("OPPONENT'S TURN", enemyPacmanMesh.position, '#ff0000');
+                enableActionButtons(false);
+            }
+            updatePvpUI();
+        }
+
+        function handlePvpAction(action) {
+            if (!isMyTurn || battleState !== 'IDLE') return;
+            battleState = 'ANIMATING';
+            enableActionButtons(false);
+
+            if (action === 'attack') {
+                pvpConn.send({ type: 'ATTACK_START' });
+                // We wait for opponent to complete shield minigame, logic continues in handlePvpData
+            } 
+            else if (action === 'heal') {
+                const healAmt = Math.floor(Math.random() * 10) + 3;
+                playerHp = Math.min(maxHp, playerHp + healAmt);
+                updatePvpUI();
+                playHealSfx();
+                spawnParticles(pacmanMesh.position, 0x00ff00, 25);
+                showFloatingText(`+${healAmt} HP`, pacmanMesh.position, '#00ff00');
+                
+                pvpConn.send({ type: 'HEAL', amt: healAmt });
+                setTimeout(() => switchPvpTurn(false), 1200);
+            } 
+            else if (action === 'power') {
+                powerCharge = 0;
+                isPowerPelletActive = true;
+                powerPelletTurnsLeft = 2;
+                updatePvpUI();
+                playPowerSfx();
+                spawnParticles(pacmanMesh.position, 0xffff00, 30);
+                showFloatingText(`POWER PELLET!`, pacmanMesh.position, '#ffff00');
+                
+                pvpConn.send({ type: 'POWER' });
+                setTimeout(() => switchPvpTurn(false), 1200);
+            }
+        }
+
+        function handlePvpData(data) {
+            if (!isPvPMode) return;
+
+            if (data.type === 'ATTACK_START') {
+                // Enemy initiated attack, we must defend
+                currentAttackingGhost = enemyPacmanMesh; // Trick minigame UI
+                setupQuickTimeShieldMinigame();
+            } 
+            else if (data.type === 'ATTACK_RESULT') {
+                // Enemy finished defending our attack
+                executePvpLunge(pacmanMesh, topHalf, bottomHalf, enemyPacmanMesh, data.blocked, isPowerPelletActive, () => {
+                    switchPvpTurn(false);
+                });
+            }
+            else if (data.type === 'HEAL') {
+                // Enemy healed
+                pvpEnemyHp = Math.min(maxPvpHp, pvpEnemyHp + data.amt);
+                updatePvpUI();
+                playHealSfx();
+                spawnParticles(enemyPacmanMesh.position, 0x00ff00, 25);
+                showFloatingText(`+${data.amt} HP`, enemyPacmanMesh.position, '#00ff00');
+                setTimeout(() => switchPvpTurn(true), 1200);
+            }
+            else if (data.type === 'POWER') {
+                // Enemy activated power
+                isEnemyPowerPelletActive = true;
+                updatePvpUI();
+                playPowerSfx();
+                spawnParticles(enemyPacmanMesh.position, 0xff00ff, 30);
+                showFloatingText(`POWER UP!`, enemyPacmanMesh.position, '#ff00ff');
+                setTimeout(() => switchPvpTurn(true), 1200);
+            }
+            else if (data.type === 'POWER_END') {
+                isEnemyPowerPelletActive = false;
+                updatePvpUI();
+            }
+        }
+
+        function executePvpLunge(attackerGroup, topH, botH, targetGroup, blocked, powerActive, callback) {
+            battleState = 'ANIMATING';
+            const startPos = attackerGroup.position.clone();
+            const targetPos = targetGroup.position.clone();
+            
+            // Adjust offset to avoid clipping exactly
+            if (attackerGroup === pacmanMesh) targetPos.add(new THREE.Vector3(-2, 0, 1));
+            else targetPos.add(new THREE.Vector3(2, 0, -1));
+
+            let progress = 0;
+            function anim() {
+                progress += 0.08;
+                if (progress < 0.5) {
+                    attackerGroup.position.lerpVectors(startPos, targetPos, progress * 2);
+                    topH.rotation.x = -0.5; botH.rotation.x = 0.5;
+                } else if (progress < 1.0) {
+                    topH.rotation.x = 0; botH.rotation.x = 0;
+                    attackerGroup.position.lerpVectors(targetPos, startPos, (progress - 0.5) * 2);
+                } else {
+                    attackerGroup.position.copy(startPos);
+                    
+                    if (blocked) {
+                        playShieldBlockSfx();
+                        spawnParticles(targetGroup.position, 0x00f2ff, 25);
+                        showFloatingText("BLOCKED!", targetGroup.position, '#00f2ff');
+                    } else {
+                        let dmg = Math.floor(Math.random() * 3) + 2; // PvP base dmg 2-4
+                        if (powerActive) dmg *= 3; 
+
+                        if (targetGroup === pacmanMesh) {
+                            playerHp = Math.max(0, playerHp - dmg);
+                        } else {
+                            pvpEnemyHp = Math.max(0, pvpEnemyHp - dmg);
+                        }
+                        updatePvpUI();
+
+                        playBiteSfx();
+                        spawnParticles(targetGroup.position, 0xff0000, 20);
+                        showFloatingText(`-${dmg}`, targetGroup.position, '#ff0000');
+
+                        if (playerHp <= 0 || pvpEnemyHp <= 0) {
+                            setTimeout(() => handlePvpEnd(), 1000);
+                            return; 
+                        }
+                    }
+                    if (callback) callback();
+                    return;
+                }
+                requestAnimationFrame(anim);
+            }
+            anim();
+        }
+
+        function handlePvpEnd() {
+            battleState = 'PVP_WAIT';
+            stopBattleOST();
+            if (playerHp <= 0 && pvpEnemyHp <= 0) {
+                // Draw
+                document.getElementById('pvp-result-title').innerText = "IT'S A TIE!";
+                document.getElementById('pvp-result-title').style.color = "#ffff00";
+                document.getElementById('pvp-result-text').innerText = "Both players were knocked out!";
+            } else if (playerHp > 0) {
+                // Victory
+                document.getElementById('pvp-result-title').innerText = "VICTORY!";
+                document.getElementById('pvp-result-title').style.color = "#00ff00";
+                document.getElementById('pvp-result-text').innerText = `You defeated ${opponentName}!`;
+                playSfx(523, 0.1, 'sine'); setTimeout(() => playSfx(659, 0.1, 'sine'), 80); setTimeout(() => playSfx(1046, 0.3, 'sine'), 160);
+                
+                spawnParticles(enemyPacmanMesh.position, 0xff00ff, 40);
+                enemyPacmanMesh.visible = false;
+            } else {
+                // Defeat
+                document.getElementById('pvp-result-title').innerText = "DEFEATED!";
+                document.getElementById('pvp-result-title').style.color = "#ff0000";
+                document.getElementById('pvp-result-text').innerText = `${opponentName} crushed you!`;
+                playDeathSfx();
+                spawnParticles(pacmanMesh.position, 0xffff00, 40);
+                pacmanMesh.visible = false;
+            }
+            
+            setTimeout(() => {
+                document.getElementById('modal-pvp-result').style.display = 'flex';
+            }, 1000);
+        }
+
+        // --- BATTLE LOGIC ENGINE (CAMPAIGN) ---
         window.startBattleLevel = function(levelNum) {
-            isPvPMode = false;
+            if (isPvPMode) return;
+            maxHp = 20; // reset for campaign
+            document.getElementById('player-name-label').innerText = "PAC-MAN";
+            document.getElementById('enemy-status-title').innerText = "ENEMIES LEFT";
+            document.getElementById('atk-desc').innerText = "(1-3 DMG)";
+            document.getElementById('battle-lives-display').style.display = 'inline';
+
             currentLevel = levelNum;
             document.getElementById('screen-menu').style.display = 'none';
             document.getElementById('screen-battle').style.display = 'block';
             
-            document.getElementById('enemy-status-title').innerText = "ENEMIES LEFT";
-            document.getElementById('ghost-count-display').style.display = 'block';
-            document.getElementById('pvp-enemy-hp-container').style.display = 'none';
-            document.getElementById('battle-lives-display').style.display = 'inline';
-            opponentMesh.visible = false;
-            document.getElementById('target-prompt').style.display = 'none';
-
             const isGlitchy = (levelNum === 100);
             const isBoss = (levelNum % 10 === 0);
             let title = `STAGE ${currentLevel}`;
@@ -1030,10 +1334,15 @@
             else if(isBoss) title += ' (BOSS)';
             document.getElementById('stage-title').innerText = title;
 
+            // Start standard battle OST or Boss battle OST
             playBattleOST(isBoss || isGlitchy);
 
-            if (isBoss || isGlitchy) startBossTimer();
-            else stopBossTimer();
+            // Handle 15 min Boss Timer
+            if (isBoss || isGlitchy) {
+                startBossTimer();
+            } else {
+                stopBossTimer();
+            }
 
             playerHp = maxHp;
             powerCharge = 0;
@@ -1045,6 +1354,7 @@
             activeGhosts = [];
             document.getElementById('ghost-hp-overlay').innerHTML = '';
 
+            // Spawn Enemies
             let ghostCount = isGlitchy ? 1 : (isBoss ? 1 : Math.min(8, 1 + Math.floor((levelNum - 1) / 12)));
             const radius = 8;
             for (let i = 0; i < ghostCount; i++) {
@@ -1065,65 +1375,16 @@
             
             camera.position.set(0, 12, 28);
             camera.lookAt(0, 2, 0);
-            resetPacmanTransform();
-        };
-
-        function startPvPBattle() {
-            isPvPMode = true;
-            document.getElementById('screen-battle').style.display = 'block';
-            playBattleOST(true);
-            stopBossTimer();
-
-            // PVP Specific UI Overrides
-            document.getElementById('enemy-status-title').innerText = "OPPONENT";
-            document.getElementById('ghost-count-display').style.display = 'none';
-            document.getElementById('pvp-enemy-hp-container').style.display = 'block';
-            document.getElementById('battle-lives-display').style.display = 'none';
-            document.getElementById('stage-title').innerText = `PVP: ${myUsername} VS ???`;
-            document.getElementById('target-prompt').style.display = 'block';
-            
-            playerHp = maxHp;
-            pvpOpponentHp = maxHp;
-            powerCharge = 0;
-            isPowerPelletActive = false;
-            powerPelletTurnsLeft = 0;
-            updateHUD();
-            updatePvPHUD();
-
-            activeGhosts.forEach(g => scene.remove(g));
-            activeGhosts = [];
-            backgroundCages.forEach(c => scene.remove(c.group));
-            backgroundCages = [];
-            document.getElementById('ghost-hp-overlay').innerHTML = '';
-
-            camera.position.set(0, 12, 28);
-            camera.lookAt(0, 2, 0);
-            resetPacmanTransform();
-            
-            opponentMesh.visible = true;
-            opponentMesh.position.set(5, 2, -5);
-            opponentMesh.lookAt(-9, 2, 5);
-
-            if (pvpRole === 'host') {
-                startMyPvPTurn();
-            } else {
-                battleState = 'PVP_WAITING';
-                enableActionButtons(false);
-                document.getElementById('target-prompt').innerText = "WAITING FOR OPPONENT...";
-                document.getElementById('target-prompt').style.color = '#ffff00';
-            }
-        }
-
-        function resetPacmanTransform() {
             pacmanMesh.visible = true;
             pacmanMesh.scale.set(1, 1, 1);
             topHalf.rotation.x = 0;
             bottomHalf.rotation.x = 0;
             pacmanMesh.rotation.set(0, Math.PI / 3, 0);
             pacmanMesh.position.set(-9, 2, 5);
-        }
+        };
 
         function updateHUD() {
+            if (isPvPMode) return updatePvpUI();
             document.getElementById('hp-text').innerText = `${playerHp}/${maxHp} HP`;
             document.getElementById('hp-bar').style.width = `${Math.max(0, (playerHp / maxHp) * 100)}%`;
             document.getElementById('pellet-bar').style.width = `${Math.min(100, (powerCharge / 2) * 100)}%`;
@@ -1131,12 +1392,8 @@
             auraMesh.visible = isPowerPelletActive;
         }
 
-        function updatePvPHUD() {
-            document.getElementById('pvp-enemy-hp-text').innerText = `${pvpOpponentHp}/${maxHp}`;
-            document.getElementById('pvp-enemy-hp-bar').style.width = `${Math.max(0, (pvpOpponentHp / maxHp) * 100)}%`;
-        }
-
         function updateGhostCountUI() {
+            if (isPvPMode) return;
             document.getElementById('ghost-count-display').innerText = `${activeGhosts.length} GHOST${activeGhosts.length > 1 ? 'S' : ''}`;
         }
 
@@ -1185,15 +1442,13 @@
         }
 
         window.selectAction = function(action) {
+            if (isPvPMode) {
+                handlePvpAction(action);
+                return;
+            }
             if (battleState !== 'IDLE') return;
             selectedAbility = action;
 
-            if (isPvPMode) {
-                executePvPAction(action);
-                return;
-            }
-
-            // Normal PvE Mode
             if (action === 'attack') {
                 if (activeGhosts.length === 1) executePlayerAttack(activeGhosts[0]);
                 else { battleState = 'PLAYER_SELECT_TARGET'; highlightTargetGhosts(true); }
@@ -1201,150 +1456,6 @@
             else if (action === 'power') executePowerPellet();
         };
 
-        // --- PVP ACTION LOGIC ---
-        function executePvPAction(action) {
-            battleState = 'ANIMATING';
-            enableActionButtons(false);
-            document.getElementById('target-prompt').innerText = "WAITING FOR OPPONENT...";
-            document.getElementById('target-prompt').style.color = '#ffff00';
-
-            if (action === 'attack') {
-                let dmg = Math.floor(Math.random() * 3) + 1;
-                if (isPowerPelletActive) dmg *= 4;
-
-                const startPos = pacmanMesh.position.clone();
-                const targetPos = opponentMesh.position.clone().add(new THREE.Vector3(-2, 0, 1));
-                let progress = 0;
-                function lunge() {
-                    progress += 0.08;
-                    if (progress < 0.5) {
-                        pacmanMesh.position.lerpVectors(startPos, targetPos, progress * 2);
-                        topHalf.rotation.x = -0.5; bottomHalf.rotation.x = 0.5;
-                    } else if (progress < 1.0) {
-                        topHalf.rotation.x = 0; bottomHalf.rotation.x = 0;
-                        pacmanMesh.position.lerpVectors(targetPos, startPos, (progress - 0.5) * 2);
-                    } else {
-                        pacmanMesh.position.copy(startPos);
-                        playBiteSfx();
-                        pvpConn.send({ type: 'action', action: 'attack', dmg: dmg });
-                        advancePvPTurn();
-                        return;
-                    }
-                    requestAnimationFrame(lunge);
-                }
-                lunge();
-            } else if (action === 'heal') {
-                const healAmt = Math.floor(Math.random() * 10) + 3;
-                playerHp = Math.min(maxHp, playerHp + healAmt);
-                updateHUD();
-                playHealSfx();
-                spawnParticles(pacmanMesh.position, 0x00ff00, 25);
-                showFloatingText(`+${healAmt} HP`, pacmanMesh.position, '#00ff00');
-                pvpConn.send({ type: 'action', action: 'heal', hp: playerHp });
-                setTimeout(advancePvPTurn, 1000);
-            } else if (action === 'power') {
-                powerCharge = 0;
-                isPowerPelletActive = true;
-                powerPelletTurnsLeft = 2;
-                updateHUD();
-                playPowerSfx();
-                spawnParticles(pacmanMesh.position, 0xffff00, 30);
-                showFloatingText(`POWER PELLET!`, pacmanMesh.position, '#ffff00');
-                pvpConn.send({ type: 'action', action: 'power' });
-                setTimeout(advancePvPTurn, 1000);
-            }
-        }
-
-        function advancePvPTurn() {
-            if (!isPowerPelletActive && powerCharge < 2) powerCharge++;
-            else if (isPowerPelletActive) {
-                powerPelletTurnsLeft--;
-                if (powerPelletTurnsLeft <= 0) isPowerPelletActive = false;
-            }
-            updateHUD();
-            battleState = 'PVP_WAITING';
-        }
-
-        function receivePvPMessage(data) {
-            if (data.type === 'init') {
-                opponentUsername = data.username;
-                document.getElementById('stage-title').innerText = `PVP: ${myUsername} VS ${opponentUsername}`;
-            }
-            else if (data.type === 'action') {
-                if (data.action === 'attack') {
-                    pvpIncomingDmg = data.dmg;
-                    setupQuickTimeShieldMinigame();
-                }
-                else if (data.action === 'heal') {
-                    pvpOpponentHp = data.hp;
-                    updatePvPHUD();
-                    spawnParticles(opponentMesh.position, 0x00ff00, 25);
-                    showFloatingText(`HEAL!`, opponentMesh.position, '#00ff00');
-                    startMyPvPTurn();
-                }
-                else if (data.action === 'power') {
-                    spawnParticles(opponentMesh.position, 0xffff00, 30);
-                    showFloatingText(`POWER PELLET!`, opponentMesh.position, '#ffff00');
-                    startMyPvPTurn();
-                }
-            }
-            else if (data.type === 'sync_hp') {
-                pvpOpponentHp = data.hp;
-                updatePvPHUD();
-                
-                if (data.blocked) {
-                    spawnParticles(opponentMesh.position, 0x00f2ff, 25);
-                    showFloatingText("BLOCKED!", opponentMesh.position, '#00f2ff');
-                    playShieldBlockSfx();
-                } else {
-                    spawnParticles(opponentMesh.position, 0xff0000, 20);
-                    showFloatingText(`-${data.dmgTaken}`, opponentMesh.position, '#ff0000');
-                    playSfx(120, 0.25, 'sawtooth', 0.2);
-                }
-
-                if (pvpOpponentHp <= 0) {
-                    setTimeout(handlePvPVictory, 1000);
-                }
-            }
-            else if (data.type === 'gameover') {
-                if (data.result === 'you_win') setTimeout(handlePvPVictory, 1000);
-            }
-        }
-
-        function startMyPvPTurn() {
-            battleState = 'IDLE';
-            enableActionButtons(true);
-            document.getElementById('target-prompt').style.display = 'block';
-            document.getElementById('target-prompt').innerText = "YOUR TURN!";
-            document.getElementById('target-prompt').style.color = '#00ff00';
-        }
-
-        function resolvePvPShield(isSuccess) {
-            let actualDmg = 0;
-            if (isSuccess) {
-                playShieldBlockSfx();
-                spawnParticles(pacmanMesh.position, 0x00f2ff, 25);
-                showFloatingText("BLOCKED!", pacmanMesh.position, '#00f2ff');
-            } else {
-                actualDmg = pvpIncomingDmg;
-                playerHp = Math.max(0, playerHp - actualDmg);
-                updateHUD();
-                playSfx(120, 0.25, 'sawtooth', 0.2);
-                spawnParticles(pacmanMesh.position, 0xff0000, 20);
-                showFloatingText(`-${actualDmg}`, pacmanMesh.position, '#ff0000');
-            }
-
-            pvpConn.send({ type: 'sync_hp', hp: playerHp, blocked: isSuccess, dmgTaken: actualDmg });
-
-            if (playerHp <= 0) {
-                pvpConn.send({ type: 'gameover', result: 'you_win' });
-                setTimeout(animatePacmanDeath, 600);
-            } else {
-                startMyPvPTurn();
-            }
-        }
-
-        // --- PVE ACTION LOGIC ---
         function executePlayerAttack(targetGhost) {
             highlightTargetGhosts(false);
             battleState = 'ANIMATING';
@@ -1422,6 +1533,7 @@
         }
 
         function advanceTurnState() {
+            if (isPvPMode) return;
             if (!isPowerPelletActive && powerCharge < 2) powerCharge++;
             else if (isPowerPelletActive) {
                 powerPelletTurnsLeft--;
@@ -1433,6 +1545,7 @@
 
         let currentGhostAttackIndex = 0;
         function processGhostsTurn() {
+            if (isPvPMode) return;
             if (activeGhosts.length === 0) return;
             currentGhostAttackIndex = 0;
             startNextGhostAttack();
@@ -1484,7 +1597,11 @@
             const isSuccess = (timingPos >= zoneLeft && timingPos <= (zoneLeft + zoneWidth));
 
             if (isPvPMode) {
-                resolvePvPShield(isSuccess);
+                // PvP specific result routing
+                pvpConn.send({ type: 'ATTACK_RESULT', blocked: isSuccess });
+                executePvpLunge(enemyPacmanMesh, enemyTopHalf, enemyBottomHalf, pacmanMesh, isSuccess, isEnemyPowerPelletActive, () => {
+                    switchPvpTurn(true);
+                });
                 return;
             }
 
@@ -1530,7 +1647,11 @@
         function enableActionButtons(enable) {
             document.getElementById('btn-attack').disabled = !enable;
             document.getElementById('btn-heal').disabled = !enable;
-            document.getElementById('btn-pellet').disabled = !enable || (powerCharge < 2 || isPowerPelletActive);
+            if (isPvPMode && !isMyTurn) {
+                document.getElementById('btn-pellet').disabled = true;
+            } else {
+                document.getElementById('btn-pellet').disabled = !enable || (powerCharge < 2 || isPowerPelletActive);
+            }
         }
 
         // --- PAC-MAN LOSE ANIMATION ---
@@ -1547,14 +1668,22 @@
                 phaseProgress++;
                 const ratio = phaseProgress / duration;
 
+                // Rotate towards screen & spin rapidly around Y and Z
                 pacmanMesh.rotation.y += 0.25;
                 pacmanMesh.rotation.z += 0.15;
+
+                // Open jaws wider and wider until 180 degrees
                 topHalf.rotation.x = -Math.min(Math.PI * 0.9, ratio * Math.PI * 1.1);
                 bottomHalf.rotation.x = Math.min(Math.PI * 0.9, ratio * Math.PI * 1.1);
+
+                // Shrink pacman to zero
                 const scale = Math.max(0, 1 - ratio);
                 pacmanMesh.scale.set(scale, scale, scale);
 
-                if (phaseProgress % 6 === 0) spawnParticles(pacmanMesh.position, 0xffff00, 8);
+                // Burst particles periodically
+                if (phaseProgress % 6 === 0) {
+                    spawnParticles(pacmanMesh.position, 0xffff00, 8);
+                }
 
                 if (phaseProgress < duration) {
                     requestAnimationFrame(deathLoop);
@@ -1569,6 +1698,7 @@
 
         // --- VICTORY & GAMEOVER MODALS ---
         function handleVictory() {
+            if (isPvPMode) return;
             battleState = 'VICTORY';
             stopBossTimer();
             stopBattleOST();
@@ -1588,76 +1718,47 @@
             }, 1500);
         }
 
-        function handlePvPVictory() {
-            battleState = 'VICTORY';
-            stopBattleOST();
-            document.getElementById('victory-title').innerText = "PVP CHAMPION!";
-            document.getElementById('victory-title').style.color = '#ff00ff';
-            document.getElementById('victory-text').innerText = `You defeated ${opponentUsername}!`;
-            document.getElementById('rescued-text').innerText = "ARENA MASTER!";
-            document.getElementById('modal-victory').style.display = 'flex';
-            playSfx(523, 0.1, 'sine');
-            setTimeout(() => playSfx(1046, 0.3, 'sine'), 240);
-        }
-
         function handleGameOver() {
+            if (isPvPMode) return; // PvP handles its own ending modal
             stopBossTimer();
             stopBattleOST();
+            playerLives--;
+            updateGlobalHUD();
             
             playSfx(300, 0.3, 'sawtooth', 0.2);
             setTimeout(() => playSfx(150, 0.5, 'sawtooth', 0.2), 250);
 
-            if (isPvPMode) {
-                document.getElementById('gameover-title').innerText = "PVP DEFEATED";
-                document.getElementById('gameover-text').innerText = `${opponentUsername} won the match!`;
-                document.getElementById('btn-retry').innerText = "LEAVE ARENA";
+            if (playerLives <= 0) {
+                document.getElementById('gameover-title').innerText = "GAME OVER";
+                document.getElementById('gameover-text').innerText = "ALL LIVES LOST!\nTHE GHOSTS HAVE TAKEN OVER PAC-CITY.";
+                document.getElementById('btn-retry').innerText = "START OVER";
                 document.getElementById('btn-retry').onclick = () => {
                     document.getElementById('modal-gameover').style.display = 'none';
-                    endPvPBattle();
+                    document.getElementById('screen-battle').style.display = 'none';
+                    hardReset();
+                    document.getElementById('screen-menu').style.display = 'flex';
                 };
             } else {
-                playerLives--;
-                updateGlobalHUD();
-                if (playerLives <= 0) {
-                    document.getElementById('gameover-title').innerText = "GAME OVER";
-                    document.getElementById('gameover-text').innerText = "ALL LIVES LOST!\nTHE GHOSTS HAVE TAKEN OVER PAC-CITY.";
-                    document.getElementById('btn-retry').innerText = "START OVER";
-                    document.getElementById('btn-retry').onclick = () => {
-                        document.getElementById('modal-gameover').style.display = 'none';
-                        document.getElementById('screen-battle').style.display = 'none';
-                        hardReset();
-                        document.getElementById('screen-menu').style.display = 'flex';
-                    };
-                } else {
-                    document.getElementById('gameover-title').innerText = "DEFEATED";
-                    document.getElementById('gameover-text').innerText = `Pac-Man went down!\nLIVES REMAINING: ${playerLives}`;
-                    document.getElementById('btn-retry').innerText = "RETRY STAGE";
-                    document.getElementById('btn-retry').onclick = retryLevel;
-                }
+                document.getElementById('gameover-title').innerText = "DEFEATED";
+                document.getElementById('gameover-text').innerText = `Pac-Man went down!\nLIVES REMAINING: ${playerLives}`;
+                document.getElementById('btn-retry').innerText = "RETRY STAGE";
+                document.getElementById('btn-retry').onclick = retryLevel;
             }
             document.getElementById('modal-gameover').style.display = 'flex';
         }
 
         window.returnToMenu = function() {
+            stopBossTimer();
+            stopBattleOST();
             document.getElementById('modal-victory').style.display = 'none';
-            if (isPvPMode) {
-                endPvPBattle();
-            } else {
-                stopBossTimer();
-                stopBattleOST();
-                document.getElementById('screen-battle').style.display = 'none';
-                document.getElementById('screen-menu').style.display = 'flex';
-                renderMapGrid();
-            }
+            document.getElementById('screen-battle').style.display = 'none';
+            document.getElementById('screen-menu').style.display = 'flex';
+            renderMapGrid();
         };
 
         window.retryLevel = function() {
             document.getElementById('modal-gameover').style.display = 'none';
-            if (isPvPMode) {
-                endPvPBattle();
-            } else {
-                startBattleLevel(currentLevel);
-            }
+            startBattleLevel(currentLevel);
         };
 
         function onWindowResize() {
@@ -1688,9 +1789,11 @@
                 cutsceneObjects.forEach(obj => {
                     if (obj.userData.isCitizen && obj.visible) {
                         citizensActive++;
+                        // Move toward Glitchy
                         const dir = new THREE.Vector3().subVectors(glitchy.position, obj.position).normalize();
                         obj.position.add(dir.multiplyScalar(obj.userData.speed));
                         
+                        // Chomping animation
                         obj.children[0].rotation.x = -Math.abs(Math.sin(time * 0.01 + obj.userData.offset)) * 0.5;
                         obj.children[1].rotation.x = Math.abs(Math.sin(time * 0.01 + obj.userData.offset)) * 0.5;
                         
@@ -1710,37 +1813,43 @@
                 }
             } 
             else {
-                if (isPvPMode && opponentMesh) {
-                    opponentMesh.position.y = 2 + Math.sin(time * 0.003) * 0.2; // Idle floating
-                }
-
-                // Battle Idle Animations (Ghosts)
-                activeGhosts.forEach((g, idx) => {
-                    if (g.userData.isGlitchy) {
-                        if(Math.random() > 0.4) {
-                            g.position.x = g.userData.basePos.x + (Math.random()-0.5)*0.6;
-                            g.position.z = g.userData.basePos.z + (Math.random()-0.5)*0.6;
+                if (isPvPMode) {
+                    // Simple PvP breathing animations
+                    if (enemyPacmanMesh && enemyPacmanMesh.visible && battleState === 'IDLE') {
+                        enemyPacmanMesh.position.y = 2 + Math.sin(time * 0.003) * 0.2;
+                    }
+                    if (pacmanMesh && pacmanMesh.visible && battleState === 'IDLE') {
+                        pacmanMesh.position.y = 2 + Math.sin(time * 0.003 + 1) * 0.2;
+                    }
+                } else {
+                    // Battle Idle Animations (Campaign)
+                    activeGhosts.forEach((g, idx) => {
+                        if (g.userData.isGlitchy) {
+                            if(Math.random() > 0.4) {
+                                g.position.x = g.userData.basePos.x + (Math.random()-0.5)*0.6;
+                                g.position.z = g.userData.basePos.z + (Math.random()-0.5)*0.6;
+                            } else {
+                                g.position.x = g.userData.basePos.x;
+                                g.position.z = g.userData.basePos.z;
+                            }
                         } else {
-                            g.position.x = g.userData.basePos.x;
-                            g.position.z = g.userData.basePos.z;
+                            g.position.y = Math.sin(time * 0.003 + idx) * 0.2 + 0.2;
                         }
-                    } else {
-                        g.position.y = Math.sin(time * 0.003 + idx) * 0.2 + 0.2;
-                    }
-                });
+                    });
 
-                // Cages animation
-                backgroundCages.forEach(c => {
-                    if (!c.active && c.cage.material.opacity > 0) {
-                        c.cage.position.y += 0.05;
-                        c.cage.material.opacity -= 0.03;
-                        c.citizen.position.y = 0.8 + Math.abs(Math.sin(time * 0.01)) * 1.5;
-                        c.citizen.children[0].rotation.x = -Math.abs(Math.sin(time * 0.015)) * 0.6;
-                        c.citizen.children[1].rotation.x = Math.abs(Math.sin(time * 0.015)) * 0.6;
-                    }
-                });
-
-                updateGhostHPBars();
+                    // Cages animation
+                    backgroundCages.forEach(c => {
+                        if (!c.active && c.cage.material.opacity > 0) {
+                            c.cage.position.y += 0.05;
+                            c.cage.material.opacity -= 0.03;
+                            c.citizen.position.y = 0.8 + Math.abs(Math.sin(time * 0.01)) * 1.5;
+                            // Chomping when free
+                            c.citizen.children[0].rotation.x = -Math.abs(Math.sin(time * 0.015)) * 0.6;
+                            c.citizen.children[1].rotation.x = Math.abs(Math.sin(time * 0.015)) * 0.6;
+                        }
+                    });
+                    updateGhostHPBars();
+                }
             }
 
             updateParticles();
