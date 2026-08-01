@@ -4,16 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pac-Fight - Epic RPG</title>
+    
+    <!-- PeerJS for PvP Multiplayer -->
+    <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
+    
     <script>
     if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js')
       .then(() => console.log('Service Worker registrado correctamente'))
       .catch(err => console.log('Error al registrar:', err));
-  }
-</script>
-
-<!-- No olvides vincular el manifest en el <head> -->
-<link rel="manifest" href="manifest.json">
+    }
+    </script>
+    <link rel="manifest" href="manifest.json">
     <style>
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         body { margin: 0; overflow: hidden; background: #000411; font-family: 'Courier New', monospace; color: #fff; touch-action: none; }
@@ -22,14 +24,16 @@
         .screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; flex-direction: column; }
         #screen-menu { z-index: 100; background: linear-gradient(135deg, #000411 0%, #001133 100%); align-items: center; justify-content: flex-start; padding: 20px; overflow-y: auto; }
         #screen-battle { z-index: 10; display: none; }
-        #screen-city { z-index: 50; display: none; background: transparent; pointer-events: none; } /* City UI overlay */
+        #screen-pvp { z-index: 10; display: none; background: transparent; pointer-events: none; }
+        #screen-city { z-index: 50; display: none; background: transparent; pointer-events: none; } 
+        #screen-matchmaking { z-index: 200; display: none; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; text-align: center; }
 
         /* Header UI */
         h1.title { font-size: 38px; color: #ffff00; text-shadow: 0 0 15px #ffff00, 3px 3px 0 #ff0000; margin: 10px 0 5px 0; letter-spacing: 3px; text-align: center; }
         .subtitle { color: #00f2ff; font-size: 14px; margin-bottom: 20px; text-shadow: 0 0 8px #00f2ff; text-align: center; }
 
         /* Level Map Screen */
-        .map-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 12px; width: 100%; max-width: 800px; background: rgba(0,0,0,0.6); border: 2px solid #00f2ff; border-radius: 12px; padding: 20px; box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); max-height: 50vh; overflow-y: auto; margin-bottom: 20px; }
+        .map-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 12px; width: 100%; max-width: 800px; background: rgba(0,0,0,0.6); border: 2px solid #00f2ff; border-radius: 12px; padding: 20px; box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); max-height: 40vh; overflow-y: auto; margin-bottom: 20px; }
         .level-btn { aspect-ratio: 1; border-radius: 10px; border: 2px solid #00f2ff; background: rgba(0, 242, 255, 0.1); color: #00f2ff; font-weight: bold; font-size: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; position: relative; }
         .level-btn:hover:not(.locked) { background: #00f2ff; color: #000; box-shadow: 0 0 15px #00f2ff; transform: scale(1.05); }
         .level-btn.locked { border-color: #444; color: #555; background: rgba(255,255,255,0.03); cursor: not-allowed; }
@@ -40,21 +44,24 @@
         .level-btn.glitchy-btn { border-color: #ff00ff; color: #ff00ff; background: rgba(255,0,255,0.15); box-shadow: 0 0 15px rgba(255,0,255,0.5); }
         .level-btn.glitchy-btn:hover:not(.locked) { background: #ff00ff; color: #fff; box-shadow: 0 0 30px #ff00ff; }
 
-        /* Battle UI */
-        #battle-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 15px; z-index: 20; }
+        /* General Battle UI Shared */
+        .battle-ui-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 15px; z-index: 20; }
         .interactive { pointer-events: auto; }
 
-        /* HUD top */
+        /* HUD */
         .hud-top { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
         .status-box { background: rgba(0, 4, 17, 0.85); border: 2px solid #00f2ff; border-radius: 10px; padding: 10px 15px; width: 220px; box-shadow: 0 0 10px rgba(0, 242, 255, 0.3); }
-        .status-box h3 { margin: 0 0 5px 0; font-size: 16px; color: #ffff00; display: flex; justify-content: space-between; }
+        .status-box h3 { margin: 0 0 5px 0; font-size: 16px; color: #ffff00; display: flex; justify-content: space-between; text-transform: uppercase;}
         .bar-bg { width: 100%; height: 14px; background: #222; border: 1px solid #fff; border-radius: 7px; overflow: hidden; position: relative; margin-top: 4px; }
         .bar-fill { height: 100%; transition: width 0.3s ease; }
-        #hp-bar { background: linear-gradient(90deg, #ff0000, #00ff00); width: 100%; }
-        #pellet-bar { background: #ffff00; width: 0%; }
+        .hp-bar-fill { background: linear-gradient(90deg, #ff0000, #00ff00); width: 100%; }
+        .pellet-bar-fill { background: #ffff00; width: 0%; }
+        
+        .status-box.opp { border-color: #ff0055; box-shadow: 0 0 10px rgba(255, 0, 85, 0.3); }
+        .status-box.opp h3 { color: #ff0055; }
 
         /* Floating Info overlay */
-        #stage-indicator { text-align: center; font-size: 20px; color: #ffff00; font-weight: bold; text-shadow: 0 0 8px #000; background: rgba(0,0,0,0.6); padding: 6px 16px; border-radius: 20px; border: 1px solid #ffff00; display: flex; flex-direction: column; }
+        .stage-indicator { text-align: center; font-size: 20px; color: #ffff00; font-weight: bold; text-shadow: 0 0 8px #000; background: rgba(0,0,0,0.6); padding: 6px 16px; border-radius: 20px; border: 1px solid #ffff00; display: flex; flex-direction: column; }
         #boss-timer-display { display: none; margin-top: 4px; font-size: 14px; color: #ff0055; text-shadow: 0 0 10px #ff0000; letter-spacing: 1px; font-weight: bold; animation: pulse 1s infinite alternate; }
         @keyframes pulse { 0% { opacity: 0.8; } 100% { opacity: 1; transform: scale(1.05); } }
 
@@ -69,15 +76,17 @@
         .cmd-btn.heal:hover:not(:disabled) { background: #00ff00; color: #000; box-shadow: 0 0 20px #00ff00; }
         .cmd-btn.city { border-color: #ff00ff; color: #ff00ff; background: rgba(255, 0, 255, 0.15); width: 200px; font-size: 16px; margin-bottom: 20px; }
         .cmd-btn.city:hover { background: #ff00ff; color: #fff; box-shadow: 0 0 20px #ff00ff; }
+        .cmd-btn.pvp { border-color: #ff3333; color: #ff3333; background: rgba(255, 51, 51, 0.15); width: 200px; font-size: 16px; margin-bottom: 20px; }
+        .cmd-btn.pvp:hover { background: #ff3333; color: #fff; box-shadow: 0 0 20px #ff3333; }
 
         /* Quick-Time Shield Overlay */
-        #shield-overlay { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; background: rgba(0,0,0,0.9); border: 3px solid #00f2ff; border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 0 30px #00f2ff; z-index: 500; }
-        #shield-overlay h2 { margin: 0 0 10px 0; color: #ffff00; font-size: 18px; }
+        .shield-overlay { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; background: rgba(0,0,0,0.9); border: 3px solid #00f2ff; border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 0 30px #00f2ff; z-index: 500; pointer-events: auto;}
+        .shield-overlay h2 { margin: 0 0 10px 0; color: #ffff00; font-size: 18px; }
         .timing-bar-container { width: 100%; height: 26px; background: #222; border: 2px solid #fff; border-radius: 13px; position: relative; overflow: hidden; margin: 15px 0; }
         .timing-zone { position: absolute; top: 0; height: 100%; background: #00ff00; opacity: 0.6; }
         .timing-indicator { position: absolute; top: 0; width: 6px; height: 100%; background: #ffffff; box-shadow: 0 0 10px #fff; left: 0%; }
-        #btn-shield { width: 100%; padding: 15px; font-size: 18px; font-weight: bold; background: #00f2ff; border: none; border-radius: 10px; color: #000; cursor: pointer; box-shadow: 0 0 15px #00f2ff; }
-        #btn-shield:active { transform: scale(0.96); }
+        .btn-shield { width: 100%; padding: 15px; font-size: 18px; font-weight: bold; background: #00f2ff; border: none; border-radius: 10px; color: #000; cursor: pointer; box-shadow: 0 0 15px #00f2ff; }
+        .btn-shield:active { transform: scale(0.96); }
 
         /* Floating Damage Text */
         .float-text { position: absolute; font-weight: bold; font-size: 24px; pointer-events: none; animation: floatUp 1s ease-out forwards; text-shadow: 2px 2px 0 #000; z-index: 1000; }
@@ -91,6 +100,9 @@
 
         /* Top Bar Info */
         .top-info-bar { width: 100%; max-width: 800px; display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px; color: #00f2ff; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; border: 1px solid #00f2ff; }
+        
+        /* Username Input */
+        .username-input { padding: 10px; border-radius: 8px; border: 2px solid #00f2ff; background: rgba(0,0,0,0.5); color: #fff; font-family: inherit; font-size: 16px; text-align: center; width: 200px; box-shadow: 0 0 10px rgba(0,242,255,0.3); margin-bottom: 15px; }
 
         /* Ghost HP Bars Overlay */
         #ghost-hp-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 15; }
@@ -116,7 +128,7 @@
     <!-- MAP / MENU SCREEN -->
     <div id="screen-menu" class="screen">
         <h1 class="title">PAC-FIGHT</h1>
-        <div class="subtitle">EPIC TURN-BASED RPG</div>
+        <div class="subtitle">EPIC TURN-BASED RPG & PVP ARENA</div>
 
         <div class="top-info-bar">
             <div>STAGES: <span id="unlocked-count" style="color:#ffff00;">1</span>/100</div>
@@ -124,9 +136,23 @@
             <div>RESCUED: <span id="menu-rescued-display" style="color:#00ff00;">0</span>/300</div>
         </div>
 
-        <button class="cmd-btn city" onclick="enterPacCity()">🏙️ VIEW PAC-CITY</button>
+        <div>
+            <input type="text" id="username-input" class="username-input" placeholder="Enter Username" maxlength="12" onchange="saveUsername()">
+        </div>
+
+        <div style="display: flex; gap: 15px;">
+            <button class="cmd-btn city" onclick="enterPacCity()">🏙️ PAC-CITY</button>
+            <button class="cmd-btn pvp" onclick="startPvPMatchmaking()">⚔️ PVP ARENA</button>
+        </div>
 
         <div class="map-container" id="map-grid"></div>
+    </div>
+
+    <!-- MATCHMAKING SCREEN -->
+    <div id="screen-matchmaking" class="screen interactive">
+        <h2 style="color:#ff3333; text-shadow: 0 0 15px #ff3333; font-size: 32px; margin-bottom: 20px;">BATTLE ARENA</h2>
+        <div id="matchmaking-status" style="font-size: 18px; color: #fff; margin-bottom: 30px;">Initializing Network...</div>
+        <button class="cmd-btn interactive" onclick="cancelMatchmaking()">CANCEL SEARCH</button>
     </div>
 
     <!-- 3D CANVAS LAYER (Behind UI) -->
@@ -135,72 +161,41 @@
     <!-- PAC-CITY SCREEN UI -->
     <div id="screen-city" class="screen">
         <div style="position: absolute; top: 15px; right: 15px; z-index: 200; pointer-events: auto;">
-            <button class="cmd-btn" style="border-color: #ff0055; color: #ff0055; background: rgba(255,0,85,0.15);" onclick="exitPacCity()">🚪 EXIT CITY</button>
+            <button class="cmd-btn interactive" style="border-color: #ff0055; color: #ff0055; background: rgba(255,0,85,0.15);" onclick="exitPacCity()">🚪 EXIT CITY</button>
         </div>
-        
-        <div id="dialogue-box">
-            <!-- Text goes here -->
-        </div>
-        
+        <div id="dialogue-box"></div>
         <div style="position: absolute; bottom: 30px; right: 30px; z-index: 200; pointer-events: auto;">
-            <button id="btn-talk" class="cmd-btn power" style="display: none; width: 80px; height: 80px; border-radius: 40px; font-size: 18px; box-shadow: 0 0 20px #ffff00;" onclick="talkToCitizen()">🗣️<br>TALK</button>
+            <button id="btn-talk" class="cmd-btn power interactive" style="display: none; width: 80px; height: 80px; border-radius: 40px; font-size: 18px; box-shadow: 0 0 20px #ffff00;" onclick="talkToCitizen()">🗣️<br>TALK</button>
         </div>
-        
-        <div id="joystick-zone">
-            <div id="joystick-knob"></div>
-        </div>
+        <div id="joystick-zone"><div id="joystick-knob"></div></div>
     </div>
 
-    <!-- INTRO CUTSCENE -->
-    <div id="screen-intro" class="cutscene-ui">
-        <div class="cutscene-text" id="intro-text">
-            PAC-CITY HAS BEEN CAPTURED...<br>
-            GLITCHY AND THE GHOSTS HAVE LOCKED EVERYONE IN CAGES.<br>
-            YOU ARE THE LAST SURVIVOR. SAVE THEM ALL!
-        </div>
-        <button class="skip-btn" onclick="endIntroCutscene()">START BATTLE / SKIP</button>
-    </div>
-
-    <!-- ENDING CUTSCENE -->
-    <div id="screen-ending" class="cutscene-ui">
-        <div class="cutscene-text" id="ending-text" style="border-color:#ff00ff; color:#ffb8ff; box-shadow: 0 0 30px #ff00ff;">
-            THE 300 RESCUED PAC-CITIZENS ARE CHARGING!<br>
-            GLITCHY IS LOSING CONTROL!
-        </div>
-        <button class="skip-btn" id="btn-finish-ending" style="display:none;" onclick="showFinalVictory()">CONTINUE</button>
-    </div>
-
-    <!-- BATTLE SCREEN -->
+    <!-- PVE BATTLE SCREEN -->
     <div id="screen-battle" class="screen" style="background: transparent; pointer-events: none;">
-        <!-- Ghost HP UI overlay -->
         <div id="ghost-hp-overlay"></div>
-
-        <div id="battle-ui">
-            <!-- Top Status -->
+        <div class="battle-ui-container">
             <div class="hud-top">
                 <div class="status-box">
-                    <h3>PAC-MAN <span id="hp-text">20/20 HP</span></h3>
-                    <div class="bar-bg"><div id="hp-bar" class="bar-fill"></div></div>
+                    <h3><span id="player-name-display">PAC-MAN</span> <span id="hp-text">20/20 HP</span></h3>
+                    <div class="bar-bg"><div id="hp-bar" class="bar-fill hp-bar-fill"></div></div>
                     <div style="font-size: 10px; margin-top: 6px; color: #ffff00;">POWER PELLET CHARGE</div>
-                    <div class="bar-bg"><div id="pellet-bar" class="bar-fill"></div></div>
+                    <div class="bar-bg"><div id="pellet-bar" class="bar-fill pellet-bar-fill"></div></div>
                 </div>
 
-                <div id="stage-indicator">
+                <div class="stage-indicator">
                     <span id="stage-title">STAGE 1</span>
                     <span style="font-size: 12px; color: #ff0055; margin-top: 4px;" id="battle-lives-display">LIVES: ❤️❤️❤️</span>
-                    <!-- 15 MINUTE BOSS TIMER DISPLAY -->
                     <div id="boss-timer-display">⏱️ 15:00</div>
                 </div>
 
-                <div class="status-box" style="border-color: #ff0055;">
-                    <h3 style="color: #ff0055;">ENEMIES LEFT</h3>
+                <div class="status-box opp">
+                    <h3>ENEMIES LEFT</h3>
                     <div id="ghost-count-display" style="font-size: 20px; font-weight: bold; color: #fff; text-align: center; margin-top: 5px;">
                         1 GHOST
                     </div>
                 </div>
             </div>
 
-            <!-- Action Panel Bottom -->
             <div>
                 <div id="target-prompt" style="text-align: center; color: #ffff00; font-weight: bold; margin-bottom: 8px; text-shadow: 1px 1px 2px #000; display: none;">
                     👆 TAP A GHOST TO TARGET
@@ -213,35 +208,95 @@
             </div>
         </div>
 
-        <!-- Quick Time Defense Overlay -->
-        <div id="shield-overlay" class="interactive">
+        <div id="shield-overlay" class="shield-overlay interactive">
             <h2>🛡️ DEFEND NOW!</h2>
             <div style="font-size: 12px; color: #00f2ff;">TAP SHIELD IN THE GREEN ZONE!</div>
             <div class="timing-bar-container">
                 <div id="timing-zone" class="timing-zone"></div>
                 <div id="timing-indicator" class="timing-indicator"></div>
             </div>
-            <button id="btn-shield" onclick="triggerShieldDefend()">BLOCK!</button>
+            <button class="btn-shield interactive" onclick="triggerShieldDefend()">BLOCK!</button>
         </div>
     </div>
 
-    <!-- VICTORY MODAL -->
+    <!-- PVP BATTLE SCREEN -->
+    <div id="screen-pvp" class="screen" style="background: transparent; pointer-events: none;">
+        <div class="battle-ui-container">
+            <div class="hud-top">
+                <div class="status-box">
+                    <h3><span id="pvp-my-name">ME</span> <span id="pvp-my-hp-text">20/20 HP</span></h3>
+                    <div class="bar-bg"><div id="pvp-my-hp-bar" class="bar-fill hp-bar-fill"></div></div>
+                    <div style="font-size: 10px; margin-top: 6px; color: #ffff00;">POWER CHARGE</div>
+                    <div class="bar-bg"><div id="pvp-my-pellet-bar" class="bar-fill pellet-bar-fill"></div></div>
+                </div>
+
+                <div class="stage-indicator">
+                    <span style="color:#ff3333;">ARENA PVP</span>
+                    <span id="pvp-turn-indicator" style="font-size: 14px; margin-top: 4px; color: #fff;">WAITING...</span>
+                </div>
+
+                <div class="status-box opp">
+                    <h3><span id="pvp-opp-name">OPPONENT</span> <span id="pvp-opp-hp-text">20/20 HP</span></h3>
+                    <div class="bar-bg"><div id="pvp-opp-hp-bar" class="bar-fill hp-bar-fill"></div></div>
+                    <div style="font-size: 10px; margin-top: 6px; color: #ffff00;">POWER CHARGE</div>
+                    <div class="bar-bg"><div id="pvp-opp-pellet-bar" class="bar-fill pellet-bar-fill"></div></div>
+                </div>
+            </div>
+
+            <div>
+                <div class="action-panel">
+                    <button id="pvp-btn-attack" class="cmd-btn interactive" onclick="selectPvPAction('attack')">⚔️ ATTACK<br><span style="font-size:10px; opacity:0.8;">(1-4 DMG)</span></button>
+                    <button id="pvp-btn-heal" class="cmd-btn heal interactive" onclick="selectPvPAction('heal')">💖 HEAL<br><span style="font-size:10px; opacity:0.8;">(+3-10 HP)</span></button>
+                    <button id="pvp-btn-pellet" class="cmd-btn power interactive" onclick="selectPvPAction('power')" disabled>⚡ POWER UP<br><span style="font-size:10px; opacity:0.8;">(2 TURNS)</span></button>
+                </div>
+            </div>
+        </div>
+
+        <div id="pvp-shield-overlay" class="shield-overlay interactive">
+            <h2>🛡️ INCOMING ATTACK!</h2>
+            <div style="font-size: 12px; color: #00f2ff;">DEFEND QUICKLY!</div>
+            <div class="timing-bar-container">
+                <div id="pvp-timing-zone" class="timing-zone"></div>
+                <div id="pvp-timing-indicator" class="timing-indicator"></div>
+            </div>
+            <button class="btn-shield interactive" onclick="triggerPvPShieldDefend()">BLOCK!</button>
+        </div>
+    </div>
+
+    <!-- MODALS -->
     <div id="modal-victory" class="modal">
         <div class="modal-content">
             <h2 id="victory-title" style="color: #00ff00; text-shadow: 0 0 15px #00ff00;">VICTORY!</h2>
             <p id="victory-text">Stage cleared successfully!</p>
             <p id="rescued-text" style="color: #ffff00; font-weight: bold;">+3 Pac-Citizens Rescued!</p>
-            <button class="modal-btn" style="background: #00ff00; color: #000;" onclick="returnToMenu()">CONTINUE MAP</button>
+            <button class="modal-btn interactive" style="background: #00ff00; color: #000;" onclick="returnToMenu()">CONTINUE</button>
         </div>
     </div>
 
-    <!-- GAMEOVER MODAL -->
     <div id="modal-gameover" class="modal">
         <div class="modal-content" style="border-color: #ff0000;">
             <h2 id="gameover-title" style="color: #ff0000; text-shadow: 0 0 15px #ff0000;">GAME OVER</h2>
-            <p id="gameover-text">Pac-Man was defeated by the Ghosts!</p>
-            <button id="btn-retry" class="modal-btn" style="background: #ff0000; color: #fff;" onclick="retryLevel()">RETRY STAGE</button>
+            <p id="gameover-text">Pac-Man was defeated!</p>
+            <button id="btn-retry" class="modal-btn interactive" style="background: #ff0000; color: #fff;" onclick="retryLevel()">RETRY STAGE</button>
         </div>
+    </div>
+
+    <!-- CUTSCENES -->
+    <div id="screen-intro" class="cutscene-ui">
+        <div class="cutscene-text" id="intro-text">
+            PAC-CITY HAS BEEN CAPTURED...<br>
+            GLITCHY AND THE GHOSTS HAVE LOCKED EVERYONE IN CAGES.<br>
+            YOU ARE THE LAST SURVIVOR. SAVE THEM ALL!
+        </div>
+        <button class="skip-btn interactive" onclick="endIntroCutscene()">START BATTLE / SKIP</button>
+    </div>
+
+    <div id="screen-ending" class="cutscene-ui">
+        <div class="cutscene-text" id="ending-text" style="border-color:#ff00ff; color:#ffb8ff; box-shadow: 0 0 30px #ff00ff;">
+            THE 300 RESCUED PAC-CITIZENS ARE CHARGING!<br>
+            GLITCHY IS LOSING CONTROL!
+        </div>
+        <button class="skip-btn interactive" id="btn-finish-ending" style="display:none;" onclick="showFinalVictory()">CONTINUE</button>
     </div>
 
     <!-- Three.js -->
@@ -252,15 +307,16 @@
     <script type="module">
         import * as THREE from 'three';
 
-        // --- GAME ARCHITECTURE & STATE ---
-        let appState = 'MENU'; // MENU, BATTLE, CITY, CUTSCENE
+        // --- GLOBAL APP STATE ---
+        // Possible states: MENU, BATTLE, CITY, CUTSCENE, MATCHMAKING, PVP_BATTLE
+        let appState = 'MENU'; 
+        
+        // PvE Player Stats
         let currentLevel = 1;
         let unlockedLevel = 1;
-        
-        // Player Stats
         let playerHp = 20;
         const maxHp = 20;
-        let powerCharge = 0; // Requires 2 charges
+        let powerCharge = 0;
         let isPowerPelletActive = false;
         let powerPelletTurnsLeft = 0;
 
@@ -269,16 +325,16 @@
         let rescuedCount = 0;
         
         // Cutscene States
-        let cutsceneMode = null; // null, 'intro', 'ending'
+        let cutsceneMode = null;
         let cutsceneObjects = [];
         let backgroundCages = [];
 
-        // Turn Management
-        let battleState = 'IDLE'; // IDLE, PLAYER_SELECT_TARGET, ANIMATING, SHIELD_MINIGAME, DEFEAT_ANIMATION, VICTORY
+        // Turn Management PvE
+        let battleState = 'IDLE'; 
         let selectedAbility = null;
         let activeGhosts = [];
 
-        // Boss Timer State (15 Minutes)
+        // Boss Timer State
         let bossTimerSeconds = 900;
         let bossTimerInterval = null;
         
@@ -286,7 +342,7 @@
         let db;
         const DB_NAME = 'PacFightDB';
 
-        // Background Audio OST Management
+        // Audio
         const bgAudio = new Audio();
         bgAudio.loop = true;
 
@@ -294,9 +350,7 @@
             bgAudio.pause();
             bgAudio.currentTime = 0;
             bgAudio.src = isBoss ? 'Pac-Fight BossFight ost.mp3' : 'Pac-Fight battle ost.mp3';
-            bgAudio.play().catch(e => {
-                console.log('Audio autoplay prevented or file not found in directory:', e);
-            });
+            bgAudio.play().catch(e => console.log('Audio autoplay prevented'));
         }
 
         function stopBattleOST() {
@@ -304,14 +358,14 @@
             bgAudio.currentTime = 0;
         }
 
-        // Quick Time Defense System
+        // Quick Time Defense System (PvE)
         let shieldAnimFrame = null;
         let timingPos = 0;
         let timingSpeed = 2.5;
         let timingDir = 1;
         let currentAttackingGhost = null;
 
-        // Ghost Catalog
+        // Models Catalog
         const ghostTypes = [
             { name: 'BLINKY', color: 0xff0000, hp: 5, atk: 2 },
             { name: 'PINKY',  color: 0xffb8ff, hp: 6, atk: 2 },
@@ -322,9 +376,27 @@
             { name: 'GOLDY',  color: 0xffff00, hp: 14, atk: 5 },
             { name: 'WHITY',  color: 0xffffff, hp: 16, atk: 5 }
         ];
-
-        // Level 100 Final Boss
         const glitchyConfig = { name: 'GLITCHY', color: 0x110022, hp: 60, atk: 8, isGlitchy: true };
+
+        // --- USERNAME SYSTEM ---
+        window.saveUsername = function() {
+            const input = document.getElementById('username-input').value;
+            if (input.trim() !== '') {
+                localStorage.setItem('PacFight_Username', input.trim());
+                document.getElementById('player-name-display').innerText = input.trim();
+            }
+        };
+
+        function loadUsername() {
+            const saved = localStorage.getItem('PacFight_Username');
+            if (saved) {
+                document.getElementById('username-input').value = saved;
+                document.getElementById('player-name-display').innerText = saved;
+            } else {
+                document.getElementById('player-name-display').innerText = "PAC-MAN";
+            }
+        }
+
 
         // --- INDEXED DB PROGRESS SYSTEM ---
         function initDB() {
@@ -345,6 +417,7 @@
         }
 
         async function loadProgress() {
+            loadUsername();
             try {
                 if (!db) await initDB();
                 const tx = db.transaction('saves', 'readonly');
@@ -353,25 +426,17 @@
                 const reqLevel = store.get('PacFight_Level');
                 const reqLives = store.get('PacFight_Lives');
 
-                reqLevel.onsuccess = () => {
-                    if (reqLevel.result) unlockedLevel = parseInt(reqLevel.result, 10);
-                };
-                
+                reqLevel.onsuccess = () => { if (reqLevel.result) unlockedLevel = parseInt(reqLevel.result, 10); };
                 reqLives.onsuccess = async () => {
                     if (reqLives.result !== undefined) {
                         playerLives = parseInt(reqLives.result, 10);
-                        if (playerLives <= 0) {
-                            await hardReset();
-                            return;
-                        }
+                        if (playerLives <= 0) { await hardReset(); return; }
                     }
                 };
 
                 tx.oncomplete = () => {
                     updateGlobalHUD();
                     renderMapGrid();
-
-                    // Intro Check
                     if (unlockedLevel === 1 && playerLives === 3 && !sessionStorage.getItem('PacFight_IntroSeen')) {
                         startIntroCutscene();
                         sessionStorage.setItem('PacFight_IntroSeen', 'true');
@@ -380,7 +445,6 @@
                     }
                 };
             } catch (err) {
-                console.error("IndexedDB load error, falling back to defaults", err);
                 updateGlobalHUD();
                 renderMapGrid();
                 document.getElementById('screen-menu').style.display = 'flex';
@@ -388,11 +452,8 @@
         }
 
         async function saveProgress() {
-            if (currentLevel >= unlockedLevel && unlockedLevel <= 100) {
-                unlockedLevel = Math.min(100, currentLevel + 1);
-            }
+            if (currentLevel >= unlockedLevel && unlockedLevel <= 100) unlockedLevel = Math.min(100, currentLevel + 1);
             updateGlobalHUD();
-            
             if (!db) await initDB();
             const tx = db.transaction('saves', 'readwrite');
             const store = tx.objectStore('saves');
@@ -404,13 +465,11 @@
             unlockedLevel = 1;
             playerLives = 3;
             rescuedCount = 0;
-            
             if (!db) await initDB();
             const tx = db.transaction('saves', 'readwrite');
             const store = tx.objectStore('saves');
             store.put(unlockedLevel, 'PacFight_Level');
             store.put(playerLives, 'PacFight_Lives');
-
             updateGlobalHUD();
             renderMapGrid();
         }
@@ -424,11 +483,9 @@
             document.getElementById('unlocked-count').innerText = Math.min(100, unlockedLevel);
         }
 
-        // --- MAP GENERATION ---
         function renderMapGrid() {
             const grid = document.getElementById('map-grid');
             grid.innerHTML = '';
-
             for (let i = 1; i <= 100; i++) {
                 const btn = document.createElement('div');
                 const isBoss = (i % 10 === 0);
@@ -439,7 +496,6 @@
                 let classes = 'level-btn';
                 if (isGlitchy) classes += ' glitchy-btn';
                 else if (isBoss) classes += ' boss';
-                
                 if (isLocked) classes += ' locked';
                 if (isCleared) classes += ' cleared';
                 btn.className = classes;
@@ -447,18 +503,11 @@
                 let icon = isGlitchy ? '👾' : (isBoss ? '👹' : i);
                 btn.innerHTML = `<div>${icon}</div>`;
                 
-                if (isCleared) {
-                    btn.innerHTML += `<div class="star-rating">⭐⭐⭐</div>`;
-                } else if (isGlitchy && !isLocked) {
-                    btn.innerHTML += `<div class="star-rating" style="color:#ff00ff">GLITCHY</div>`;
-                } else if (isBoss && !isLocked) {
-                    btn.innerHTML += `<div class="star-rating" style="color:#ff0000">BOSS</div>`;
-                }
+                if (isCleared) btn.innerHTML += `<div class="star-rating">⭐⭐⭐</div>`;
+                else if (isGlitchy && !isLocked) btn.innerHTML += `<div class="star-rating" style="color:#ff00ff">GLITCHY</div>`;
+                else if (isBoss && !isLocked) btn.innerHTML += `<div class="star-rating" style="color:#ff0000">BOSS</div>`;
 
-                if (!isLocked) {
-                    btn.onclick = () => startBattleLevel(i);
-                }
-
+                if (!isLocked) btn.onclick = () => startBattleLevel(i);
                 grid.appendChild(btn);
             }
         }
@@ -481,38 +530,17 @@
             } catch(e) {}
         }
 
-        function playBiteSfx() {
-            playSfx(180, 0.08, 'sawtooth', 0.15);
-            setTimeout(() => playSfx(320, 0.12, 'sawtooth', 0.15), 60);
-        }
-
-        function playHealSfx() {
-            [400, 520, 650, 780, 950].forEach((f, idx) => setTimeout(() => playSfx(f, 0.1, 'sine', 0.1), idx * 50));
-        }
-
-        function playPowerSfx() {
-            playSfx(300, 0.4, 'triangle', 0.2);
-            setTimeout(() => playSfx(600, 0.4, 'triangle', 0.2), 150);
-        }
-
-        function playShieldBlockSfx() {
-            playSfx(880, 0.15, 'square', 0.2);
-            setTimeout(() => playSfx(1200, 0.2, 'sine', 0.15), 80);
-        }
-
-        function playDeathSfx() {
-            const freqs = [600, 550, 500, 450, 400, 350, 300, 250, 200, 150, 100];
-            freqs.forEach((f, idx) => {
-                setTimeout(() => playSfx(f, 0.08, 'sawtooth', 0.2), idx * 70);
-            });
-        }
+        function playBiteSfx() { playSfx(180, 0.08, 'sawtooth', 0.15); setTimeout(() => playSfx(320, 0.12, 'sawtooth', 0.15), 60); }
+        function playHealSfx() { [400, 520, 650, 780, 950].forEach((f, idx) => setTimeout(() => playSfx(f, 0.1, 'sine', 0.1), idx * 50)); }
+        function playPowerSfx() { playSfx(300, 0.4, 'triangle', 0.2); setTimeout(() => playSfx(600, 0.4, 'triangle', 0.2), 150); }
+        function playShieldBlockSfx() { playSfx(880, 0.15, 'square', 0.2); setTimeout(() => playSfx(1200, 0.2, 'sine', 0.15), 80); }
+        function playDeathSfx() { [600, 550, 500, 450, 400, 350, 300, 250, 200, 150, 100].forEach((f, idx) => setTimeout(() => playSfx(f, 0.08, 'sawtooth', 0.2), idx * 70)); }
 
         // --- THREE.JS SCENE SETUP ---
         let scene, camera, renderer, floor, gridHelper;
         let pacmanMesh, topHalf, bottomHalf, auraMesh;
+        let opponentMesh, oppTopHalf, oppBottomHalf, oppAuraMesh; // PVP
         let activeParticles = [];
-        
-        // Shared assets for citizens to keep rendering smooth for 300 models
         let citizenTopGeo, citizenBotGeo, citizenEyeGeo, citizenMat, citizenEyeMat;
 
         function init3D() {
@@ -529,36 +557,22 @@
             renderer.shadowMap.enabled = true;
             container.appendChild(renderer.domElement);
 
-            // Lighting
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-            scene.add(ambientLight);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); scene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0x00f2ff, 1.5); dirLight.position.set(10, 20, 15); scene.add(dirLight);
+            const pointLight = new THREE.PointLight(0xffff00, 1, 30); pointLight.position.set(-8, 3, 5); scene.add(pointLight);
 
-            const dirLight = new THREE.DirectionalLight(0x00f2ff, 1.5);
-            dirLight.position.set(10, 20, 15);
-            scene.add(dirLight);
-
-            const pointLight = new THREE.PointLight(0xffff00, 1, 30);
-            pointLight.position.set(-8, 3, 5);
-            scene.add(pointLight);
-
-            // Arena Floor Grid
-            const floorGeo = new THREE.PlaneGeometry(160, 160); // Enlarged for Pac-City
+            const floorGeo = new THREE.PlaneGeometry(160, 160);
             const floorMat = new THREE.MeshPhongMaterial({ color: 0x001122, side: THREE.DoubleSide });
             floor = new THREE.Mesh(floorGeo, floorMat);
-            floor.rotation.x = -Math.PI / 2;
-            floor.position.y = 0;
-            scene.add(floor);
+            floor.rotation.x = -Math.PI / 2; floor.position.y = 0; scene.add(floor);
 
-            gridHelper = new THREE.GridHelper(160, 80, 0x00f2ff, 0x002244);
-            gridHelper.position.y = 0.01;
-            scene.add(gridHelper);
+            gridHelper = new THREE.GridHelper(160, 80, 0x00f2ff, 0x002244); gridHelper.position.y = 0.01; scene.add(gridHelper);
 
-            // Initialize Models
             initCitizenAssets();
             createPacmanModel();
+            createOpponentModel();
             initJoystick();
 
-            // Resize and Raycaster
             window.addEventListener('resize', onWindowResize);
             setupRaycaster();
         }
@@ -572,19 +586,13 @@
             citizenEyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
         }
 
-        // Identical design to Pac-Man but optimized for 300 copies
         function createPacCitizen() {
             const group = new THREE.Group();
-            const top = new THREE.Mesh(citizenTopGeo, citizenMat);
-            const bot = new THREE.Mesh(citizenBotGeo, citizenMat);
-            
+            const top = new THREE.Mesh(citizenTopGeo, citizenMat); const bot = new THREE.Mesh(citizenBotGeo, citizenMat);
             const scale = 0.4;
             const re = new THREE.Mesh(citizenEyeGeo, citizenEyeMat); re.position.set(0.8*scale, 0.9*scale, 1.5*scale);
             const le = new THREE.Mesh(citizenEyeGeo, citizenEyeMat); le.position.set(-0.8*scale, 0.9*scale, 1.5*scale);
-            
-            top.add(re); top.add(le);
-            group.add(top); group.add(bot);
-            
+            top.add(re); top.add(le); group.add(top); group.add(bot);
             group.userData = { isCitizen: true, speed: 0.1 + Math.random() * 0.15, offset: Math.random() * Math.PI * 2, wanderTarget: new THREE.Vector3() };
             return group;
         }
@@ -592,112 +600,66 @@
         function createPacmanModel() {
             pacmanMesh = new THREE.Group();
             const pmMat = new THREE.MeshPhongMaterial({ color: 0xffff00, shininess: 80 });
-
             const topGeo = new THREE.SphereGeometry(2, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
             topHalf = new THREE.Mesh(topGeo, pmMat);
-
             const botGeo = new THREE.SphereGeometry(2, 32, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
             bottomHalf = new THREE.Mesh(botGeo, pmMat);
-
-            const eyeGeo = new THREE.SphereGeometry(0.3, 16, 16);
-            const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const eyeGeo = new THREE.SphereGeometry(0.3, 16, 16); const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
             const rightEye = new THREE.Mesh(eyeGeo, eyeMat); rightEye.position.set(0.8, 0.9, 1.5);
             const leftEye = new THREE.Mesh(eyeGeo, eyeMat); leftEye.position.set(-0.8, 0.9, 1.5);
-
-            topHalf.add(rightEye); topHalf.add(leftEye);
-            pacmanMesh.add(topHalf); pacmanMesh.add(bottomHalf);
-
+            topHalf.add(rightEye); topHalf.add(leftEye); pacmanMesh.add(topHalf); pacmanMesh.add(bottomHalf);
+            
             const auraGeo = new THREE.SphereGeometry(2.6, 16, 16);
             const auraMat = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true, transparent: true, opacity: 0.5 });
-            auraMesh = new THREE.Mesh(auraGeo, auraMat);
-            auraMesh.visible = false;
-            pacmanMesh.add(auraMesh);
+            auraMesh = new THREE.Mesh(auraGeo, auraMat); auraMesh.visible = false; pacmanMesh.add(auraMesh);
+            
+            pacmanMesh.position.set(-9, 2, 5); pacmanMesh.rotation.y = Math.PI / 3; scene.add(pacmanMesh);
+        }
 
-            pacmanMesh.position.set(-9, 2, 5);
-            pacmanMesh.rotation.y = Math.PI / 3;
-            scene.add(pacmanMesh);
+        // Multiplayer Red Pacman Model
+        function createOpponentModel() {
+            opponentMesh = new THREE.Group();
+            const pmMat = new THREE.MeshPhongMaterial({ color: 0xff3355, shininess: 80 });
+            const topGeo = new THREE.SphereGeometry(2, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+            oppTopHalf = new THREE.Mesh(topGeo, pmMat);
+            const botGeo = new THREE.SphereGeometry(2, 32, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
+            oppBottomHalf = new THREE.Mesh(botGeo, pmMat);
+            
+            const eyeGeo = new THREE.SphereGeometry(0.3, 16, 16); const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const rightEye = new THREE.Mesh(eyeGeo, eyeMat); rightEye.position.set(0.8, 0.9, 1.5);
+            const leftEye = new THREE.Mesh(eyeGeo, eyeMat); leftEye.position.set(-0.8, 0.9, 1.5);
+            oppTopHalf.add(rightEye); oppTopHalf.add(leftEye); opponentMesh.add(oppTopHalf); opponentMesh.add(oppBottomHalf);
+            
+            const auraGeo = new THREE.SphereGeometry(2.6, 16, 16);
+            const auraMat = new THREE.MeshBasicMaterial({ color: 0xff3355, wireframe: true, transparent: true, opacity: 0.5 });
+            oppAuraMesh = new THREE.Mesh(auraGeo, auraMat); oppAuraMesh.visible = false; opponentMesh.add(oppAuraMesh);
+            
+            opponentMesh.position.set(9, 2, -5); opponentMesh.rotation.y = -Math.PI / 1.5; 
+            opponentMesh.visible = false;
+            scene.add(opponentMesh);
         }
 
         function createGhostModel(config, isBoss = false) {
             const group = new THREE.Group();
             const scale = config.isGlitchy ? 3.0 : (isBoss ? 2.2 : 1.2);
-
             const bodyMat = new THREE.MeshPhongMaterial({ color: config.color, shininess: 50 });
-            const body = new THREE.Mesh(new THREE.CapsuleGeometry(1, 1.2, 4, 16), bodyMat);
-            body.position.y = 1.2;
-            group.add(body);
-
+            const body = new THREE.Mesh(new THREE.CapsuleGeometry(1, 1.2, 4, 16), bodyMat); body.position.y = 1.2; group.add(body);
             if (config.isGlitchy) {
                 const wireMat = new THREE.MeshBasicMaterial({ color: 0xff00ff, wireframe: true });
-                const wire = new THREE.Mesh(body.geometry, wireMat);
-                wire.scale.set(1.05, 1.05, 1.05);
-                wire.position.y = 1.2;
-                group.add(wire);
+                const wire = new THREE.Mesh(body.geometry, wireMat); wire.scale.set(1.05, 1.05, 1.05); wire.position.y = 1.2; group.add(wire);
             }
-
-            // Eyes
-            const eGeo = new THREE.SphereGeometry(0.25, 8, 8);
-            const pGeo = new THREE.SphereGeometry(0.12, 8, 8);
+            const eGeo = new THREE.SphereGeometry(0.25, 8, 8); const pGeo = new THREE.SphereGeometry(0.12, 8, 8);
             const eMat = new THREE.MeshBasicMaterial({ color: config.isGlitchy ? 0xff0000 : 0xffffff });
             const pMat = new THREE.MeshBasicMaterial({ color: config.isGlitchy ? 0xffff00 : 0x0000ff });
-
-            const lE = new THREE.Mesh(eGeo, eMat); lE.position.set(0.4, 1.7, 0.8);
-            const lP = new THREE.Mesh(pGeo, pMat); lP.position.set(0.4, 1.7, 1.0);
-            const rE = new THREE.Mesh(eGeo, eMat); rE.position.set(-0.4, 1.7, 0.8);
-            const rP = new THREE.Mesh(pGeo, pMat); rP.position.set(-0.4, 1.7, 1.0);
+            const lE = new THREE.Mesh(eGeo, eMat); lE.position.set(0.4, 1.7, 0.8); const lP = new THREE.Mesh(pGeo, pMat); lP.position.set(0.4, 1.7, 1.0);
+            const rE = new THREE.Mesh(eGeo, eMat); rE.position.set(-0.4, 1.7, 0.8); const rP = new THREE.Mesh(pGeo, pMat); rP.position.set(-0.4, 1.7, 1.0);
             group.add(lE, lP, rE, rP);
-
             const ringGeo = new THREE.RingGeometry(1.2, 1.5, 32);
             const ringMat = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide, transparent: true, opacity: 0 });
-            const ring = new THREE.Mesh(ringGeo, ringMat);
-            ring.rotation.x = -Math.PI / 2;
-            ring.position.y = 0.05;
-            group.add(ring);
-
+            const ring = new THREE.Mesh(ringGeo, ringMat); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.05; group.add(ring);
             group.scale.setScalar(scale);
-            group.userData = {
-                name: config.name,
-                color: config.color,
-                hp: config.hp * (isBoss ? 4 : 1),
-                maxHp: config.hp * (isBoss ? 4 : 1),
-                atk: config.atk * (isBoss ? 2 : 1),
-                isBoss: isBoss,
-                isGlitchy: config.isGlitchy,
-                selectionRing: ring,
-                bodyMesh: body,
-                basePos: new THREE.Vector3()
-            };
-
+            group.userData = { name: config.name, color: config.color, hp: config.hp * (isBoss ? 4 : 1), maxHp: config.hp * (isBoss ? 4 : 1), atk: config.atk * (isBoss ? 2 : 1), isBoss: isBoss, isGlitchy: config.isGlitchy, selectionRing: ring, bodyMesh: body, basePos: new THREE.Vector3() };
             return group;
-        }
-
-        function createLevelCages() {
-            backgroundCages.forEach(c => scene.remove(c.group));
-            backgroundCages = [];
-            
-            for(let i = -1; i <= 1; i++) {
-                const cageGroup = new THREE.Group();
-                const cageMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, wireframe: true, transparent: true, opacity: 0.8 });
-                const cage = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), cageMat);
-                cage.position.y = 1.0;
-                
-                const citizen = createPacCitizen();
-                citizen.position.y = 0.8;
-                citizen.rotation.y = Math.random() * Math.PI;
-                
-                cageGroup.add(cage);
-                cageGroup.add(citizen);
-                cageGroup.position.set(i * 6, 0, -12);
-                scene.add(cageGroup);
-                backgroundCages.push({ group: cageGroup, cage: cage, citizen: citizen, active: true });
-            }
-        }
-
-        function breakCagesOpen() {
-            backgroundCages.forEach(c => {
-                c.active = false;
-                spawnParticles(c.group.position, 0x00f2ff, 15);
-            });
         }
 
         function spawnParticles(pos, color, count = 15) {
@@ -707,424 +669,90 @@
                 const mesh = new THREE.Mesh(geo, mat);
                 mesh.position.copy(pos).add(new THREE.Vector3((Math.random()-0.5), (Math.random()-0.5)+0.5, (Math.random()-0.5)));
                 const vel = new THREE.Vector3((Math.random()-0.5)*0.2, Math.random()*0.2+0.1, (Math.random()-0.5)*0.2);
-                scene.add(mesh);
-                activeParticles.push({ mesh, vel, life: 1.0 });
+                scene.add(mesh); activeParticles.push({ mesh, vel, life: 1.0 });
             }
         }
 
         function updateParticles() {
             for (let i = activeParticles.length - 1; i >= 0; i--) {
-                const p = activeParticles[i];
-                p.mesh.position.add(p.vel);
-                p.life -= 0.03;
-                p.mesh.material.opacity = p.life;
-                if (p.life <= 0) {
-                    scene.remove(p.mesh);
-                    p.mesh.geometry.dispose();
-                    p.mesh.material.dispose();
-                    activeParticles.splice(i, 1);
-                }
+                const p = activeParticles[i]; p.mesh.position.add(p.vel); p.life -= 0.03; p.mesh.material.opacity = p.life;
+                if (p.life <= 0) { scene.remove(p.mesh); p.mesh.geometry.dispose(); p.mesh.material.dispose(); activeParticles.splice(i, 1); }
             }
         }
 
-        // Raycasting for target selection
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-
+        const raycaster = new THREE.Raycaster(); const mouse = new THREE.Vector2();
         function setupRaycaster() {
-            const container = document.getElementById('canvas-container');
-            container.addEventListener('click', (e) => {
-                if (battleState !== 'PLAYER_SELECT_TARGET') return;
-                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-
-                raycaster.setFromCamera(mouse, camera);
-                const ghostMeshes = activeGhosts.map(g => g.userData.bodyMesh);
-                const intersects = raycaster.intersectObjects(ghostMeshes);
-
-                if (intersects.length > 0) {
-                    const hitBody = intersects[0].object;
-                    const ghostGroup = activeGhosts.find(g => g.userData.bodyMesh === hitBody);
-                    if (ghostGroup) executePlayerAttack(ghostGroup);
-                }
-            });
-
-            // Fallback listeners on the window to bypass UI blocking
             const handleGlobalTargetSelect = (clientX, clientY) => {
-                if (battleState !== 'PLAYER_SELECT_TARGET') return;
-                mouse.x = (clientX / window.innerWidth) * 2 - 1;
-                mouse.y = -(clientY / window.innerHeight) * 2 + 1;
-
+                if (battleState !== 'PLAYER_SELECT_TARGET' || appState !== 'BATTLE') return;
+                mouse.x = (clientX / window.innerWidth) * 2 - 1; mouse.y = -(clientY / window.innerHeight) * 2 + 1;
                 raycaster.setFromCamera(mouse, camera);
                 const ghostMeshes = activeGhosts.map(g => g.userData.bodyMesh);
                 const intersects = raycaster.intersectObjects(ghostMeshes);
-
                 if (intersects.length > 0) {
                     const hitBody = intersects[0].object;
                     const ghostGroup = activeGhosts.find(g => g.userData.bodyMesh === hitBody);
                     if (ghostGroup) executePlayerAttack(ghostGroup);
                 }
             };
-            
-            window.addEventListener('click', (e) => {
-                if (e.target.closest && e.target.closest('.interactive')) return; 
-                handleGlobalTargetSelect(e.clientX, e.clientY);
-            });
-            
-            window.addEventListener('touchstart', (e) => {
-                if (e.target.closest && e.target.closest('.interactive')) return;
-                if (e.touches && e.touches.length > 0) {
-                    handleGlobalTargetSelect(e.touches[0].clientX, e.touches[0].clientY);
-                }
-            }, { passive: true });
+            window.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('.interactive')) return; handleGlobalTargetSelect(e.clientX, e.clientY); });
+            window.addEventListener('touchstart', (e) => { if (e.target.closest && e.target.closest('.interactive')) return; if (e.touches && e.touches.length > 0) handleGlobalTargetSelect(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
         }
 
-        function highlightTargetGhosts(enable) {
-            activeGhosts.forEach(g => { g.userData.selectionRing.material.opacity = enable ? 0.8 : 0; });
-            document.getElementById('target-prompt').style.display = enable ? 'block' : 'none';
+        function showFloatingText(text, pos3D, color = '#ffff00') {
+            const div = document.createElement('div'); div.className = 'float-text'; div.innerText = text; div.style.color = color;
+            const p = pos3D.clone(); p.y += 2; p.project(camera);
+            div.style.left = `${(p.x * 0.5 + 0.5) * window.innerWidth}px`; div.style.top = `${(p.y * -0.5 + 0.5) * window.innerHeight}px`;
+            document.body.appendChild(div); setTimeout(() => div.remove(), 1000);
         }
 
-        // --- CUTSCENES ---
-        window.startIntroCutscene = function() {
-            appState = 'CUTSCENE';
-            cutsceneMode = 'intro';
-            stopBattleOST();
-            document.getElementById('screen-menu').style.display = 'none';
-            document.getElementById('screen-intro').style.display = 'flex';
-            
-            // Generate Cages in distance
-            for(let i=0; i<40; i++) {
-                const cageMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, wireframe: true });
-                const cage = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), cageMat);
-                cage.position.set((Math.random()-0.5)*50, 1, (Math.random()-0.5)*40 - 15);
-                const cit = createPacCitizen();
-                cit.position.copy(cage.position);
-                scene.add(cage); scene.add(cit);
-                cutsceneObjects.push(cage, cit);
+        // ==========================================
+        //  PVE BATTLE ENGINE (Intact from original)
+        // ==========================================
+        function createLevelCages() {
+            backgroundCages.forEach(c => scene.remove(c.group)); backgroundCages = [];
+            for(let i = -1; i <= 1; i++) {
+                const cageGroup = new THREE.Group();
+                const cageMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, wireframe: true, transparent: true, opacity: 0.8 });
+                const cage = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), cageMat); cage.position.y = 1.0;
+                const citizen = createPacCitizen(); citizen.position.y = 0.8; citizen.rotation.y = Math.random() * Math.PI;
+                cageGroup.add(cage); cageGroup.add(citizen); cageGroup.position.set(i * 6, 0, -12); scene.add(cageGroup);
+                backgroundCages.push({ group: cageGroup, cage: cage, citizen: citizen, active: true });
             }
-            
-            // Add Glitchy and Team
-            const glitchy = createGhostModel(glitchyConfig, true);
-            glitchy.scale.set(4, 4, 4);
-            glitchy.position.set(0, 0, -25);
-            scene.add(glitchy);
-            cutsceneObjects.push(glitchy);
-
-            for(let i=0; i<4; i++) {
-                const ghost = createGhostModel(ghostTypes[i]);
-                ghost.position.set((i-1.5)*6, 0, -15);
-                scene.add(ghost);
-                cutsceneObjects.push(ghost);
-            }
-            
-            camera.position.set(0, 35, 45);
-            camera.lookAt(0, 0, -10);
-            pacmanMesh.visible = false;
-        };
-
-        window.endIntroCutscene = function() {
-            appState = 'MENU';
-            cutsceneMode = null;
-            cutsceneObjects.forEach(obj => scene.remove(obj));
-            cutsceneObjects = [];
-            document.getElementById('screen-intro').style.display = 'none';
-            document.getElementById('screen-menu').style.display = 'flex';
-            pacmanMesh.visible = true;
-        };
-
-        window.startEndingCutscene = function() {
-            appState = 'CUTSCENE';
-            cutsceneMode = 'ending';
-            battleState = 'VICTORY';
-            stopBattleOST();
-            stopBossTimer();
-            document.getElementById('battle-ui').style.display = 'none';
-            document.getElementById('screen-ending').style.display = 'flex';
-            document.getElementById('ghost-hp-overlay').innerHTML = '';
-            
-            // Spawn Glitchy
-            const glitchy = createGhostModel(glitchyConfig, true);
-            glitchy.scale.set(5, 5, 5);
-            glitchy.position.set(0, 0, 0);
-            scene.add(glitchy);
-            cutsceneObjects.push(glitchy);
-            
-            // Spawn all 300 rescued citizens
-            for(let i=0; i<300; i++) {
-                const cit = createPacCitizen();
-                const angle = Math.random() * Math.PI * 2;
-                const radius = 18 + Math.random() * 25;
-                cit.position.set(Math.cos(angle)*radius, 0.5, Math.sin(angle)*radius);
-                cit.lookAt(0, 0, 0);
-                scene.add(cit);
-                cutsceneObjects.push(cit);
-            }
-            
-            camera.position.set(0, 35, 40);
-            camera.lookAt(0, 0, 0);
-            pacmanMesh.visible = false;
-            backgroundCages.forEach(c => scene.remove(c.group));
-        };
-
-        window.showFinalVictory = function() {
-            document.getElementById('screen-ending').style.display = 'none';
-            document.getElementById('victory-title').innerText = "WORLD SAVED!";
-            document.getElementById('victory-text').innerText = "Glitchy is defeated and Pac-City is free!";
-            document.getElementById('rescued-text').innerText = "300 / 300 PAC-CITIZENS RESCUED!";
-            document.getElementById('modal-victory').style.display = 'flex';
-            saveProgress();
-        };
-
-        // --- BOSS TIMER MANAGEMENT ---
-        function startBossTimer() {
-            stopBossTimer();
-            bossTimerSeconds = 900; // 15 Minutes = 900 Seconds
-            updateBossTimerUI();
-            document.getElementById('boss-timer-display').style.display = 'block';
-
-            bossTimerInterval = setInterval(() => {
-                if (battleState === 'VICTORY' || battleState === 'DEFEAT_ANIMATION') {
-                    stopBossTimer();
-                    return;
-                }
-                bossTimerSeconds--;
-                updateBossTimerUI();
-
-                if (bossTimerSeconds <= 0) {
-                    stopBossTimer();
-                    showFloatingText("TIME EXPIRED!", pacmanMesh.position, '#ff0000');
-                    playerHp = 0;
-                    updateHUD();
-                    setTimeout(animatePacmanDeath, 500);
-                }
-            }, 1000);
         }
+        function breakCagesOpen() { backgroundCages.forEach(c => { c.active = false; spawnParticles(c.group.position, 0x00f2ff, 15); }); }
 
-        function stopBossTimer() {
-            if (bossTimerInterval) {
-                clearInterval(bossTimerInterval);
-                bossTimerInterval = null;
-            }
-            document.getElementById('boss-timer-display').style.display = 'none';
-        }
-
-        function updateBossTimerUI() {
-            const mins = Math.floor(Math.max(0, bossTimerSeconds) / 60);
-            const secs = Math.max(0, bossTimerSeconds) % 60;
-            const formatted = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-            document.getElementById('boss-timer-display').innerText = `⏱️ ${formatted}`;
-        }
-
-        // --- PAC-CITY SYSTEM & JOYSTICK ---
-        let cityMeshes = [];
-        let cityCitizens = [];
-        let joystickActive = false;
-        let joystickCenter = { x: 0, y: 0 };
-        let joystickDir = { x: 0, y: 0 };
-        const joystickMaxRadius = 35; // Size constraints
-        
-        function initJoystick() {
-            const zone = document.getElementById('joystick-zone');
-            const knob = document.getElementById('joystick-knob');
-
-            function start(e) {
-                if(appState !== 'CITY') return;
-                joystickActive = true;
-                const rect = zone.getBoundingClientRect();
-                joystickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-                move(e);
-            }
-            function move(e) {
-                if (!joystickActive || appState !== 'CITY') return;
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                
-                let dx = clientX - joystickCenter.x;
-                let dy = clientY - joystickCenter.y;
-                const dist = Math.sqrt(dx*dx + dy*dy);
-                
-                if (dist > joystickMaxRadius) {
-                    dx = (dx/dist) * joystickMaxRadius;
-                    dy = (dy/dist) * joystickMaxRadius;
-                }
-                
-                knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-                joystickDir.x = dx / joystickMaxRadius;
-                joystickDir.y = dy / joystickMaxRadius;
-            }
-            function end(e) {
-                joystickActive = false;
-                knob.style.transform = `translate(-50%, -50%)`;
-                joystickDir.x = 0;
-                joystickDir.y = 0;
-            }
-
-            zone.addEventListener('mousedown', start);
-            window.addEventListener('mousemove', move);
-            window.addEventListener('mouseup', end);
-            zone.addEventListener('touchstart', start, {passive: true});
-            window.addEventListener('touchmove', move, {passive: true});
-            window.addEventListener('touchend', end);
-        }
-
-        window.enterPacCity = function() {
-            appState = 'CITY';
-            document.getElementById('screen-menu').style.display = 'none';
-            document.getElementById('screen-city').style.display = 'block';
-            
-            // Hide menu background objects
-            backgroundCages.forEach(c => c.group.visible = false);
-            
-            pacmanMesh.visible = true;
-            pacmanMesh.position.set(0, 2, 0);
-            pacmanMesh.scale.set(1, 1, 1);
-            
-            // Create Neon Buildings
-            for (let i = 0; i < 25; i++) {
-                const height = 5 + Math.random() * 20;
-                const geo = new THREE.BoxGeometry(4 + Math.random()*4, height, 4 + Math.random()*4);
-                // Cyberpunk neon building colors
-                const colors = [0x00f2ff, 0xff00ff, 0x000411, 0x110033, 0xff0055];
-                const mat = new THREE.MeshPhongMaterial({ 
-                    color: colors[Math.floor(Math.random() * colors.length)], 
-                    transparent: true, 
-                    opacity: 0.85,
-                    shininess: 90
-                });
-                
-                const bldg = new THREE.Mesh(geo, mat);
-                
-                // Keep center free
-                let bx, bz;
-                do {
-                    bx = (Math.random() - 0.5) * 120;
-                    bz = (Math.random() - 0.5) * 120;
-                } while (Math.abs(bx) < 15 && Math.abs(bz) < 15);
-                
-                bldg.position.set(bx, height/2, bz);
-                
-                // Add wireframe neon glow edges
-                const edges = new THREE.EdgesGeometry(geo);
-                const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x00f2ff, transparent: true, opacity: 0.5 }));
-                bldg.add(line);
-
-                scene.add(bldg);
-                cityMeshes.push(bldg);
-            }
-            
-            // Spawn Citizens
-            const countToSpawn = Math.min(rescuedCount, 150); // Performance cap
-            for (let i = 0; i < countToSpawn; i++) {
-                const cit = createPacCitizen();
-                cit.position.set((Math.random() - 0.5) * 100, 0.8, (Math.random() - 0.5) * 100);
-                cit.userData.wanderTarget.copy(cit.position);
-                scene.add(cit);
-                cityCitizens.push(cit);
-            }
-        };
-
-        window.exitPacCity = function() {
-            appState = 'MENU';
-            document.getElementById('screen-city').style.display = 'none';
-            document.getElementById('screen-menu').style.display = 'flex';
-            
-            cityMeshes.forEach(m => { scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
-            cityMeshes = [];
-            
-            cityCitizens.forEach(c => scene.remove(c));
-            cityCitizens = [];
-            
-            backgroundCages.forEach(c => c.group.visible = true);
-            
-            document.getElementById('dialogue-box').style.display = 'none';
-            document.getElementById('btn-talk').style.display = 'none';
-        };
-
-        const cityDialogues = [
-            "Thank you for saving us, Pac-Man!",
-            "Glitchy was terrifying...",
-            "We believe in you!",
-            "Our city is rebuilding thanks to you.",
-            "Waka waka!",
-            "It was so dark in those cages.",
-            "You are our true hero!",
-            "Did you know Ghosts are afraid of Power Pellets?",
-            "Pac-City feels alive again!"
-        ];
-
-        window.talkToCitizen = function() {
-            const db = document.getElementById('dialogue-box');
-            playSfx(800, 0.1, 'sine', 0.2);
-            db.innerText = cityDialogues[Math.floor(Math.random() * cityDialogues.length)];
-            db.style.display = 'block';
-            
-            // hide after 3.5 seconds
-            setTimeout(() => {
-                db.style.display = 'none';
-            }, 3500);
-        };
-
-        // --- BATTLE LOGIC ENGINE ---
         window.startBattleLevel = function(levelNum) {
-            appState = 'BATTLE';
-            currentLevel = levelNum;
+            appState = 'BATTLE'; currentLevel = levelNum;
             document.getElementById('screen-menu').style.display = 'none';
             document.getElementById('screen-battle').style.display = 'block';
             
-            const isGlitchy = (levelNum === 100);
-            const isBoss = (levelNum % 10 === 0);
-            let title = `STAGE ${currentLevel}`;
-            if(isGlitchy) title += ' (FINAL BOSS)';
-            else if(isBoss) title += ' (BOSS)';
+            const isGlitchy = (levelNum === 100); const isBoss = (levelNum % 10 === 0);
+            let title = `STAGE ${currentLevel}`; if(isGlitchy) title += ' (FINAL BOSS)'; else if(isBoss) title += ' (BOSS)';
             document.getElementById('stage-title').innerText = title;
 
-            // Start standard battle OST or Boss battle OST
             playBattleOST(isBoss || isGlitchy);
+            if (isBoss || isGlitchy) startBossTimer(); else stopBossTimer();
 
-            // Handle 15 min Boss Timer
-            if (isBoss || isGlitchy) {
-                startBossTimer();
-            } else {
-                stopBossTimer();
-            }
-
-            playerHp = maxHp;
-            powerCharge = 0;
-            isPowerPelletActive = false;
-            powerPelletTurnsLeft = 0;
+            playerHp = maxHp; powerCharge = 0; isPowerPelletActive = false; powerPelletTurnsLeft = 0;
             updateHUD();
 
-            activeGhosts.forEach(g => scene.remove(g));
-            activeGhosts = [];
+            activeGhosts.forEach(g => scene.remove(g)); activeGhosts = [];
             document.getElementById('ghost-hp-overlay').innerHTML = '';
 
-            // Spawn Enemies
             let ghostCount = isGlitchy ? 1 : (isBoss ? 1 : Math.min(8, 1 + Math.floor((levelNum - 1) / 12)));
-            const radius = 8;
             for (let i = 0; i < ghostCount; i++) {
                 let config = isGlitchy ? glitchyConfig : ghostTypes[(levelNum + i - 1) % ghostTypes.length];
                 const ghost = createGhostModel(config, isBoss || isGlitchy);
                 const angle = (i - (ghostCount - 1) / 2) * 0.45;
-                ghost.position.set(6 + Math.sin(angle) * radius, 0, 0 + Math.cos(angle) * radius);
-                ghost.rotation.y = -Math.PI / 3;
-                ghost.userData.basePos.copy(ghost.position);
-                scene.add(ghost);
-                activeGhosts.push(ghost);
+                ghost.position.set(6 + Math.sin(angle) * 8, 0, 0 + Math.cos(angle) * 8); ghost.rotation.y = -Math.PI / 3; ghost.userData.basePos.copy(ghost.position);
+                scene.add(ghost); activeGhosts.push(ghost);
             }
-
-            createLevelCages();
-            updateGhostCountUI();
-            battleState = 'IDLE';
-            enableActionButtons(true);
+            createLevelCages(); document.getElementById('ghost-count-display').innerText = `${activeGhosts.length} GHOST${activeGhosts.length > 1 ? 'S' : ''}`;
+            battleState = 'IDLE'; enableActionButtons(true);
             
-            camera.position.set(0, 12, 28);
-            camera.lookAt(0, 2, 0);
-            pacmanMesh.visible = true;
-            pacmanMesh.scale.set(1, 1, 1);
-            topHalf.rotation.x = 0;
-            bottomHalf.rotation.x = 0;
-            pacmanMesh.rotation.set(0, Math.PI / 3, 0);
-            pacmanMesh.position.set(-9, 2, 5);
+            camera.position.set(0, 12, 28); camera.lookAt(0, 2, 0);
+            pacmanMesh.visible = true; opponentMesh.visible = false; pacmanMesh.scale.set(1, 1, 1);
+            pacmanMesh.rotation.set(0, Math.PI / 3, 0); pacmanMesh.position.set(-9, 2, 5);
         };
 
         function updateHUD() {
@@ -1135,186 +763,62 @@
             auraMesh.visible = isPowerPelletActive;
         }
 
-        function updateGhostCountUI() {
-            document.getElementById('ghost-count-display').innerText = `${activeGhosts.length} GHOST${activeGhosts.length > 1 ? 'S' : ''}`;
-        }
-
-        function updateGhostHPBars() {
-            if(cutsceneMode) return;
-            const overlay = document.getElementById('ghost-hp-overlay');
-            activeGhosts.forEach(g => {
-                let bar = g.userData.hpBar;
-                if (!bar) {
-                    bar = document.createElement('div');
-                    let clz = 'ghost-hp-wrapper';
-                    if(g.userData.isGlitchy) clz += ' glitchy-hp-wrapper';
-                    else if(g.userData.isBoss) clz += ' boss-hp-wrapper';
-                    
-                    bar.className = clz;
-                    bar.innerHTML = `<div class="ghost-hp-fill"></div>`;
-                    overlay.appendChild(bar);
-                    g.userData.hpBar = bar;
-                }
-                
-                const pos = g.position.clone();
-                pos.y += (g.userData.isGlitchy ? 5.5 : (g.userData.isBoss ? 4.5 : 3.0));
-                pos.project(camera);
-                
-                const x = (pos.x * .5 + .5) * window.innerWidth;
-                const y = (pos.y * -.5 + .5) * window.innerHeight;
-                
-                bar.style.left = `${x}px`;
-                bar.style.top = `${y}px`;
-                bar.querySelector('.ghost-hp-fill').style.width = `${Math.max(0, g.userData.hp / g.userData.maxHp) * 100}%`;
-            });
-        }
-
-        function showFloatingText(text, pos3D, color = '#ffff00') {
-            const div = document.createElement('div');
-            div.className = 'float-text';
-            div.innerText = text;
-            div.style.color = color;
-            const p = pos3D.clone();
-            p.y += 2;
-            p.project(camera);
-            div.style.left = `${(p.x * 0.5 + 0.5) * window.innerWidth}px`;
-            div.style.top = `${(p.y * -0.5 + 0.5) * window.innerHeight}px`;
-            document.body.appendChild(div);
-            setTimeout(() => div.remove(), 1000);
-        }
-
         window.selectAction = function(action) {
             if (battleState !== 'IDLE') return;
             selectedAbility = action;
-
             if (action === 'attack') {
                 if (activeGhosts.length === 1) executePlayerAttack(activeGhosts[0]);
-                else { battleState = 'PLAYER_SELECT_TARGET'; highlightTargetGhosts(true); }
+                else { battleState = 'PLAYER_SELECT_TARGET'; activeGhosts.forEach(g => { g.userData.selectionRing.material.opacity = 0.8; }); document.getElementById('target-prompt').style.display = 'block'; }
             } else if (action === 'heal') executePlayerHeal();
             else if (action === 'power') executePowerPellet();
         };
 
         function executePlayerAttack(targetGhost) {
-            highlightTargetGhosts(false);
-            battleState = 'ANIMATING';
-            enableActionButtons(false);
-
-            const startPos = pacmanMesh.position.clone();
-            const targetPos = targetGhost.position.clone().add(new THREE.Vector3(-2, 0, 1));
-
+            activeGhosts.forEach(g => { g.userData.selectionRing.material.opacity = 0; }); document.getElementById('target-prompt').style.display = 'none';
+            battleState = 'ANIMATING'; enableActionButtons(false);
+            const startPos = pacmanMesh.position.clone(); const targetPos = targetGhost.position.clone().add(new THREE.Vector3(-2, 0, 1));
             let progress = 0;
             function animateLunge() {
                 progress += 0.08;
-                if (progress < 0.5) {
-                    pacmanMesh.position.lerpVectors(startPos, targetPos, progress * 2);
-                    topHalf.rotation.x = -0.5; bottomHalf.rotation.x = 0.5;
-                } else if (progress < 1.0) {
-                    topHalf.rotation.x = 0; bottomHalf.rotation.x = 0;
-                    pacmanMesh.position.lerpVectors(targetPos, startPos, (progress - 0.5) * 2);
-                } else {
+                if (progress < 0.5) { pacmanMesh.position.lerpVectors(startPos, targetPos, progress * 2); topHalf.rotation.x = -0.5; bottomHalf.rotation.x = 0.5; }
+                else if (progress < 1.0) { topHalf.rotation.x = 0; bottomHalf.rotation.x = 0; pacmanMesh.position.lerpVectors(targetPos, startPos, (progress - 0.5) * 2); }
+                else {
                     pacmanMesh.position.copy(startPos);
-                    
-                    let dmg = Math.floor(Math.random() * 3) + 1; 
-                    if (isPowerPelletActive) dmg *= 4; 
-
-                    targetGhost.userData.hp -= dmg;
-                    playBiteSfx();
-                    spawnParticles(targetGhost.position, targetGhost.userData.color, 20);
-                    showFloatingText(`-${dmg}`, targetGhost.position, '#ff0000');
-
+                    let dmg = Math.floor(Math.random() * 3) + 1; if (isPowerPelletActive) dmg *= 4; 
+                    targetGhost.userData.hp -= dmg; playBiteSfx(); spawnParticles(targetGhost.position, targetGhost.userData.color, 20); showFloatingText(`-${dmg}`, targetGhost.position, '#ff0000');
                     if (targetGhost.userData.hp <= 0) {
-                        spawnParticles(targetGhost.position, 0xffffff, 35);
-                        if(targetGhost.userData.hpBar) targetGhost.userData.hpBar.remove();
-                        scene.remove(targetGhost);
-                        activeGhosts = activeGhosts.filter(g => g !== targetGhost);
-                        updateGhostCountUI();
+                        spawnParticles(targetGhost.position, 0xffffff, 35); if(targetGhost.userData.hpBar) targetGhost.userData.hpBar.remove();
+                        scene.remove(targetGhost); activeGhosts = activeGhosts.filter(g => g !== targetGhost); document.getElementById('ghost-count-display').innerText = `${activeGhosts.length} GHOST${activeGhosts.length > 1 ? 'S' : ''}`;
                     }
-
-                    if (activeGhosts.length === 0) {
-                        stopBossTimer();
-                        if (currentLevel === 100) setTimeout(startEndingCutscene, 1000);
-                        else setTimeout(handleVictory, 800);
-                        return;
-                    }
-
-                    advanceTurnState();
-                    return;
+                    if (activeGhosts.length === 0) { stopBossTimer(); if (currentLevel === 100) setTimeout(startEndingCutscene, 1000); else setTimeout(handleVictory, 800); return; }
+                    advanceTurnState(); return;
                 }
                 requestAnimationFrame(animateLunge);
             }
             animateLunge();
         }
 
-        function executePlayerHeal() {
-            battleState = 'ANIMATING';
-            enableActionButtons(false);
-            const healAmt = Math.floor(Math.random() * 10) + 3;
-            playerHp = Math.min(maxHp, playerHp + healAmt);
-            updateHUD();
-            playHealSfx();
-            spawnParticles(pacmanMesh.position, 0x00ff00, 25);
-            showFloatingText(`+${healAmt} HP`, pacmanMesh.position, '#00ff00');
-            setTimeout(() => advanceTurnState(), 1000);
-        }
-
-        function executePowerPellet() {
-            battleState = 'ANIMATING';
-            enableActionButtons(false);
-            powerCharge = 0;
-            isPowerPelletActive = true;
-            powerPelletTurnsLeft = 2;
-            updateHUD();
-            playPowerSfx();
-            spawnParticles(pacmanMesh.position, 0xffff00, 30);
-            showFloatingText(`POWER PELLET ACTIVE!`, pacmanMesh.position, '#ffff00');
-            setTimeout(() => advanceTurnState(), 1000);
-        }
-
+        function executePlayerHeal() { battleState = 'ANIMATING'; enableActionButtons(false); const healAmt = Math.floor(Math.random() * 10) + 3; playerHp = Math.min(maxHp, playerHp + healAmt); updateHUD(); playHealSfx(); spawnParticles(pacmanMesh.position, 0x00ff00, 25); showFloatingText(`+${healAmt} HP`, pacmanMesh.position, '#00ff00'); setTimeout(() => advanceTurnState(), 1000); }
+        function executePowerPellet() { battleState = 'ANIMATING'; enableActionButtons(false); powerCharge = 0; isPowerPelletActive = true; powerPelletTurnsLeft = 2; updateHUD(); playPowerSfx(); spawnParticles(pacmanMesh.position, 0xffff00, 30); showFloatingText(`POWER PELLET ACTIVE!`, pacmanMesh.position, '#ffff00'); setTimeout(() => advanceTurnState(), 1000); }
+        
         function advanceTurnState() {
             if (!isPowerPelletActive && powerCharge < 2) powerCharge++;
-            else if (isPowerPelletActive) {
-                powerPelletTurnsLeft--;
-                if (powerPelletTurnsLeft <= 0) isPowerPelletActive = false;
-            }
-            updateHUD();
-            setTimeout(processGhostsTurn, 600);
+            else if (isPowerPelletActive) { powerPelletTurnsLeft--; if (powerPelletTurnsLeft <= 0) isPowerPelletActive = false; }
+            updateHUD(); setTimeout(processGhostsTurn, 600);
         }
 
         let currentGhostAttackIndex = 0;
-        function processGhostsTurn() {
-            if (activeGhosts.length === 0) return;
-            currentGhostAttackIndex = 0;
-            startNextGhostAttack();
-        }
-
+        function processGhostsTurn() { if (activeGhosts.length === 0) return; currentGhostAttackIndex = 0; startNextGhostAttack(); }
         function startNextGhostAttack() {
-            if (currentGhostAttackIndex >= activeGhosts.length) {
-                battleState = 'IDLE';
-                enableActionButtons(true);
-                return;
-            }
+            if (currentGhostAttackIndex >= activeGhosts.length) { battleState = 'IDLE'; enableActionButtons(true); return; }
             currentAttackingGhost = activeGhosts[currentGhostAttackIndex];
-            setupQuickTimeShieldMinigame();
-        }
-
-        function setupQuickTimeShieldMinigame() {
             battleState = 'SHIELD_MINIGAME';
-            const overlay = document.getElementById('shield-overlay');
-            overlay.style.display = 'block';
-
-            const zone = document.getElementById('timing-zone');
-            const zoneWidth = Math.floor(Math.random() * 20) + 20;
-            const zoneLeft = Math.floor(Math.random() * (100 - zoneWidth));
-            zone.style.width = `${zoneWidth}%`;
-            zone.style.left = `${zoneLeft}%`;
-
+            document.getElementById('shield-overlay').style.display = 'block';
+            const zone = document.getElementById('timing-zone'); const zoneWidth = Math.floor(Math.random() * 20) + 20; const zoneLeft = Math.floor(Math.random() * (100 - zoneWidth));
+            zone.style.width = `${zoneWidth}%`; zone.style.left = `${zoneLeft}%`;
             timingPos = 0; timingDir = 1; timingSpeed = 2.0 + Math.random() * 1.5;
-
             function animateTimingBar() {
-                timingPos += timingSpeed * timingDir;
-                if (timingPos >= 100) { timingPos = 100; timingDir = -1; }
-                if (timingPos <= 0) { timingPos = 0; timingDir = 1; }
-
+                timingPos += timingSpeed * timingDir; if (timingPos >= 100) { timingPos = 100; timingDir = -1; } if (timingPos <= 0) { timingPos = 0; timingDir = 1; }
                 document.getElementById('timing-indicator').style.left = `${timingPos}%`;
                 if (battleState === 'SHIELD_MINIGAME') shieldAnimFrame = requestAnimationFrame(animateTimingBar);
             }
@@ -1322,350 +826,583 @@
         }
 
         window.triggerShieldDefend = function() {
-            if (battleState !== 'SHIELD_MINIGAME') return;
-            cancelAnimationFrame(shieldAnimFrame);
-
-            document.getElementById('shield-overlay').style.display = 'none';
-            battleState = 'ANIMATING';
-
-            const zoneLeft = parseFloat(document.getElementById('timing-zone').style.left);
-            const zoneWidth = parseFloat(document.getElementById('timing-zone').style.width);
+            if (battleState !== 'SHIELD_MINIGAME') return; cancelAnimationFrame(shieldAnimFrame);
+            document.getElementById('shield-overlay').style.display = 'none'; battleState = 'ANIMATING';
+            const zoneLeft = parseFloat(document.getElementById('timing-zone').style.left); const zoneWidth = parseFloat(document.getElementById('timing-zone').style.width);
             const isSuccess = (timingPos >= zoneLeft && timingPos <= (zoneLeft + zoneWidth));
-
-            const g = currentAttackingGhost;
-            const startPos = g.position.clone();
-            const targetPos = pacmanMesh.position.clone().add(new THREE.Vector3(2, 0, -1));
-
+            const g = currentAttackingGhost; const startPos = g.position.clone(); const targetPos = pacmanMesh.position.clone().add(new THREE.Vector3(2, 0, -1));
             let progress = 0;
             function animateGhostLunge() {
                 progress += 0.08;
-                if (progress < 0.5) g.position.lerpVectors(startPos, targetPos, progress * 2);
-                else if (progress < 1.0) g.position.lerpVectors(targetPos, startPos, (progress - 0.5) * 2);
+                if (progress < 0.5) g.position.lerpVectors(startPos, targetPos, progress * 2); else if (progress < 1.0) g.position.lerpVectors(targetPos, startPos, (progress - 0.5) * 2);
                 else {
                     g.position.copy(startPos);
-
-                    if (isSuccess) {
-                        playShieldBlockSfx();
-                        spawnParticles(pacmanMesh.position, 0x00f2ff, 25);
-                        showFloatingText("BLOCKED!", pacmanMesh.position, '#00f2ff');
-                    } else {
-                        const incomingAtk = g.userData.atk;
-                        playerHp = Math.max(0, playerHp - incomingAtk);
-                        updateHUD();
-
-                        playSfx(120, 0.25, 'sawtooth', 0.2);
-                        spawnParticles(pacmanMesh.position, 0xff0000, 20);
-                        showFloatingText(`-${incomingAtk}`, pacmanMesh.position, '#ff0000');
-
-                        if (playerHp <= 0) {
-                            setTimeout(animatePacmanDeath, 600);
-                            return;
-                        }
+                    if (isSuccess) { playShieldBlockSfx(); spawnParticles(pacmanMesh.position, 0x00f2ff, 25); showFloatingText("BLOCKED!", pacmanMesh.position, '#00f2ff'); }
+                    else {
+                        playerHp = Math.max(0, playerHp - g.userData.atk); updateHUD(); playSfx(120, 0.25, 'sawtooth', 0.2); spawnParticles(pacmanMesh.position, 0xff0000, 20); showFloatingText(`-${g.userData.atk}`, pacmanMesh.position, '#ff0000');
+                        if (playerHp <= 0) { setTimeout(animatePacmanDeath, 600); return; }
                     }
-                    currentGhostAttackIndex++;
-                    setTimeout(startNextGhostAttack, 500);
-                    return;
+                    currentGhostAttackIndex++; setTimeout(startNextGhostAttack, 500); return;
                 }
                 requestAnimationFrame(animateGhostLunge);
             }
             animateGhostLunge();
         };
 
-        function enableActionButtons(enable) {
-            document.getElementById('btn-attack').disabled = !enable;
-            document.getElementById('btn-heal').disabled = !enable;
-            document.getElementById('btn-pellet').disabled = !enable || (powerCharge < 2 || isPowerPelletActive);
-        }
+        function enableActionButtons(enable) { document.getElementById('btn-attack').disabled = !enable; document.getElementById('btn-heal').disabled = !enable; document.getElementById('btn-pellet').disabled = !enable || (powerCharge < 2 || isPowerPelletActive); }
 
-        // --- PAC-MAN LOSE ANIMATION ---
         function animatePacmanDeath() {
-            battleState = 'DEFEAT_ANIMATION';
-            enableActionButtons(false);
-            stopBossTimer();
-            playDeathSfx();
-
-            let phaseProgress = 0;
-            const duration = 120; // ~2 seconds @ 60fps
-
+            battleState = 'DEFEAT_ANIMATION'; enableActionButtons(false); stopBossTimer(); playDeathSfx(); let phaseProgress = 0; const duration = 120;
             function deathLoop() {
-                phaseProgress++;
-                const ratio = phaseProgress / duration;
-
-                // Rotate towards screen & spin rapidly around Y and Z
-                pacmanMesh.rotation.y += 0.25;
-                pacmanMesh.rotation.z += 0.15;
-
-                // Open jaws wider and wider until 180 degrees
-                topHalf.rotation.x = -Math.min(Math.PI * 0.9, ratio * Math.PI * 1.1);
-                bottomHalf.rotation.x = Math.min(Math.PI * 0.9, ratio * Math.PI * 1.1);
-
-                // Shrink pacman to zero
-                const scale = Math.max(0, 1 - ratio);
-                pacmanMesh.scale.set(scale, scale, scale);
-
-                // Burst particles periodically
-                if (phaseProgress % 6 === 0) {
-                    spawnParticles(pacmanMesh.position, 0xffff00, 8);
-                }
-
-                if (phaseProgress < duration) {
-                    requestAnimationFrame(deathLoop);
-                } else {
-                    pacmanMesh.visible = false;
-                    spawnParticles(pacmanMesh.position, 0xffff00, 40);
-                    setTimeout(handleGameOver, 500);
-                }
+                phaseProgress++; const ratio = phaseProgress / duration; pacmanMesh.rotation.y += 0.25; pacmanMesh.rotation.z += 0.15;
+                topHalf.rotation.x = -Math.min(Math.PI * 0.9, ratio * Math.PI * 1.1); bottomHalf.rotation.x = Math.min(Math.PI * 0.9, ratio * Math.PI * 1.1);
+                const scale = Math.max(0, 1 - ratio); pacmanMesh.scale.set(scale, scale, scale);
+                if (phaseProgress % 6 === 0) spawnParticles(pacmanMesh.position, 0xffff00, 8);
+                if (phaseProgress < duration) requestAnimationFrame(deathLoop);
+                else { pacmanMesh.visible = false; spawnParticles(pacmanMesh.position, 0xffff00, 40); setTimeout(handleGameOver, 500); }
             }
             deathLoop();
         }
 
-        // --- VICTORY & GAMEOVER MODALS ---
-        function handleVictory() {
-            battleState = 'VICTORY';
-            stopBossTimer();
-            stopBattleOST();
-            breakCagesOpen();
-            saveProgress(); // Saves progress in DB
-            
-            setTimeout(() => {
-                document.getElementById('victory-title').innerText = "VICTORY!";
-                document.getElementById('victory-text').innerText = `Stage ${currentLevel} cleared! Unlocked Level ${unlockedLevel}`;
-                document.getElementById('rescued-text').innerText = (currentLevel === unlockedLevel - 1) ? "+3 Pac-Citizens Rescued!" : "Level Replayed";
-                document.getElementById('modal-victory').style.display = 'flex';
-                
-                playSfx(523, 0.1, 'sine');
-                setTimeout(() => playSfx(659, 0.1, 'sine'), 80);
-                setTimeout(() => playSfx(784, 0.1, 'sine'), 160);
-                setTimeout(() => playSfx(1046, 0.3, 'sine'), 240);
-            }, 1500);
+
+        // ==========================================
+        //  PVP MULTIPLAYER ARENA (PEERJS)
+        // ==========================================
+        let peer = null;
+        let pvpConnection = null;
+        let pvpRole = null; 
+        let pvpOpponentName = 'Challenger';
+        let pvpMyTurn = false;
+        let isSearchingPvP = false;
+        let pvpSearchIndex = 1;
+        const MAX_PVP_ROOMS = 10;
+        
+        let pvpMyHp = 20, pvpOppHp = 20;
+        let pvpMyPower = 0, pvpOppPower = 0;
+        let pvpMyPowerActive = false, pvpOppPowerActive = false;
+        let pvpMyTurnsLeft = 0, pvpOppTurnsLeft = 0;
+
+        window.startPvPMatchmaking = function() {
+            saveUsername(); // save latest username
+            appState = 'MATCHMAKING';
+            document.getElementById('screen-menu').style.display = 'none';
+            document.getElementById('screen-matchmaking').style.display = 'flex';
+            document.getElementById('matchmaking-status').innerText = 'Searching network...';
+            isSearchingPvP = true;
+            pvpSearchIndex = 1;
+
+            if (peer) { peer.destroy(); }
+            initPeerGeneric();
+        };
+
+        window.cancelMatchmaking = function() {
+            isSearchingPvP = false;
+            if (peer) peer.destroy();
+            appState = 'MENU';
+            document.getElementById('screen-matchmaking').style.display = 'none';
+            document.getElementById('screen-menu').style.display = 'flex';
+        };
+
+        function initPeerGeneric() {
+            peer = new Peer();
+            peer.on('open', (id) => {
+                tryConnectPvP();
+            });
+            peer.on('error', (err) => {
+                if (err.type === 'peer-unavailable' && isSearchingPvP) {
+                    becomePvPHost(pvpSearchIndex);
+                }
+            });
         }
 
-        async function handleGameOver() {
-            stopBossTimer();
-            stopBattleOST();
-            playerLives--;
-            updateGlobalHUD();
-            await saveProgress(); // Commits life loss to DB instantly
-            
-            playSfx(300, 0.3, 'sawtooth', 0.2);
-            setTimeout(() => playSfx(150, 0.5, 'sawtooth', 0.2), 250);
+        function tryConnectPvP() {
+            if (!isSearchingPvP) return;
+            document.getElementById('matchmaking-status').innerText = `Checking arena room ${pvpSearchIndex}...`;
+            const targetId = `pacfight-pvp-arena-${pvpSearchIndex}`;
+            const conn = peer.connect(targetId, { reliable: true });
 
-            if (playerLives <= 0) {
-                document.getElementById('gameover-title').innerText = "GAME OVER";
-                document.getElementById('gameover-text').innerText = "ALL LIVES LOST!\nTHE GHOSTS HAVE TAKEN OVER PAC-CITY.";
-                document.getElementById('btn-retry').innerText = "START OVER";
-                document.getElementById('btn-retry').onclick = async () => {
-                    document.getElementById('modal-gameover').style.display = 'none';
-                    document.getElementById('screen-battle').style.display = 'none';
-                    await hardReset(); // Erases DB progress and starts over
-                    appState = 'MENU';
-                    document.getElementById('screen-menu').style.display = 'flex';
-                };
-            } else {
-                document.getElementById('gameover-title').innerText = "DEFEATED";
-                document.getElementById('gameover-text').innerText = `Pac-Man went down!\nLIVES REMAINING: ${playerLives}`;
-                document.getElementById('btn-retry').innerText = "RETRY STAGE";
-                document.getElementById('btn-retry').onclick = retryLevel;
+            let searchTimeout = setTimeout(() => {
+                if(isSearchingPvP) becomePvPHost(pvpSearchIndex);
+            }, 2500); // If connection hangs, host this room
+
+            conn.on('open', () => {
+                clearTimeout(searchTimeout);
+                setupPvPConnection(conn, false); // we are client
+            });
+        }
+
+        function becomePvPHost(index) {
+            if (!isSearchingPvP) return;
+            document.getElementById('matchmaking-status').innerText = `Hosting Room ${index}... waiting for challenger`;
+            if (peer) peer.destroy();
+            peer = new Peer(`pacfight-pvp-arena-${index}`);
+
+            peer.on('open', () => {
+                // waiting...
+            });
+
+            peer.on('connection', (conn) => {
+                if (isSearchingPvP) {
+                    setupPvPConnection(conn, true); // we are host
+                } else {
+                    conn.close();
+                }
+            });
+
+            peer.on('error', (err) => {
+                if (err.type === 'unavailable-id' && isSearchingPvP) {
+                    pvpSearchIndex = (pvpSearchIndex % MAX_PVP_ROOMS) + 1;
+                    initPeerGeneric(); // ID taken, keep looking
+                }
+            });
+        }
+
+        function setupPvPConnection(conn, isHost) {
+            isSearchingPvP = false;
+            pvpConnection = conn;
+            pvpRole = isHost ? 'host' : 'client';
+            document.getElementById('matchmaking-status').innerText = 'Opponent found! Connecting...';
+
+            conn.on('data', (data) => handlePvPData(data));
+            conn.on('close', () => handlePvPDisconnect());
+
+            conn.on('open', () => {
+                const myName = document.getElementById('username-input').value || 'Player';
+                conn.send({ type: 'handshake', name: myName });
+            });
+            if (conn.open) {
+                const myName = document.getElementById('username-input').value || 'Player';
+                conn.send({ type: 'handshake', name: myName });
             }
+        }
+
+        function handlePvPData(data) {
+            if (appState !== 'MATCHMAKING' && appState !== 'PVP_BATTLE') return;
+
+            if (data.type === 'handshake') {
+                pvpOpponentName = data.name;
+                if (pvpRole === 'host') {
+                    pvpConnection.send({ type: 'handshake_ack', name: document.getElementById('username-input').value || 'Player' });
+                    startPvPBattle();
+                }
+            } else if (data.type === 'handshake_ack') {
+                pvpOpponentName = data.name;
+                startPvPBattle();
+            } else if (data.type === 'attack_intent') {
+                // Opponent attacked us! We need to defend
+                setupPvPShieldMinigame();
+            } else if (data.type === 'attack_result') {
+                // We attacked opponent, here is result
+                applyPvPAttackResult(data.dmg, data.blocked);
+            } else if (data.type === 'action') {
+                // Opponent did a local action (heal, power)
+                applyPvPAction(data.action, data.amount);
+            }
+        }
+
+        function handlePvPDisconnect() {
+            if (appState === 'PVP_BATTLE') {
+                alert("Opponent disconnected!");
+                endPvPMatch();
+            }
+        }
+
+        function startPvPBattle() {
+            appState = 'PVP_BATTLE';
+            document.getElementById('screen-matchmaking').style.display = 'none';
+            document.getElementById('screen-pvp').style.display = 'block';
+
+            pvpMyHp = 20; pvpOppHp = 20;
+            pvpMyPower = 0; pvpOppPower = 0;
+            pvpMyPowerActive = false; pvpOppPowerActive = false;
+            pvpMyTurnsLeft = 0; pvpOppTurnsLeft = 0;
+
+            document.getElementById('pvp-my-name').innerText = document.getElementById('username-input').value || 'ME';
+            document.getElementById('pvp-opp-name').innerText = pvpOpponentName;
+
+            playBattleOST(true); // Epic music
+            
+            // Setup 3D Scene for PvP
+            activeGhosts.forEach(g => scene.remove(g));
+            backgroundCages.forEach(c => c.group.visible = false);
+            
+            camera.position.set(0, 15, 30);
+            camera.lookAt(0, 2, 0);
+            
+            pacmanMesh.visible = true;
+            pacmanMesh.scale.set(1.2, 1.2, 1.2);
+            pacmanMesh.position.set(-8, 2, 8);
+            pacmanMesh.rotation.set(0, Math.PI / 4, 0);
+            
+            opponentMesh.visible = true;
+            opponentMesh.scale.set(1.2, 1.2, 1.2);
+            opponentMesh.position.set(8, 2, -8);
+            opponentMesh.rotation.set(0, -Math.PI / 1.3, 0);
+
+            // Host goes first
+            pvpMyTurn = (pvpRole === 'host');
+            updatePvPHUD();
+        }
+
+        function updatePvPHUD() {
+            document.getElementById('pvp-my-hp-text').innerText = `${pvpMyHp}/20 HP`;
+            document.getElementById('pvp-my-hp-bar').style.width = `${Math.max(0, (pvpMyHp/20)*100)}%`;
+            document.getElementById('pvp-my-pellet-bar').style.width = `${Math.min(100, (pvpMyPower/2)*100)}%`;
+            
+            document.getElementById('pvp-opp-hp-text').innerText = `${pvpOppHp}/20 HP`;
+            document.getElementById('pvp-opp-hp-bar').style.width = `${Math.max(0, (pvpOppHp/20)*100)}%`;
+            document.getElementById('pvp-opp-pellet-bar').style.width = `${Math.min(100, (pvpOppPower/2)*100)}%`;
+
+            auraMesh.visible = pvpMyPowerActive;
+            oppAuraMesh.visible = pvpOppPowerActive;
+
+            const btnAtk = document.getElementById('pvp-btn-attack');
+            const btnHeal = document.getElementById('pvp-btn-heal');
+            const btnPow = document.getElementById('pvp-btn-pellet');
+            
+            if (pvpMyTurn) {
+                document.getElementById('pvp-turn-indicator').innerText = "YOUR TURN";
+                document.getElementById('pvp-turn-indicator').style.color = "#00ff00";
+                btnAtk.disabled = false;
+                btnHeal.disabled = false;
+                btnPow.disabled = (pvpMyPower < 2 || pvpMyPowerActive);
+            } else {
+                document.getElementById('pvp-turn-indicator').innerText = "OPPONENT'S TURN";
+                document.getElementById('pvp-turn-indicator').style.color = "#ff3333";
+                btnAtk.disabled = true;
+                btnHeal.disabled = true;
+                btnPow.disabled = true;
+            }
+        }
+
+        window.selectPvPAction = function(action) {
+            if (!pvpMyTurn) return;
+            pvpMyTurn = false;
+            updatePvPHUD();
+
+            if (action === 'attack') {
+                document.getElementById('pvp-turn-indicator').innerText = "WAITING FOR DEFENSE...";
+                document.getElementById('pvp-turn-indicator').style.color = "#ffff00";
+                pvpConnection.send({ type: 'attack_intent' });
+            } else if (action === 'heal') {
+                const amt = Math.floor(Math.random() * 8) + 3;
+                pvpMyHp = Math.min(20, pvpMyHp + amt);
+                playHealSfx();
+                spawnParticles(pacmanMesh.position, 0x00ff00, 25);
+                showFloatingText(`+${amt}`, pacmanMesh.position, '#00ff00');
+                pvpConnection.send({ type: 'action', action: 'heal', amount: amt });
+                setTimeout(endPvPTurn, 1000);
+            } else if (action === 'power') {
+                pvpMyPower = 0; pvpMyPowerActive = true; pvpMyTurnsLeft = 2;
+                playPowerSfx();
+                spawnParticles(pacmanMesh.position, 0xffff00, 30);
+                showFloatingText("POWER ACTIVE", pacmanMesh.position, '#ffff00');
+                pvpConnection.send({ type: 'action', action: 'power', amount: 0 });
+                setTimeout(endPvPTurn, 1000);
+            }
+        };
+
+        function applyPvPAction(action, amount) {
+            if (action === 'heal') {
+                pvpOppHp = Math.min(20, pvpOppHp + amount);
+                playHealSfx();
+                spawnParticles(opponentMesh.position, 0x00ff00, 25);
+                showFloatingText(`+${amount}`, opponentMesh.position, '#00ff00');
+            } else if (action === 'power') {
+                pvpOppPower = 0; pvpOppPowerActive = true; pvpOppTurnsLeft = 2;
+                playPowerSfx();
+                spawnParticles(opponentMesh.position, 0xffff00, 30);
+                showFloatingText("POWER ACTIVE", opponentMesh.position, '#ffff00');
+            }
+            updatePvPHUD();
+            setTimeout(() => { pvpMyTurn = true; advancePvPState(); }, 1000);
+        }
+
+        // P2 Defends
+        function setupPvPShieldMinigame() {
+            document.getElementById('pvp-shield-overlay').style.display = 'block';
+            const zone = document.getElementById('pvp-timing-zone'); 
+            const zoneWidth = Math.floor(Math.random() * 20) + 20; 
+            const zoneLeft = Math.floor(Math.random() * (100 - zoneWidth));
+            zone.style.width = `${zoneWidth}%`; zone.style.left = `${zoneLeft}%`;
+            timingPos = 0; timingDir = 1; timingSpeed = 2.5 + Math.random() * 1.5;
+            
+            function animatePvPTimingBar() {
+                timingPos += timingSpeed * timingDir; 
+                if (timingPos >= 100) { timingPos = 100; timingDir = -1; } 
+                if (timingPos <= 0) { timingPos = 0; timingDir = 1; }
+                document.getElementById('pvp-timing-indicator').style.left = `${timingPos}%`;
+                if (document.getElementById('pvp-shield-overlay').style.display === 'block') {
+                    shieldAnimFrame = requestAnimationFrame(animatePvPTimingBar);
+                }
+            }
+            animatePvPTimingBar();
+        }
+
+        window.triggerPvPShieldDefend = function() {
+            cancelAnimationFrame(shieldAnimFrame);
+            document.getElementById('pvp-shield-overlay').style.display = 'none';
+            
+            const zoneLeft = parseFloat(document.getElementById('pvp-timing-zone').style.left); 
+            const zoneWidth = parseFloat(document.getElementById('pvp-timing-zone').style.width);
+            const blocked = (timingPos >= zoneLeft && timingPos <= (zoneLeft + zoneWidth));
+            
+            let dmg = blocked ? 0 : (Math.floor(Math.random() * 3) + 1);
+            if (!blocked && pvpOppPowerActive) dmg *= 4; // Opponent hits hard if powered
+
+            pvpConnection.send({ type: 'attack_result', blocked: blocked, dmg: dmg });
+            
+            // Play Opponent Attack Animation locally
+            animatePvPLunge(opponentMesh, pacmanMesh, () => {
+                if (blocked) {
+                    playShieldBlockSfx(); spawnParticles(pacmanMesh.position, 0x00f2ff, 25); showFloatingText("BLOCKED!", pacmanMesh.position, '#00f2ff');
+                } else {
+                    pvpMyHp = Math.max(0, pvpMyHp - dmg); updatePvPHUD();
+                    playSfx(120, 0.25, 'sawtooth', 0.2); spawnParticles(pacmanMesh.position, 0xff0000, 20); showFloatingText(`-${dmg}`, pacmanMesh.position, '#ff0000');
+                }
+                setTimeout(() => { checkPvPWin(); pvpMyTurn = true; advancePvPState(); }, 500);
+            });
+        };
+
+        // P1 Receives Result
+        function applyPvPAttackResult(dmg, blocked) {
+            animatePvPLunge(pacmanMesh, opponentMesh, () => {
+                if (blocked) {
+                    playShieldBlockSfx(); spawnParticles(opponentMesh.position, 0x00f2ff, 25); showFloatingText("BLOCKED!", opponentMesh.position, '#00f2ff');
+                } else {
+                    pvpOppHp = Math.max(0, pvpOppHp - dmg); updatePvPHUD();
+                    playBiteSfx(); spawnParticles(opponentMesh.position, 0xff0000, 20); showFloatingText(`-${dmg}`, opponentMesh.position, '#ff0000');
+                }
+                setTimeout(() => { checkPvPWin(); endPvPTurn(); }, 500);
+            });
+        }
+
+        function animatePvPLunge(attacker, defender, onComplete) {
+            const startPos = attacker.position.clone();
+            const targetPos = defender.position.clone().add(new THREE.Vector3(
+                attacker === pacmanMesh ? -3 : 3, 0, attacker === pacmanMesh ? 3 : -3
+            ));
+            const attackerTop = attacker === pacmanMesh ? topHalf : oppTopHalf;
+            const attackerBot = attacker === pacmanMesh ? bottomHalf : oppBottomHalf;
+
+            let progress = 0;
+            function lunge() {
+                progress += 0.08;
+                if (progress < 0.5) { attacker.position.lerpVectors(startPos, targetPos, progress * 2); attackerTop.rotation.x = -0.5; attackerBot.rotation.x = 0.5; }
+                else if (progress < 1.0) { attackerTop.rotation.x = 0; attackerBot.rotation.x = 0; attacker.position.lerpVectors(targetPos, startPos, (progress - 0.5) * 2); }
+                else { attacker.position.copy(startPos); onComplete(); return; }
+                requestAnimationFrame(lunge);
+            }
+            lunge();
+        }
+
+        function advancePvPState() {
+            if (pvpMyTurn) {
+                if (!pvpMyPowerActive && pvpMyPower < 2) pvpMyPower++;
+                else if (pvpMyPowerActive) { pvpMyTurnsLeft--; if (pvpMyTurnsLeft <= 0) pvpMyPowerActive = false; }
+            } else {
+                if (!pvpOppPowerActive && pvpOppPower < 2) pvpOppPower++;
+                else if (pvpOppPowerActive) { pvpOppTurnsLeft--; if (pvpOppTurnsLeft <= 0) pvpOppPowerActive = false; }
+            }
+            updatePvPHUD();
+        }
+        
+        function endPvPTurn() { advancePvPState(); }
+
+        function checkPvPWin() {
+            if (pvpMyHp <= 0 || pvpOppHp <= 0) {
+                appState = 'PVP_GAMEOVER';
+                document.getElementById('pvp-shield-overlay').style.display = 'none';
+                
+                if (pvpMyHp <= 0) {
+                    playDeathSfx();
+                    spawnParticles(pacmanMesh.position, 0xffff00, 40);
+                    pacmanMesh.visible = false;
+                    document.getElementById('gameover-title').innerText = "ARENA DEFEAT";
+                    document.getElementById('gameover-text').innerText = `${pvpOpponentName} has bested you!`;
+                    document.getElementById('btn-retry').innerText = "LEAVE ARENA";
+                    document.getElementById('btn-retry').onclick = endPvPMatch;
+                    document.getElementById('modal-gameover').style.display = 'flex';
+                } else {
+                    spawnParticles(opponentMesh.position, 0xff3355, 40);
+                    opponentMesh.visible = false;
+                    document.getElementById('victory-title').innerText = "ARENA VICTORY!";
+                    document.getElementById('victory-text').innerText = `You defeated ${pvpOpponentName}!`;
+                    document.getElementById('rescued-text').innerText = "PVP MATCH COMPLETE";
+                    document.getElementById('modal-victory').style.display = 'flex';
+                }
+            }
+        }
+
+        function endPvPMatch() {
+            if (peer) peer.destroy();
+            appState = 'MENU';
+            document.getElementById('modal-gameover').style.display = 'none';
+            document.getElementById('modal-victory').style.display = 'none';
+            document.getElementById('screen-pvp').style.display = 'none';
+            document.getElementById('screen-menu').style.display = 'flex';
+            stopBattleOST();
+            renderMapGrid();
+        }
+
+        // --- CUTSCENES / MODALS (Intact) ---
+        window.startIntroCutscene = function() {
+            appState = 'CUTSCENE'; cutsceneMode = 'intro'; stopBattleOST();
+            document.getElementById('screen-menu').style.display = 'none'; document.getElementById('screen-intro').style.display = 'flex';
+            for(let i=0; i<40; i++) {
+                const cageMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, wireframe: true });
+                const cage = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), cageMat); cage.position.set((Math.random()-0.5)*50, 1, (Math.random()-0.5)*40 - 15);
+                const cit = createPacCitizen(); cit.position.copy(cage.position); scene.add(cage); scene.add(cit); cutsceneObjects.push(cage, cit);
+            }
+            const glitchy = createGhostModel(glitchyConfig, true); glitchy.scale.set(4, 4, 4); glitchy.position.set(0, 0, -25); scene.add(glitchy); cutsceneObjects.push(glitchy);
+            for(let i=0; i<4; i++) { const ghost = createGhostModel(ghostTypes[i]); ghost.position.set((i-1.5)*6, 0, -15); scene.add(ghost); cutsceneObjects.push(ghost); }
+            camera.position.set(0, 35, 45); camera.lookAt(0, 0, -10); pacmanMesh.visible = false;
+        };
+        window.endIntroCutscene = function() {
+            appState = 'MENU'; cutsceneMode = null; cutsceneObjects.forEach(obj => scene.remove(obj)); cutsceneObjects = [];
+            document.getElementById('screen-intro').style.display = 'none'; document.getElementById('screen-menu').style.display = 'flex'; pacmanMesh.visible = true;
+        };
+        window.startEndingCutscene = function() {
+            appState = 'CUTSCENE'; cutsceneMode = 'ending'; battleState = 'VICTORY'; stopBattleOST(); stopBossTimer();
+            document.getElementById('screen-battle').style.display = 'none'; document.getElementById('screen-ending').style.display = 'flex'; document.getElementById('ghost-hp-overlay').innerHTML = '';
+            const glitchy = createGhostModel(glitchyConfig, true); glitchy.scale.set(5, 5, 5); glitchy.position.set(0, 0, 0); scene.add(glitchy); cutsceneObjects.push(glitchy);
+            for(let i=0; i<300; i++) { const cit = createPacCitizen(); const angle = Math.random() * Math.PI * 2; const radius = 18 + Math.random() * 25; cit.position.set(Math.cos(angle)*radius, 0.5, Math.sin(angle)*radius); cit.lookAt(0, 0, 0); scene.add(cit); cutsceneObjects.push(cit); }
+            camera.position.set(0, 35, 40); camera.lookAt(0, 0, 0); pacmanMesh.visible = false; backgroundCages.forEach(c => scene.remove(c.group));
+        };
+        window.showFinalVictory = function() {
+            document.getElementById('screen-ending').style.display = 'none'; document.getElementById('victory-title').innerText = "WORLD SAVED!"; document.getElementById('victory-text').innerText = "Glitchy is defeated and Pac-City is free!"; document.getElementById('rescued-text').innerText = "300 / 300 PAC-CITIZENS RESCUED!"; document.getElementById('modal-victory').style.display = 'flex'; saveProgress();
+        };
+
+        function startBossTimer() { stopBossTimer(); bossTimerSeconds = 900; document.getElementById('boss-timer-display').innerText = `⏱️ 15:00`; document.getElementById('boss-timer-display').style.display = 'block'; bossTimerInterval = setInterval(() => { if (battleState === 'VICTORY' || battleState === 'DEFEAT_ANIMATION') { stopBossTimer(); return; } bossTimerSeconds--; const mins = Math.floor(Math.max(0, bossTimerSeconds) / 60); const secs = Math.max(0, bossTimerSeconds) % 60; document.getElementById('boss-timer-display').innerText = `⏱️ ${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`; if (bossTimerSeconds <= 0) { stopBossTimer(); showFloatingText("TIME EXPIRED!", pacmanMesh.position, '#ff0000'); playerHp = 0; updateHUD(); setTimeout(animatePacmanDeath, 500); } }, 1000); }
+        function stopBossTimer() { if (bossTimerInterval) { clearInterval(bossTimerInterval); bossTimerInterval = null; } document.getElementById('boss-timer-display').style.display = 'none'; }
+
+        // --- PAC-CITY SYSTEM & JOYSTICK ---
+        let cityMeshes = [], cityCitizens = [], joystickActive = false, joystickCenter = { x: 0, y: 0 }, joystickDir = { x: 0, y: 0 };
+        function initJoystick() {
+            const zone = document.getElementById('joystick-zone'); const knob = document.getElementById('joystick-knob'); const maxR = 35;
+            function start(e) { if(appState !== 'CITY') return; joystickActive = true; const rect = zone.getBoundingClientRect(); joystickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }; move(e); }
+            function move(e) { if (!joystickActive || appState !== 'CITY') return; const cx = e.touches ? e.touches[0].clientX : e.clientX; const cy = e.touches ? e.touches[0].clientY : e.clientY; let dx = cx - joystickCenter.x, dy = cy - joystickCenter.y; const dist = Math.sqrt(dx*dx + dy*dy); if (dist > maxR) { dx = (dx/dist)*maxR; dy = (dy/dist)*maxR; } knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; joystickDir.x = dx / maxR; joystickDir.y = dy / maxR; }
+            function end(e) { joystickActive = false; knob.style.transform = `translate(-50%, -50%)`; joystickDir.x = 0; joystickDir.y = 0; }
+            zone.addEventListener('mousedown', start); window.addEventListener('mousemove', move); window.addEventListener('mouseup', end); zone.addEventListener('touchstart', start, {passive: true}); window.addEventListener('touchmove', move, {passive: true}); window.addEventListener('touchend', end);
+        }
+
+        window.enterPacCity = function() {
+            appState = 'CITY'; document.getElementById('screen-menu').style.display = 'none'; document.getElementById('screen-city').style.display = 'block';
+            backgroundCages.forEach(c => c.group.visible = false); pacmanMesh.visible = true; pacmanMesh.position.set(0, 2, 0); pacmanMesh.scale.set(1, 1, 1);
+            for (let i = 0; i < 25; i++) {
+                const height = 5 + Math.random() * 20; const geo = new THREE.BoxGeometry(4 + Math.random()*4, height, 4 + Math.random()*4);
+                const colors = [0x00f2ff, 0xff00ff, 0x000411, 0x110033, 0xff0055]; const mat = new THREE.MeshPhongMaterial({ color: colors[Math.floor(Math.random() * colors.length)], transparent: true, opacity: 0.85, shininess: 90 });
+                const bldg = new THREE.Mesh(geo, mat); let bx, bz; do { bx = (Math.random() - 0.5) * 120; bz = (Math.random() - 0.5) * 120; } while (Math.abs(bx) < 15 && Math.abs(bz) < 15); bldg.position.set(bx, height/2, bz);
+                const edges = new THREE.EdgesGeometry(geo); const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x00f2ff, transparent: true, opacity: 0.5 })); bldg.add(line);
+                scene.add(bldg); cityMeshes.push(bldg);
+            }
+            for (let i = 0; i < Math.min(rescuedCount, 150); i++) { const cit = createPacCitizen(); cit.position.set((Math.random() - 0.5) * 100, 0.8, (Math.random() - 0.5) * 100); cit.userData.wanderTarget.copy(cit.position); scene.add(cit); cityCitizens.push(cit); }
+        };
+        window.exitPacCity = function() {
+            appState = 'MENU'; document.getElementById('screen-city').style.display = 'none'; document.getElementById('screen-menu').style.display = 'flex';
+            cityMeshes.forEach(m => { scene.remove(m); m.geometry.dispose(); m.material.dispose(); }); cityMeshes = []; cityCitizens.forEach(c => scene.remove(c)); cityCitizens = []; backgroundCages.forEach(c => c.group.visible = true); document.getElementById('dialogue-box').style.display = 'none'; document.getElementById('btn-talk').style.display = 'none';
+        };
+
+        const cityDialogues = ["Thank you for saving us, Pac-Man!", "Glitchy was terrifying...", "We believe in you!", "Our city is rebuilding thanks to you.", "Waka waka!", "It was so dark in those cages.", "You are our true hero!", "Did you know Ghosts are afraid of Power Pellets?", "Pac-City feels alive again!"];
+        window.talkToCitizen = function() { const db = document.getElementById('dialogue-box'); playSfx(800, 0.1, 'sine', 0.2); db.innerText = cityDialogues[Math.floor(Math.random() * cityDialogues.length)]; db.style.display = 'block'; setTimeout(() => { db.style.display = 'none'; }, 3500); };
+
+        function handleVictory() {
+            battleState = 'VICTORY'; stopBossTimer(); stopBattleOST(); breakCagesOpen(); saveProgress();
+            setTimeout(() => {
+                document.getElementById('victory-title').innerText = "VICTORY!"; document.getElementById('victory-text').innerText = `Stage ${currentLevel} cleared! Unlocked Level ${unlockedLevel}`; document.getElementById('rescued-text').innerText = (currentLevel === unlockedLevel - 1) ? "+3 Pac-Citizens Rescued!" : "Level Replayed"; document.getElementById('modal-victory').style.display = 'flex';
+                playSfx(523, 0.1, 'sine'); setTimeout(() => playSfx(659, 0.1, 'sine'), 80); setTimeout(() => playSfx(784, 0.1, 'sine'), 160); setTimeout(() => playSfx(1046, 0.3, 'sine'), 240);
+            }, 1500);
+        }
+        async function handleGameOver() {
+            stopBossTimer(); stopBattleOST(); playerLives--; updateGlobalHUD(); await saveProgress(); playSfx(300, 0.3, 'sawtooth', 0.2); setTimeout(() => playSfx(150, 0.5, 'sawtooth', 0.2), 250);
+            if (playerLives <= 0) {
+                document.getElementById('gameover-title').innerText = "GAME OVER"; document.getElementById('gameover-text').innerText = "ALL LIVES LOST!\nTHE GHOSTS HAVE TAKEN OVER PAC-CITY."; document.getElementById('btn-retry').innerText = "START OVER";
+                document.getElementById('btn-retry').onclick = async () => { document.getElementById('modal-gameover').style.display = 'none'; document.getElementById('screen-battle').style.display = 'none'; await hardReset(); appState = 'MENU'; document.getElementById('screen-menu').style.display = 'flex'; };
+            } else { document.getElementById('gameover-title').innerText = "DEFEATED"; document.getElementById('gameover-text').innerText = `Pac-Man went down!\nLIVES REMAINING: ${playerLives}`; document.getElementById('btn-retry').innerText = "RETRY STAGE"; document.getElementById('btn-retry').onclick = retryLevel; }
             document.getElementById('modal-gameover').style.display = 'flex';
         }
 
-        window.returnToMenu = function() {
-            appState = 'MENU';
-            stopBossTimer();
-            stopBattleOST();
-            document.getElementById('modal-victory').style.display = 'none';
-            document.getElementById('screen-battle').style.display = 'none';
-            document.getElementById('screen-menu').style.display = 'flex';
-            renderMapGrid();
-        };
+        window.returnToMenu = function() { appState = 'MENU'; stopBossTimer(); stopBattleOST(); document.getElementById('modal-victory').style.display = 'none'; document.getElementById('screen-battle').style.display = 'none'; document.getElementById('screen-menu').style.display = 'flex'; renderMapGrid(); };
+        window.retryLevel = function() { document.getElementById('modal-gameover').style.display = 'none'; startBattleLevel(currentLevel); };
 
-        window.retryLevel = function() {
-            document.getElementById('modal-gameover').style.display = 'none';
-            startBattleLevel(currentLevel);
-        };
-
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
+        function onWindowResize() { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); }
 
         // --- MAIN RENDER LOOP ---
-        function animate() {
-            requestAnimationFrame(animate);
-            const time = Date.now();
-
-            if (appState === 'CUTSCENE' && cutsceneMode === 'intro') {
-                camera.position.x = Math.sin(time * 0.0003) * 45;
-                camera.position.z = Math.cos(time * 0.0003) * 45;
-                camera.lookAt(0, 0, -10);
-            } 
-            else if (appState === 'CUTSCENE' && cutsceneMode === 'ending') {
-                let citizensActive = 0;
-                const glitchy = cutsceneObjects.find(o => o.userData.isGlitchy);
-                
-                if (glitchy && glitchy.visible) {
-                    glitchy.position.x = (Math.random()-0.5)*0.8;
-                    glitchy.position.z = (Math.random()-0.5)*0.8;
-                }
-
-                cutsceneObjects.forEach(obj => {
-                    if (obj.userData.isCitizen && obj.visible) {
-                        citizensActive++;
-                        // Move toward Glitchy
-                        const dir = new THREE.Vector3().subVectors(glitchy.position, obj.position).normalize();
-                        obj.position.add(dir.multiplyScalar(obj.userData.speed));
-                        
-                        // Chomping animation
-                        obj.children[0].rotation.x = -Math.abs(Math.sin(time * 0.01 + obj.userData.offset)) * 0.5;
-                        obj.children[1].rotation.x = Math.abs(Math.sin(time * 0.01 + obj.userData.offset)) * 0.5;
-                        
-                        if (obj.position.distanceTo(glitchy.position) < 3.5) {
-                            obj.visible = false;
-                            spawnParticles(glitchy.position, 0xffff00, 2);
-                        }
-                    }
-                });
-
-                if (citizensActive === 0 && glitchy && glitchy.visible) {
-                    glitchy.visible = false;
-                    spawnParticles(glitchy.position, 0xff00ff, 150);
-                    playSfx(100, 1.5, 'sawtooth');
-                    document.getElementById('btn-finish-ending').style.display = 'block';
-                    document.getElementById('ending-text').innerText = "GLITCHY HAS BEEN DEFEATED!";
-                }
-            } 
-            else if (appState === 'CITY') {
-                // Joystick Movement Logic
-                const speed = 0.4;
-                if (joystickDir.x !== 0 || joystickDir.y !== 0) {
-                    pacmanMesh.position.x += joystickDir.x * speed;
-                    pacmanMesh.position.z += joystickDir.y * speed;
-                    
-                    // City bounds (-70 to 70)
-                    pacmanMesh.position.x = Math.max(-70, Math.min(70, pacmanMesh.position.x));
-                    pacmanMesh.position.z = Math.max(-70, Math.min(70, pacmanMesh.position.z));
-                    
-                    // Rotate and chomp
-                    const angle = Math.atan2(joystickDir.x, joystickDir.y);
-                    pacmanMesh.rotation.y = angle;
-                    
-                    const chomp = Math.abs(Math.sin(time * 0.015)) * 0.6;
-                    topHalf.rotation.x = -chomp;
-                    bottomHalf.rotation.x = chomp;
-                } else {
-                    topHalf.rotation.x = 0;
-                    bottomHalf.rotation.x = 0;
-                }
-
-                // Smooth Camera Follow
-                camera.position.lerp(new THREE.Vector3(pacmanMesh.position.x, 22, pacmanMesh.position.z + 28), 0.1);
-                camera.lookAt(pacmanMesh.position);
-
-                // Update wandering Citizens & check for interaction
-                let nearestDist = Infinity;
-                
-                cityCitizens.forEach(cit => {
-                    const distToPlayer = cit.position.distanceTo(pacmanMesh.position);
-                    if (distToPlayer < nearestDist) {
-                        nearestDist = distToPlayer;
-                    }
-
-                    // Wandering AI
-                    const citSpeed = cit.userData.speed * 0.25;
-                    const dir = new THREE.Vector3().subVectors(cit.userData.wanderTarget, cit.position);
-                    
-                    if (dir.lengthSq() > 1.0) {
-                        dir.normalize();
-                        cit.position.add(dir.multiplyScalar(citSpeed));
-                        
-                        const angle = Math.atan2(dir.x, dir.z);
-                        // Smooth rotation
-                        cit.rotation.y += (angle - cit.rotation.y) * 0.1;
-                        
-                        const chomp = Math.abs(Math.sin(time * 0.01 + cit.userData.offset)) * 0.5;
-                        cit.children[0].rotation.x = -chomp;
-                        cit.children[1].rotation.x = chomp;
-                    } else {
-                        // Pick new random target point occasionally
-                        if (Math.random() < 0.01) {
-                            cit.userData.wanderTarget.set(
-                                cit.position.x + (Math.random() - 0.5) * 20,
-                                0.8,
-                                cit.position.z + (Math.random() - 0.5) * 20
-                            );
-                            // Bound to city limits
-                            cit.userData.wanderTarget.x = Math.max(-70, Math.min(70, cit.userData.wanderTarget.x));
-                            cit.userData.wanderTarget.z = Math.max(-70, Math.min(70, cit.userData.wanderTarget.z));
-                        }
-                        cit.children[0].rotation.x = 0;
-                        cit.children[1].rotation.x = 0;
-                    }
-                });
-
-                // Show Talk Button if close to a citizen
-                if (nearestDist < 6.0) {
-                    document.getElementById('btn-talk').style.display = 'block';
-                } else {
-                    document.getElementById('btn-talk').style.display = 'none';
-                    document.getElementById('dialogue-box').style.display = 'none'; // Auto hide dialogue if walked away
-                }
-
-            }
-            else if (appState === 'BATTLE') {
-                // Battle Idle Animations
-                activeGhosts.forEach((g, idx) => {
-                    if (g.userData.isGlitchy) {
-                        if(Math.random() > 0.4) {
-                            g.position.x = g.userData.basePos.x + (Math.random()-0.5)*0.6;
-                            g.position.z = g.userData.basePos.z + (Math.random()-0.5)*0.6;
-                        } else {
-                            g.position.x = g.userData.basePos.x;
-                            g.position.z = g.userData.basePos.z;
-                        }
-                    } else {
-                        g.position.y = Math.sin(time * 0.003 + idx) * 0.2 + 0.2;
-                    }
-                });
-
-                // Cages animation
-                backgroundCages.forEach(c => {
-                    if (!c.active && c.cage.material.opacity > 0) {
-                        c.cage.position.y += 0.05;
-                        c.cage.material.opacity -= 0.03;
-                        c.citizen.position.y = 0.8 + Math.abs(Math.sin(time * 0.01)) * 1.5;
-                        // Chomping when free
-                        c.citizen.children[0].rotation.x = -Math.abs(Math.sin(time * 0.015)) * 0.6;
-                        c.citizen.children[1].rotation.x = Math.abs(Math.sin(time * 0.015)) * 0.6;
-                    }
-                });
-
-                updateGhostHPBars();
-            }
-            else if (appState === 'MENU') {
-                // Menu slow pan camera
-                camera.position.x = Math.sin(time * 0.0001) * 35;
-                camera.position.z = Math.cos(time * 0.0001) * 35;
-                camera.lookAt(0, 0, 0);
-
-                // Idle idle animation for menu background citizens (cages)
-                backgroundCages.forEach(c => {
-                    if(c.group.visible) {
-                        c.citizen.children[0].rotation.x = -Math.abs(Math.sin(time * 0.015)) * 0.4;
-                        c.citizen.children[1].rotation.x = Math.abs(Math.sin(time * 0.015)) * 0.4;
-                    }
-                });
-            }
-
-            updateParticles();
-            renderer.render(scene, camera);
+        function updateGhostHPBars() {
+            if(cutsceneMode || appState !== 'BATTLE') return;
+            const overlay = document.getElementById('ghost-hp-overlay');
+            activeGhosts.forEach(g => {
+                let bar = g.userData.hpBar;
+                if (!bar) { bar = document.createElement('div'); let clz = 'ghost-hp-wrapper'; if(g.userData.isGlitchy) clz += ' glitchy-hp-wrapper'; else if(g.userData.isBoss) clz += ' boss-hp-wrapper'; bar.className = clz; bar.innerHTML = `<div class="ghost-hp-fill"></div>`; overlay.appendChild(bar); g.userData.hpBar = bar; }
+                const pos = g.position.clone(); pos.y += (g.userData.isGlitchy ? 5.5 : (g.userData.isBoss ? 4.5 : 3.0)); pos.project(camera);
+                bar.style.left = `${(pos.x * .5 + .5) * window.innerWidth}px`; bar.style.top = `${(pos.y * -.5 + .5) * window.innerHeight}px`;
+                bar.querySelector('.ghost-hp-fill').style.width = `${Math.max(0, g.userData.hp / g.userData.maxHp) * 100}%`;
+            });
         }
 
-        // Initialize application
-        init3D();
-        loadProgress(); // IndexedDB load handles the rest
-        animate();
+        function animate() {
+            requestAnimationFrame(animate); const time = Date.now();
+
+            if (appState === 'CUTSCENE' && cutsceneMode === 'intro') { camera.position.x = Math.sin(time * 0.0003) * 45; camera.position.z = Math.cos(time * 0.0003) * 45; camera.lookAt(0, 0, -10); } 
+            else if (appState === 'CUTSCENE' && cutsceneMode === 'ending') {
+                let citizensActive = 0; const glitchy = cutsceneObjects.find(o => o.userData.isGlitchy);
+                if (glitchy && glitchy.visible) { glitchy.position.x = (Math.random()-0.5)*0.8; glitchy.position.z = (Math.random()-0.5)*0.8; }
+                cutsceneObjects.forEach(obj => {
+                    if (obj.userData.isCitizen && obj.visible) {
+                        citizensActive++; const dir = new THREE.Vector3().subVectors(glitchy.position, obj.position).normalize(); obj.position.add(dir.multiplyScalar(obj.userData.speed));
+                        obj.children[0].rotation.x = -Math.abs(Math.sin(time * 0.01 + obj.userData.offset)) * 0.5; obj.children[1].rotation.x = Math.abs(Math.sin(time * 0.01 + obj.userData.offset)) * 0.5;
+                        if (obj.position.distanceTo(glitchy.position) < 3.5) { obj.visible = false; spawnParticles(glitchy.position, 0xffff00, 2); }
+                    }
+                });
+                if (citizensActive === 0 && glitchy && glitchy.visible) { glitchy.visible = false; spawnParticles(glitchy.position, 0xff00ff, 150); playSfx(100, 1.5, 'sawtooth'); document.getElementById('btn-finish-ending').style.display = 'block'; document.getElementById('ending-text').innerText = "GLITCHY HAS BEEN DEFEATED!"; }
+            } 
+            else if (appState === 'CITY') {
+                const speed = 0.4;
+                if (joystickDir.x !== 0 || joystickDir.y !== 0) {
+                    pacmanMesh.position.x += joystickDir.x * speed; pacmanMesh.position.z += joystickDir.y * speed;
+                    pacmanMesh.position.x = Math.max(-70, Math.min(70, pacmanMesh.position.x)); pacmanMesh.position.z = Math.max(-70, Math.min(70, pacmanMesh.position.z));
+                    pacmanMesh.rotation.y = Math.atan2(joystickDir.x, joystickDir.y);
+                    const chomp = Math.abs(Math.sin(time * 0.015)) * 0.6; topHalf.rotation.x = -chomp; bottomHalf.rotation.x = chomp;
+                } else { topHalf.rotation.x = 0; bottomHalf.rotation.x = 0; }
+                camera.position.lerp(new THREE.Vector3(pacmanMesh.position.x, 22, pacmanMesh.position.z + 28), 0.1); camera.lookAt(pacmanMesh.position);
+                
+                let nearestDist = Infinity;
+                cityCitizens.forEach(cit => {
+                    const distToPlayer = cit.position.distanceTo(pacmanMesh.position); if (distToPlayer < nearestDist) nearestDist = distToPlayer;
+                    const citSpeed = cit.userData.speed * 0.25; const dir = new THREE.Vector3().subVectors(cit.userData.wanderTarget, cit.position);
+                    if (dir.lengthSq() > 1.0) {
+                        dir.normalize(); cit.position.add(dir.multiplyScalar(citSpeed)); cit.rotation.y += (Math.atan2(dir.x, dir.z) - cit.rotation.y) * 0.1;
+                        const chomp = Math.abs(Math.sin(time * 0.01 + cit.userData.offset)) * 0.5; cit.children[0].rotation.x = -chomp; cit.children[1].rotation.x = chomp;
+                    } else {
+                        if (Math.random() < 0.01) { cit.userData.wanderTarget.set(cit.position.x + (Math.random() - 0.5) * 20, 0.8, cit.position.z + (Math.random() - 0.5) * 20); cit.userData.wanderTarget.x = Math.max(-70, Math.min(70, cit.userData.wanderTarget.x)); cit.userData.wanderTarget.z = Math.max(-70, Math.min(70, cit.userData.wanderTarget.z)); }
+                        cit.children[0].rotation.x = 0; cit.children[1].rotation.x = 0;
+                    }
+                });
+                if (nearestDist < 6.0) document.getElementById('btn-talk').style.display = 'block'; else { document.getElementById('btn-talk').style.display = 'none'; document.getElementById('dialogue-box').style.display = 'none'; }
+            }
+            else if (appState === 'BATTLE') {
+                activeGhosts.forEach((g, idx) => {
+                    if (g.userData.isGlitchy) { if(Math.random() > 0.4) { g.position.x = g.userData.basePos.x + (Math.random()-0.5)*0.6; g.position.z = g.userData.basePos.z + (Math.random()-0.5)*0.6; } else { g.position.x = g.userData.basePos.x; g.position.z = g.userData.basePos.z; } } 
+                    else g.position.y = Math.sin(time * 0.003 + idx) * 0.2 + 0.2;
+                });
+                backgroundCages.forEach(c => {
+                    if (!c.active && c.cage.material.opacity > 0) { c.cage.position.y += 0.05; c.cage.material.opacity -= 0.03; c.citizen.position.y = 0.8 + Math.abs(Math.sin(time * 0.01)) * 1.5; c.citizen.children[0].rotation.x = -Math.abs(Math.sin(time * 0.015)) * 0.6; c.citizen.children[1].rotation.x = Math.abs(Math.sin(time * 0.015)) * 0.6; }
+                });
+                updateGhostHPBars();
+            }
+            else if (appState === 'PVP_BATTLE') {
+                // Bobbing idle animation for both PvP models
+                pacmanMesh.position.y = Math.sin(time * 0.003) * 0.2 + 2;
+                if(opponentMesh) opponentMesh.position.y = Math.cos(time * 0.003) * 0.2 + 2;
+            }
+            else if (appState === 'MENU') {
+                camera.position.x = Math.sin(time * 0.0001) * 35; camera.position.z = Math.cos(time * 0.0001) * 35; camera.lookAt(0, 0, 0);
+                backgroundCages.forEach(c => { if(c.group.visible) { c.citizen.children[0].rotation.x = -Math.abs(Math.sin(time * 0.015)) * 0.4; c.citizen.children[1].rotation.x = Math.abs(Math.sin(time * 0.015)) * 0.4; } });
+            }
+            updateParticles(); renderer.render(scene, camera);
+        }
+
+        init3D(); loadProgress(); animate();
     </script>
 </body>
 </html>
