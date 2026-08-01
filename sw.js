@@ -1,5 +1,5 @@
 // 1. Cambia el número de versión cada vez que modifiques tu HTML u otros archivos
-const cacheName = 'Pac-Fight-RPG-game'; 
+const cacheName = 'Pac-Fight-RPG'; 
 
 const assets = [
   './',
