@@ -11,9 +11,9 @@
       .catch(err => console.log('Error al registrar:', err));
   }
 </script>
+
+<!-- No olvides vincular el manifest en el <head> -->
 <link rel="manifest" href="manifest.json">
-    <!-- PeerJS for P2P 1v1 Multiplayer -->
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         body { margin: 0; overflow: hidden; background: #000411; font-family: 'Courier New', monospace; color: #fff; }
@@ -22,14 +22,13 @@
         .screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; flex-direction: column; }
         #screen-menu { z-index: 100; background: linear-gradient(135deg, #000411 0%, #001133 100%); align-items: center; justify-content: flex-start; padding: 20px; overflow-y: auto; }
         #screen-battle { z-index: 10; display: none; }
-        #screen-multiplayer { z-index: 150; display: none; background: radial-gradient(circle, #001133 0%, #000411 100%); align-items: center; justify-content: center; padding: 20px; flex-direction: column; }
 
         /* Header UI */
         h1.title { font-size: 38px; color: #ffff00; text-shadow: 0 0 15px #ffff00, 3px 3px 0 #ff0000; margin: 10px 0 5px 0; letter-spacing: 3px; text-align: center; }
-        .subtitle { color: #00f2ff; font-size: 14px; margin-bottom: 15px; text-shadow: 0 0 8px #00f2ff; text-align: center; }
+        .subtitle { color: #00f2ff; font-size: 14px; margin-bottom: 20px; text-shadow: 0 0 8px #00f2ff; text-align: center; }
 
-        /* Level Map Screen & Menu Options */
-        .map-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 12px; width: 100%; max-width: 800px; background: rgba(0,0,0,0.6); border: 2px solid #00f2ff; border-radius: 12px; padding: 20px; box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); max-height: 50vh; overflow-y: auto; margin-bottom: 15px; }
+        /* Level Map Screen */
+        .map-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 12px; width: 100%; max-width: 800px; background: rgba(0,0,0,0.6); border: 2px solid #00f2ff; border-radius: 12px; padding: 20px; box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); max-height: 60vh; overflow-y: auto; }
         .level-btn { aspect-ratio: 1; border-radius: 10px; border: 2px solid #00f2ff; background: rgba(0, 242, 255, 0.1); color: #00f2ff; font-weight: bold; font-size: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; position: relative; }
         .level-btn:hover:not(.locked) { background: #00f2ff; color: #000; box-shadow: 0 0 15px #00f2ff; transform: scale(1.05); }
         .level-btn.locked { border-color: #444; color: #555; background: rgba(255,255,255,0.03); cursor: not-allowed; }
@@ -39,12 +38,6 @@
         .level-btn .star-rating { font-size: 9px; color: #ffff00; margin-top: 2px; }
         .level-btn.glitchy-btn { border-color: #ff00ff; color: #ff00ff; background: rgba(255,0,255,0.15); box-shadow: 0 0 15px rgba(255,0,255,0.5); }
         .level-btn.glitchy-btn:hover:not(.locked) { background: #ff00ff; color: #fff; box-shadow: 0 0 30px #ff00ff; }
-
-        .menu-action-bar { display: flex; gap: 15px; width: 100%; max-width: 800px; justify-content: center; margin-bottom: 10px; flex-wrap: wrap; }
-        .menu-btn { padding: 12px 20px; font-size: 14px; font-weight: bold; font-family: inherit; border-radius: 10px; border: 2px solid #ffff00; background: rgba(255,255,0,0.15); color: #ffff00; cursor: pointer; box-shadow: 0 0 10px rgba(255,255,0,0.2); transition: 0.2s; }
-        .menu-btn:hover { background: #ffff00; color: #000; box-shadow: 0 0 20px #ffff00; transform: translateY(-2px); }
-        .menu-btn.multi { border-color: #ff00ff; color: #ff00ff; background: rgba(255,0,255,0.15); }
-        .menu-btn.multi:hover { background: #ff00ff; color: #fff; box-shadow: 0 0 20px #ff00ff; }
 
         /* Battle UI */
         #battle-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 15px; z-index: 20; }
@@ -115,43 +108,15 @@
     <!-- MAP / MENU SCREEN -->
     <div id="screen-menu" class="screen">
         <h1 class="title">PAC-FIGHT</h1>
-        <div class="subtitle">EPIC TURN-BASED RPG & 1V1 ARENA</div>
+        <div class="subtitle">EPIC TURN-BASED RPG</div>
 
         <div class="top-info-bar">
-            <div>PILOT: <span id="display-username" style="color:#ffff00; cursor:pointer;" onclick="promptChangeUsername()">PAC-HERO</span> ✏️</div>
             <div>STAGES: <span id="unlocked-count" style="color:#ffff00;">1</span>/100</div>
             <div>LIVES: <span id="menu-lives-display">❤️❤️❤️</span></div>
             <div>RESCUED: <span id="menu-rescued-display" style="color:#00ff00;">0</span>/300</div>
         </div>
 
-        <div class="menu-action-bar">
-            <button class="menu-btn multi" onclick="openMultiplayerLobby()">⚔️ 1v1 PAC-MAN BATTLE ARENA</button>
-            <button class="menu-btn" onclick="promptChangeUsername()">CHANGE USERNAME</button>
-        </div>
-
         <div class="map-container" id="map-grid"></div>
-    </div>
-
-    <!-- 1V1 MULTIPLAYER LOBBY SCREEN -->
-    <div id="screen-multiplayer" class="screen">
-        <div class="modal-content" style="max-width: 460px;">
-            <h2 style="color: #ff00ff; text-shadow: 0 0 10px #ff00ff;">1V1 ARENA MATCHMAKING</h2>
-            <p id="multiplayer-status-text" style="color: #00f2ff; font-size: 15px; margin: 15px 0;">READY TO FIND A RIVAL PAC-MAN.</p>
-            
-            <div id="lobby-controls" style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
-                <button class="modal-btn" style="background: #ff00ff; color: #fff; margin-top:0;" onclick="startAutoMatchmaking()">🔍 AUTO-SEARCH OPPONENT</button>
-                <div style="border-top: 1px dashed #444; margin: 10px 0;"></div>
-                <button class="modal-btn" style="background: #00f2ff; color: #000; margin-top:0;" onclick="hostPrivateRoom()">HOST PRIVATE ROOM</button>
-                <div style="display: flex; gap: 8px;">
-                    <input type="text" id="room-code-input" placeholder="Enter Room Code..." style="flex:1; padding: 10px; background: #000; border: 2px solid #00f2ff; color: #fff; font-family: inherit; border-radius: 8px; text-align: center;">
-                    <button class="modal-btn" style="background: #00ff00; color: #000; margin-top:0; padding: 10px 20px;" onclick="joinPrivateRoom()">JOIN</button>
-                </div>
-                <button class="modal-btn" style="background: #555; color: #fff; margin-top: 10px;" onclick="closeMultiplayerLobby()">BACK TO MENU</button>
-            </div>
-            <div id="matchmaking-cancel-box" style="display:none; margin-top: 20px;">
-                <button class="modal-btn" style="background: #ff0000; color: #fff; width: 100%;" onclick="cancelMatchmaking()">CANCEL SEARCH</button>
-            </div>
-        </div>
     </div>
 
     <!-- 3D CANVAS LAYER (Behind UI) -->
@@ -185,7 +150,7 @@
             <!-- Top Status -->
             <div class="hud-top">
                 <div class="status-box">
-                    <h3 id="p1-name-hud">PAC-MAN <span id="hp-text">20/20 HP</span></h3>
+                    <h3>PAC-MAN <span id="hp-text">20/20 HP</span></h3>
                     <div class="bar-bg"><div id="hp-bar" class="bar-fill"></div></div>
                     <div style="font-size: 10px; margin-top: 6px; color: #ffff00;">POWER PELLET CHARGE</div>
                     <div class="bar-bg"><div id="pellet-bar" class="bar-fill"></div></div>
@@ -198,8 +163,8 @@
                     <div id="boss-timer-display">⏱️ 15:00</div>
                 </div>
 
-                <div class="status-box" style="border-color: #ff0055;" id="enemy-status-box">
-                    <h3 style="color: #ff0055;" id="enemy-box-title">ENEMIES LEFT</h3>
+                <div class="status-box" style="border-color: #ff0055;">
+                    <h3 style="color: #ff0055;">ENEMIES LEFT</h3>
                     <div id="ghost-count-display" style="font-size: 20px; font-weight: bold; color: #fff; text-align: center; margin-top: 5px;">
                         1 GHOST
                     </div>
@@ -209,7 +174,7 @@
             <!-- Action Panel Bottom -->
             <div>
                 <div id="target-prompt" style="text-align: center; color: #ffff00; font-weight: bold; margin-bottom: 8px; text-shadow: 1px 1px 2px #000; display: none;">
-                    👆 TAP A TARGET TO ATTACK
+                    👆 TAP A GHOST TO TARGET
                 </div>
                 <div class="action-panel">
                     <button id="btn-attack" class="cmd-btn interactive" onclick="selectAction('attack')">⚔️ ATTACK<br><span style="font-size:10px; opacity:0.8;">(1-3 DMG)</span></button>
@@ -245,7 +210,7 @@
     <div id="modal-gameover" class="modal">
         <div class="modal-content" style="border-color: #ff0000;">
             <h2 id="gameover-title" style="color: #ff0000; text-shadow: 0 0 15px #ff0000;">GAME OVER</h2>
-            <p id="gameover-text">Pac-Man was defeated!</p>
+            <p id="gameover-text">Pac-Man was defeated by the Ghosts!</p>
             <button id="btn-retry" class="modal-btn" style="background: #ff0000; color: #fff;" onclick="retryLevel()">RETRY STAGE</button>
         </div>
     </div>
@@ -261,7 +226,6 @@
         // --- GAME ARCHITECTURE & STATE ---
         let currentLevel = 1;
         let unlockedLevel = 1;
-        let userName = 'PAC-HERO';
         
         // Player Stats
         let playerHp = 20;
@@ -275,7 +239,7 @@
         let rescuedCount = 0;
         
         // Cutscene States
-        let cutsceneMode = null;
+        let cutsceneMode = null; // null, 'intro', 'ending'
         let cutsceneObjects = [];
         let backgroundCages = [];
 
@@ -283,16 +247,6 @@
         let battleState = 'IDLE'; // IDLE, PLAYER_SELECT_TARGET, ANIMATING, SHIELD_MINIGAME, DEFEAT_ANIMATION, VICTORY
         let selectedAbility = null;
         let activeGhosts = [];
-
-        // 1v1 Multiplayer State
-        let isMultiplayer = false;
-        let peer = null;
-        let conn = null;
-        let isHost = false;
-        let opponentName = 'RIVAL PAC';
-        let opponentHp = 20;
-        let isMyTurn = true;
-        let matchmakingInterval = null;
 
         // Boss Timer State (15 Minutes)
         let bossTimerSeconds = 900;
@@ -305,6 +259,7 @@
         function playBattleOST(isBoss) {
             bgAudio.pause();
             bgAudio.currentTime = 0;
+            // Play boss OST for boss levels, classic battle OST for normal levels
             bgAudio.src = isBoss ? 'Pac-Fight BossFight ost.mp3' : 'Pac-Fight battle ost.mp3';
             bgAudio.play().catch(e => {
                 console.log('Audio autoplay prevented or file not found in directory:', e);
@@ -335,27 +290,28 @@
             { name: 'WHITY',  color: 0xffffff, hp: 16, atk: 5 }
         ];
 
+        // Level 100 Final Boss
         const glitchyConfig = { name: 'GLITCHY', color: 0x110022, hp: 60, atk: 8, isGlitchy: true };
 
         // --- LOCAL STORAGE DATA ---
         function loadProgress() {
             const savedLevel = localStorage.getItem('PacFight_Level');
             const savedLives = localStorage.getItem('PacFight_Lives');
-            const savedName = localStorage.getItem('PacFight_Username');
             
             if (savedLevel) unlockedLevel = parseInt(savedLevel, 10);
             if (savedLives) {
                 playerLives = parseInt(savedLives, 10);
                 if (playerLives <= 0) {
+                    // Fail safe if reloaded on 0 lives
                     hardReset();
                     return;
                 }
             }
-            if (savedName) userName = savedName;
             
             updateGlobalHUD();
             renderMapGrid();
 
+            // Intro Check
             if (unlockedLevel === 1 && playerLives === 3 && !sessionStorage.getItem('PacFight_IntroSeen')) {
                 startIntroCutscene();
                 sessionStorage.setItem('PacFight_IntroSeen', 'true');
@@ -365,14 +321,11 @@
         }
 
         function saveProgress() {
-            if (!isMultiplayer) {
-                if (currentLevel >= unlockedLevel && unlockedLevel <= 100) {
-                    unlockedLevel = currentLevel + 1;
-                    localStorage.setItem('PacFight_Level', Math.min(100, unlockedLevel));
-                }
-                localStorage.setItem('PacFight_Lives', playerLives);
+            if (currentLevel >= unlockedLevel && unlockedLevel <= 100) {
+                unlockedLevel = currentLevel + 1;
+                localStorage.setItem('PacFight_Level', Math.min(100, unlockedLevel));
             }
-            localStorage.setItem('PacFight_Username', userName);
+            localStorage.setItem('PacFight_Lives', playerLives);
             updateGlobalHUD();
         }
 
@@ -387,15 +340,6 @@
             renderMapGrid();
         }
 
-        window.promptChangeUsername = function() {
-            const newName = prompt("Enter your Pac-Man Pilot Name:", userName);
-            if (newName && newName.trim().length > 0) {
-                userName = newName.trim().substring(0, 12).toUpperCase();
-                saveProgress();
-                updateGlobalHUD();
-            }
-        };
-
         function updateGlobalHUD() {
             rescuedCount = Math.min(300, (unlockedLevel - 1) * 3);
             const hearts = '❤️'.repeat(Math.max(0, playerLives)) + '🖤'.repeat(Math.max(0, 3 - playerLives));
@@ -403,8 +347,6 @@
             document.getElementById('battle-lives-display').innerText = `LIVES: ${hearts}`;
             document.getElementById('menu-rescued-display').innerText = rescuedCount;
             document.getElementById('unlocked-count').innerText = Math.min(100, unlockedLevel);
-            document.getElementById('display-username').innerText = userName;
-            document.getElementById('p1-name-hud').innerHTML = `${userName} <span id="hp-text">20/20 HP</span>`;
         }
 
         // --- MAP GENERATION ---
@@ -493,9 +435,9 @@
         // --- THREE.JS SCENE SETUP ---
         let scene, camera, renderer;
         let pacmanMesh, topHalf, bottomHalf, auraMesh;
-        let opponentPacMesh, opponentTopHalf, opponentBotHalf;
         let activeParticles = [];
         
+        // Shared assets for citizens to keep rendering smooth for 300 models
         let citizenTopGeo, citizenBotGeo, citizenEyeGeo, citizenMat, citizenEyeMat;
 
         function init3D() {
@@ -512,6 +454,7 @@
             renderer.shadowMap.enabled = true;
             container.appendChild(renderer.domElement);
 
+            // Lighting
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
             scene.add(ambientLight);
 
@@ -519,6 +462,11 @@
             dirLight.position.set(10, 20, 15);
             scene.add(dirLight);
 
+            const pointLight = new THREE.PointLight(0xffff00, 1, 30);
+            pointLight.position.set(-8, 3, 5);
+            scene.add(pointLight);
+
+            // Arena Floor Grid
             const floorGeo = new THREE.PlaneGeometry(60, 40);
             const floorMat = new THREE.MeshPhongMaterial({ color: 0x001122, side: THREE.DoubleSide });
             const floor = new THREE.Mesh(floorGeo, floorMat);
@@ -530,10 +478,11 @@
             gridHelper.position.y = 0.01;
             scene.add(gridHelper);
 
+            // Initialize Models
             initCitizenAssets();
             createPacmanModel();
-            createOpponentPacmanModel();
 
+            // Resize and Raycaster
             window.addEventListener('resize', onWindowResize);
             setupRaycaster();
         }
@@ -547,6 +496,7 @@
             citizenEyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
         }
 
+        // Identical design to Pac-Man but optimized for 300 copies
         function createPacCitizen() {
             const group = new THREE.Group();
             const top = new THREE.Mesh(citizenTopGeo, citizenMat);
@@ -592,38 +542,6 @@
             scene.add(pacmanMesh);
         }
 
-        function createOpponentPacmanModel() {
-            opponentPacMesh = new THREE.Group();
-            const opMat = new THREE.MeshPhongMaterial({ color: 0xff0055, shininess: 80 });
-
-            const topGeo = new THREE.SphereGeometry(2, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
-            opponentTopHalf = new THREE.Mesh(topGeo, opMat);
-
-            const botGeo = new THREE.SphereGeometry(2, 32, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
-            opponentBotHalf = new THREE.Mesh(botGeo, opMat);
-
-            const eyeGeo = new THREE.SphereGeometry(0.3, 16, 16);
-            const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-            const rightEye = new THREE.Mesh(eyeGeo, eyeMat); rightEye.position.set(0.8, 0.9, 1.5);
-            const leftEye = new THREE.Mesh(eyeGeo, eyeMat); leftEye.position.set(-0.8, 0.9, 1.5);
-
-            opponentTopHalf.add(rightEye); opponentTopHalf.add(leftEye);
-            opponentPacMesh.add(opponentTopHalf); opponentPacMesh.add(opponentBotHalf);
-
-            const ringGeo = new THREE.RingGeometry(2.4, 2.7, 32);
-            const ringMat = new THREE.MeshBasicMaterial({ color: 0xff00ff, side: THREE.DoubleSide, transparent: true, opacity: 0 });
-            const ring = new THREE.Mesh(ringGeo, ringMat);
-            ring.rotation.x = -Math.PI / 2;
-            ring.position.y = -2;
-            opponentPacMesh.add(ring);
-
-            opponentPacMesh.position.set(9, 2, -5);
-            opponentPacMesh.rotation.y = -Math.PI / 3;
-            opponentPacMesh.visible = false;
-            opponentPacMesh.userData = { selectionRing: ring, isOpponentPac: true, bodyMesh: opponentTopHalf };
-            scene.add(opponentPacMesh);
-        }
-
         function createGhostModel(config, isBoss = false) {
             const group = new THREE.Group();
             const scale = config.isGlitchy ? 3.0 : (isBoss ? 2.2 : 1.2);
@@ -641,6 +559,7 @@
                 group.add(wire);
             }
 
+            // Eyes
             const eGeo = new THREE.SphereGeometry(0.25, 8, 8);
             const pGeo = new THREE.SphereGeometry(0.12, 8, 8);
             const eMat = new THREE.MeshBasicMaterial({ color: config.isGlitchy ? 0xff0000 : 0xffffff });
@@ -738,364 +657,55 @@
 
         function setupRaycaster() {
             const container = document.getElementById('canvas-container');
-            
-            const handleTargetSelect = (clientX, clientY) => {
+            container.addEventListener('click', (e) => {
+                if (battleState !== 'PLAYER_SELECT_TARGET') return;
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+                const ghostMeshes = activeGhosts.map(g => g.userData.bodyMesh);
+                const intersects = raycaster.intersectObjects(ghostMeshes);
+
+                if (intersects.length > 0) {
+                    const hitBody = intersects[0].object;
+                    const ghostGroup = activeGhosts.find(g => g.userData.bodyMesh === hitBody);
+                    if (ghostGroup) executePlayerAttack(ghostGroup);
+                }
+            });
+
+            // Fallback listeners on the window to bypass UI blocking
+            const handleGlobalTargetSelect = (clientX, clientY) => {
                 if (battleState !== 'PLAYER_SELECT_TARGET') return;
                 mouse.x = (clientX / window.innerWidth) * 2 - 1;
                 mouse.y = -(clientY / window.innerHeight) * 2 + 1;
 
                 raycaster.setFromCamera(mouse, camera);
-                
-                if (isMultiplayer) {
-                    const intersects = raycaster.intersectObject(opponentTopHalf);
-                    if (intersects.length > 0) {
-                        executeMultiplayerAttack();
-                    }
-                } else {
-                    const ghostMeshes = activeGhosts.map(g => g.userData.bodyMesh);
-                    const intersects = raycaster.intersectObjects(ghostMeshes);
-                    if (intersects.length > 0) {
-                        const hitBody = intersects[0].object;
-                        const ghostGroup = activeGhosts.find(g => g.userData.bodyMesh === hitBody);
-                        if (ghostGroup) executePlayerAttack(ghostGroup);
-                    }
+                const ghostMeshes = activeGhosts.map(g => g.userData.bodyMesh);
+                const intersects = raycaster.intersectObjects(ghostMeshes);
+
+                if (intersects.length > 0) {
+                    const hitBody = intersects[0].object;
+                    const ghostGroup = activeGhosts.find(g => g.userData.bodyMesh === hitBody);
+                    if (ghostGroup) executePlayerAttack(ghostGroup);
                 }
             };
-
-            container.addEventListener('click', (e) => handleTargetSelect(e.clientX, e.clientY));
+            
             window.addEventListener('click', (e) => {
                 if (e.target.closest && e.target.closest('.interactive')) return; 
-                handleTargetSelect(e.clientX, e.clientY);
+                handleGlobalTargetSelect(e.clientX, e.clientY);
             });
+            
             window.addEventListener('touchstart', (e) => {
                 if (e.target.closest && e.target.closest('.interactive')) return;
                 if (e.touches && e.touches.length > 0) {
-                    handleTargetSelect(e.touches[0].clientX, e.touches[0].clientY);
+                    handleGlobalTargetSelect(e.touches[0].clientX, e.touches[0].clientY);
                 }
             }, { passive: true });
         }
 
         function highlightTargetGhosts(enable) {
-            if (isMultiplayer) {
-                opponentPacMesh.userData.selectionRing.material.opacity = enable ? 0.8 : 0;
-            } else {
-                activeGhosts.forEach(g => { g.userData.selectionRing.material.opacity = enable ? 0.8 : 0; });
-            }
+            activeGhosts.forEach(g => { g.userData.selectionRing.material.opacity = enable ? 0.8 : 0; });
             document.getElementById('target-prompt').style.display = enable ? 'block' : 'none';
-        }
-
-        // --- 1V1 MULTIPLAYER PEERJS SYSTEM ---
-        window.openMultiplayerLobby = function() {
-            document.getElementById('screen-menu').style.display = 'none';
-            document.getElementById('screen-multiplayer').style.display = 'flex';
-            document.getElementById('multiplayer-status-text').innerText = "CHOOSE MATCHMAKING OR PRIVATE ROOM";
-            document.getElementById('lobby-controls').style.display = 'flex';
-            document.getElementById('matchmaking-cancel-box').style.display = 'none';
-        };
-
-        window.closeMultiplayerLobby = function() {
-            if (peer) { peer.destroy(); peer = null; }
-            document.getElementById('screen-multiplayer').style.display = 'none';
-            document.getElementById('screen-menu').style.display = 'flex';
-        };
-
-        // Automatic Matchmaking System (using PeerJS public cloud with a custom prefix room pool)
-        window.startAutoMatchmaking = function() {
-            document.getElementById('lobby-controls').style.display = 'none';
-            document.getElementById('matchmaking-cancel-box').style.display = 'block';
-            document.getElementById('multiplayer-status-text').innerText = "SEARCHING FOR ONLINE PAC-RIVAL...";
-
-            if (peer) { peer.destroy(); }
-            
-            // Generate a random client search slot between 1 and 25
-            const searchSlot = Math.floor(Math.random() * 25) + 1;
-            const myPeerId = `pacfight-match-${Math.random().toString(36).substring(2, 8)}`;
-            
-            peer = new Peer(myPeerId);
-
-            peer.on('open', (id) => {
-                console.log('Matchmaking peer open:', id);
-                tryConnectToPool(searchSlot, 1);
-            });
-
-            peer.on('connection', (incomingConn) => {
-                setupMultiplayerConnection(incomingConn, true);
-            });
-
-            peer.on('error', (err) => {
-                console.log('Matchmaking error:', err);
-            });
-        };
-
-        function tryConnectToPool(slot, attempt) {
-            if (!peer || battleState !== 'IDLE' && document.getElementById('screen-multiplayer').style.display === 'none') return;
-            
-            // Try connecting to a host slot in the public room pool
-            const targetId = `pacfight-host-slot-${slot}`;
-            if (peer.id === targetId) {
-                // We are the host of this slot
-                isHost = true;
-                document.getElementById('multiplayer-status-text').innerText = `WAITING IN SLOT #${slot} FOR OPPONENT...`;
-                peer.on('connection', (incomingConn) => {
-                    setupMultiplayerConnection(incomingConn, true);
-                });
-                return;
-            }
-
-            const testConn = peer.connect(targetId, { reliable: true });
-            let connected = false;
-
-            testConn.on('open', () => {
-                connected = true;
-                isHost = false;
-                setupMultiplayerConnection(testConn, false);
-            });
-
-            setTimeout(() => {
-                if (!connected && document.getElementById('screen-multiplayer').style.display === 'flex') {
-                    testConn.close();
-                    if (attempt < 5) {
-                        tryConnectToPool(Math.floor(Math.random() * 25) + 1, attempt + 1);
-                    } else {
-                        // Become the host of our own slot if no opponents found
-                        isHost = true;
-                        document.getElementById('multiplayer-status-text').innerText = `HOSTING BATTLE ARENA. WAITING FOR RIVAL...`;
-                        peer.on('connection', (incomingConn) => {
-                            setupMultiplayerConnection(incomingConn, true);
-                        });
-                    }
-                }
-            }, 2000);
-        }
-
-        window.cancelMatchmaking = function() {
-            if (peer) { peer.destroy(); peer = null; }
-            document.getElementById('matchmaking-cancel-box').style.display = 'none';
-            document.getElementById('lobby-controls').style.display = 'flex';
-            document.getElementById('multiplayer-status-text').innerText = "SEARCH CANCELLED.";
-        };
-
-        window.hostPrivateRoom = function() {
-            document.getElementById('lobby-controls').style.display = 'none';
-            document.getElementById('multiplayer-status-text').innerText = "CREATING PRIVATE ROOM...";
-
-            if (peer) { peer.destroy(); }
-            const roomCode = Math.floor(1000 + Math.random() * 9000);
-            peer = new Peer(`pacfight-room-${roomCode}`);
-
-            peer.on('open', () => {
-                isHost = true;
-                document.getElementById('multiplayer-status-text').innerHTML = `ROOM CODE: <b style="color:#ffff00; font-size:22px;">${roomCode}</b><br>WAITING FOR PLAYER TO JOIN...`;
-                document.getElementById('matchmaking-cancel-box').style.display = 'block';
-            });
-
-            peer.on('connection', (incomingConn) => {
-                setupMultiplayerConnection(incomingConn, true);
-            });
-
-            peer.on('error', (err) => {
-                alert('Room creation error. Try another code.');
-                closeMultiplayerLobby();
-            });
-        };
-
-        window.joinPrivateRoom = function() {
-            const code = document.getElementById('room-code-input').value.trim();
-            if (!code) { alert('Please enter a room code.'); return; }
-
-            document.getElementById('lobby-controls').style.display = 'none';
-            document.getElementById('multiplayer-status-text').innerText = "CONNECTING TO ROOM...";
-
-            if (peer) { peer.destroy(); }
-            peer = new Peer();
-
-            peer.on('open', () => {
-                const targetId = `pacfight-room-${code}`;
-                const c = peer.connect(targetId, { reliable: true });
-                isHost = false;
-
-                c.on('open', () => {
-                    setupMultiplayerConnection(c, false);
-                });
-
-                c.on('error', () => {
-                    alert('Could not connect to room.');
-                    closeMultiplayerLobby();
-                });
-            });
-        };
-
-        function setupMultiplayerConnection(connection, hosting) {
-            conn = connection;
-            isHost = hosting;
-
-            conn.on('open', () => {
-                console.log('Multiplayer connected!');
-                // Send our name
-                conn.send({ type: 'INIT', name: userName });
-            });
-
-            conn.on('data', (data) => {
-                handleMultiplayerData(data);
-            });
-
-            conn.on('close', () => {
-                alert('Opponent disconnected!');
-                returnToMenu();
-            });
-        }
-
-        function handleMultiplayerData(data) {
-            if (data.type === 'INIT') {
-                opponentName = data.name || 'RIVAL PAC';
-                // If we are host, reply with our init so opponent gets our name too
-                if (isHost) {
-                    conn.send({ type: 'INIT', name: userName });
-                }
-                startMultiplayerBattleArena();
-            } else if (data.type === 'ACTION') {
-                // Opponent performed an action against us
-                processOpponentAction(data);
-            } else if (data.type === 'SHIELD_RESULT') {
-                // Result of shield check
-                resolveIncomingAttackResult(data.success, data.damage);
-            }
-        }
-
-        function startMultiplayerBattleArena() {
-            isMultiplayer = true;
-            document.getElementById('screen-multiplayer').style.display = 'none';
-            document.getElementById('screen-menu').style.display = 'none';
-            document.getElementById('screen-battle').style.display = 'block';
-
-            document.getElementById('stage-title').innerText = "1V1 ARENA BATTLE";
-            document.getElementById('enemy-box-title').innerText = "OPPONENT";
-            document.getElementById('ghost-count-display').innerText = opponentName;
-            document.getElementById('boss-timer-display').style.display = 'none';
-
-            playBattleOST(true);
-
-            playerHp = maxHp;
-            opponentHp = maxHp;
-            powerCharge = 0;
-            isPowerPelletActive = false;
-            powerPelletTurnsLeft = 0;
-            updateHUD();
-
-            // Clear ghosts
-            activeGhosts.forEach(g => scene.remove(g));
-            activeGhosts = [];
-            document.getElementById('ghost-hp-overlay').innerHTML = '';
-
-            // Setup opponent 3D model
-            opponentPacMesh.visible = true;
-            opponentPacMesh.position.set(9, 2, -5);
-
-            // Host goes first, joiner goes second
-            isMyTurn = isHost;
-            battleState = isMyTurn ? 'IDLE' : 'ANIMATING';
-            enableActionButtons(isMyTurn);
-            
-            showFloatingText(isMyTurn ? "YOUR TURN!" : "RIVAL'S TURN!", pacmanMesh.position, '#ffff00');
-        }
-
-        function executeMultiplayerAttack() {
-            highlightTargetGhosts(false);
-            battleState = 'ANIMATING';
-            enableActionButtons(false);
-
-            const startPos = pacmanMesh.position.clone();
-            const targetPos = opponentPacMesh.position.clone().add(new THREE.Vector3(-2, 0, 1));
-
-            let progress = 0;
-            function animateP1Lunge() {
-                progress += 0.08;
-                if (progress < 0.5) {
-                    pacmanMesh.position.lerpVectors(startPos, targetPos, progress * 2);
-                    topHalf.rotation.x = -0.5; bottomHalf.rotation.x = 0.5;
-                } else if (progress < 1.0) {
-                    topHalf.rotation.x = 0; bottomHalf.rotation.x = 0;
-                    pacmanMesh.position.lerpVectors(targetPos, startPos, (progress - 0.5) * 2);
-                } else {
-                    pacmanMesh.position.copy(startPos);
-                    
-                    let dmg = Math.floor(Math.random() * 3) + 1;
-                    if (isPowerPelletActive) dmg *= 4;
-
-                    playBiteSfx();
-                    spawnParticles(opponentPacMesh.position, 0xff0055, 20);
-                    showFloatingText(`-${dmg}`, opponentPacMesh.position, '#ff0000');
-
-                    // Send action packet to opponent
-                    conn.send({ type: 'ACTION', action: 'attack', damage: dmg, powerActive: isPowerPelletActive });
-
-                    isMyTurn = false;
-                    setTimeout(() => {
-                        battleState = 'ANIMATING';
-                        enableActionButtons(false);
-                        showFloatingText("WAITING FOR RIVAL...", pacmanMesh.position, '#ff0055');
-                    }, 800);
-                    return;
-                }
-                requestAnimationFrame(animateP1Lunge);
-            }
-            animateP1Lunge();
-        }
-
-        function processOpponentAction(data) {
-            if (data.action === 'attack') {
-                // Opponent attacked us! Prompt quick time defense minigame
-                currentAttackingGhost = null; // Use for QTM
-                setupQuickTimeShieldMinigame(data.damage);
-            } else if (data.action === 'heal') {
-                playHealSfx();
-                spawnParticles(opponentPacMesh.position, 0x00ff00, 20);
-                showFloatingText(`HEALED`, opponentPacMesh.position, '#00ff00');
-                isMyTurn = true;
-                battleState = 'IDLE';
-                enableActionButtons(true);
-                showFloatingText("YOUR TURN!", pacmanMesh.position, '#ffff00');
-            } else if (data.action === 'power') {
-                playPowerSfx();
-                spawnParticles(opponentPacMesh.position, 0xffff00, 25);
-                showFloatingText(`POWER PELLET!`, opponentPacMesh.position, '#ffff00');
-                isMyTurn = true;
-                battleState = 'IDLE';
-                enableActionButtons(true);
-                showFloatingText("YOUR TURN!", pacmanMesh.position, '#ffff00');
-            }
-        }
-
-        function resolveIncomingAttackResult(success, incomingAtk) {
-            if (success) {
-                playShieldBlockSfx();
-                spawnParticles(pacmanMesh.position, 0x00f2ff, 25);
-                showFloatingText("BLOCKED!", pacmanMesh.position, '#00f2ff');
-            } else {
-                playerHp = Math.max(0, playerHp - incomingAtk);
-                updateHUD();
-                playSfx(120, 0.25, 'sawtooth', 0.2);
-                spawnParticles(pacmanMesh.position, 0xff0000, 20);
-                showFloatingText(`-${incomingAtk}`, pacmanMesh.position, '#ff0000');
-
-                if (playerHp <= 0) {
-                    conn.send({ type: 'ACTION', action: 'win' });
-                    setTimeout(handleGameOver, 600);
-                    return;
-                }
-            }
-
-            if (!isMultiplayer) {
-                // Singleplayer ghost turn continuation
-                currentGhostAttackIndex++;
-                setTimeout(startNextGhostAttack, 500);
-            } else {
-                // Multiplayer turn switch back to us
-                isMyTurn = true;
-                battleState = 'IDLE';
-                enableActionButtons(true);
-                showFloatingText("YOUR TURN!", pacmanMesh.position, '#ffff00');
-            }
         }
 
         // --- CUTSCENES ---
@@ -1105,6 +715,7 @@
             document.getElementById('screen-menu').style.display = 'none';
             document.getElementById('screen-intro').style.display = 'flex';
             
+            // Generate Cages in distance
             for(let i=0; i<40; i++) {
                 const cageMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, wireframe: true });
                 const cage = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), cageMat);
@@ -1115,6 +726,7 @@
                 cutsceneObjects.push(cage, cit);
             }
             
+            // Add Glitchy and Team
             const glitchy = createGhostModel(glitchyConfig, true);
             glitchy.scale.set(4, 4, 4);
             glitchy.position.set(0, 0, -25);
@@ -1151,12 +763,14 @@
             document.getElementById('screen-ending').style.display = 'flex';
             document.getElementById('ghost-hp-overlay').innerHTML = '';
             
+            // Spawn Glitchy
             const glitchy = createGhostModel(glitchyConfig, true);
             glitchy.scale.set(5, 5, 5);
             glitchy.position.set(0, 0, 0);
             scene.add(glitchy);
             cutsceneObjects.push(glitchy);
             
+            // Spawn all 300 rescued citizens
             for(let i=0; i<300; i++) {
                 const cit = createPacCitizen();
                 const angle = Math.random() * Math.PI * 2;
@@ -1185,7 +799,7 @@
         // --- BOSS TIMER MANAGEMENT ---
         function startBossTimer() {
             stopBossTimer();
-            bossTimerSeconds = 900;
+            bossTimerSeconds = 900; // 15 Minutes = 900 Seconds
             updateBossTimerUI();
             document.getElementById('boss-timer-display').style.display = 'block';
 
@@ -1224,8 +838,6 @@
 
         // --- BATTLE LOGIC ENGINE ---
         window.startBattleLevel = function(levelNum) {
-            isMultiplayer = false;
-            opponentPacMesh.visible = false;
             currentLevel = levelNum;
             document.getElementById('screen-menu').style.display = 'none';
             document.getElementById('screen-battle').style.display = 'block';
@@ -1236,10 +848,11 @@
             if(isGlitchy) title += ' (FINAL BOSS)';
             else if(isBoss) title += ' (BOSS)';
             document.getElementById('stage-title').innerText = title;
-            document.getElementById('enemy-box-title').innerText = "ENEMIES LEFT";
 
+            // Start standard battle OST or Boss battle OST
             playBattleOST(isBoss || isGlitchy);
 
+            // Handle 15 min Boss Timer
             if (isBoss || isGlitchy) {
                 startBossTimer();
             } else {
@@ -1256,6 +869,7 @@
             activeGhosts = [];
             document.getElementById('ghost-hp-overlay').innerHTML = '';
 
+            // Spawn Enemies
             let ghostCount = isGlitchy ? 1 : (isBoss ? 1 : Math.min(8, 1 + Math.floor((levelNum - 1) / 12)));
             const radius = 8;
             for (let i = 0; i < ghostCount; i++) {
@@ -1299,27 +913,6 @@
         function updateGhostHPBars() {
             if(cutsceneMode) return;
             const overlay = document.getElementById('ghost-hp-overlay');
-            
-            if (isMultiplayer && opponentPacMesh.visible) {
-                let bar = opponentPacMesh.userData.hpBar;
-                if (!bar) {
-                    bar = document.createElement('div');
-                    bar.className = 'ghost-hp-wrapper boss-hp-wrapper';
-                    bar.innerHTML = `<div class="ghost-hp-fill"></div>`;
-                    overlay.appendChild(bar);
-                    opponentPacMesh.userData.hpBar = bar;
-                }
-                const pos = opponentPacMesh.position.clone();
-                pos.y += 3.5;
-                pos.project(camera);
-                const x = (pos.x * .5 + .5) * window.innerWidth;
-                const y = (pos.y * -.5 + .5) * window.innerHeight;
-                bar.style.left = `${x}px`;
-                bar.style.top = `${y}px`;
-                bar.querySelector('.ghost-hp-fill').style.width = `${Math.max(0, (opponentHp / maxHp) * 100)}%`;
-                return;
-            }
-
             activeGhosts.forEach(g => {
                 let bar = g.userData.hpBar;
                 if (!bar) {
@@ -1362,26 +955,14 @@
         }
 
         window.selectAction = function(action) {
-            if (battleState !== 'IDLE' || (isMultiplayer && !isMyTurn)) return;
+            if (battleState !== 'IDLE') return;
             selectedAbility = action;
 
             if (action === 'attack') {
-                if (isMultiplayer) {
-                    battleState = 'PLAYER_SELECT_TARGET';
-                    highlightTargetGhosts(true);
-                } else if (activeGhosts.length === 1) {
-                    executePlayerAttack(activeGhosts[0]);
-                } else {
-                    battleState = 'PLAYER_SELECT_TARGET';
-                    highlightTargetGhosts(true);
-                }
-            } else if (action === 'heal') {
-                if (isMultiplayer) executeMultiplayerHeal();
-                else executePlayerHeal();
-            } else if (action === 'power') {
-                if (isMultiplayer) executeMultiplayerPower();
-                else executePowerPellet();
-            }
+                if (activeGhosts.length === 1) executePlayerAttack(activeGhosts[0]);
+                else { battleState = 'PLAYER_SELECT_TARGET'; highlightTargetGhosts(true); }
+            } else if (action === 'heal') executePlayerHeal();
+            else if (action === 'power') executePowerPellet();
         };
 
         function executePlayerAttack(targetGhost) {
@@ -1460,45 +1041,6 @@
             setTimeout(() => advanceTurnState(), 1000);
         }
 
-        function executeMultiplayerHeal() {
-            battleState = 'ANIMATING';
-            enableActionButtons(false);
-            const healAmt = Math.floor(Math.random() * 10) + 3;
-            playerHp = Math.min(maxHp, playerHp + healAmt);
-            updateHUD();
-            playHealSfx();
-            spawnParticles(pacmanMesh.position, 0x00ff00, 25);
-            showFloatingText(`+${healAmt} HP`, pacmanMesh.position, '#00ff00');
-            conn.send({ type: 'ACTION', action: 'heal' });
-
-            isMyTurn = false;
-            setTimeout(() => {
-                battleState = 'ANIMATING';
-                enableActionButtons(false);
-                showFloatingText("WAITING FOR RIVAL...", pacmanMesh.position, '#ff0055');
-            }, 1000);
-        }
-
-        function executeMultiplayerPower() {
-            battleState = 'ANIMATING';
-            enableActionButtons(false);
-            powerCharge = 0;
-            isPowerPelletActive = true;
-            powerPelletTurnsLeft = 2;
-            updateHUD();
-            playPowerSfx();
-            spawnParticles(pacmanMesh.position, 0xffff00, 30);
-            showFloatingText(`POWER PELLET ACTIVE!`, pacmanMesh.position, '#ffff00');
-            conn.send({ type: 'ACTION', action: 'power' });
-
-            isMyTurn = false;
-            setTimeout(() => {
-                battleState = 'ANIMATING';
-                enableActionButtons(false);
-                showFloatingText("WAITING FOR RIVAL...", pacmanMesh.position, '#ff0055');
-            }, 1000);
-        }
-
         function advanceTurnState() {
             if (!isPowerPelletActive && powerCharge < 2) powerCharge++;
             else if (isPowerPelletActive) {
@@ -1523,10 +1065,10 @@
                 return;
             }
             currentAttackingGhost = activeGhosts[currentGhostAttackIndex];
-            setupQuickTimeShieldMinigame(currentAttackingGhost.userData.atk);
+            setupQuickTimeShieldMinigame();
         }
 
-        function setupQuickTimeShieldMinigame(incomingAtk) {
+        function setupQuickTimeShieldMinigame() {
             battleState = 'SHIELD_MINIGAME';
             const overlay = document.getElementById('shield-overlay');
             overlay.style.display = 'block';
@@ -1548,9 +1090,6 @@
                 if (battleState === 'SHIELD_MINIGAME') shieldAnimFrame = requestAnimationFrame(animateTimingBar);
             }
             animateTimingBar();
-
-            // Store current incoming atk in global for triggerShieldDefend
-            window._currentIncomingAtk = incomingAtk;
         }
 
         window.triggerShieldDefend = function() {
@@ -1563,15 +1102,6 @@
             const zoneLeft = parseFloat(document.getElementById('timing-zone').style.left);
             const zoneWidth = parseFloat(document.getElementById('timing-zone').style.width);
             const isSuccess = (timingPos >= zoneLeft && timingPos <= (zoneLeft + zoneWidth));
-            const incomingAtk = window._currentIncomingAtk || 2;
-
-            if (isMultiplayer) {
-                if (conn) {
-                    conn.send({ type: 'SHIELD_RESULT', success: isSuccess, damage: incomingAtk });
-                }
-                resolveIncomingAttackResult(isSuccess, incomingAtk);
-                return;
-            }
 
             const g = currentAttackingGhost;
             const startPos = g.position.clone();
@@ -1584,7 +1114,27 @@
                 else if (progress < 1.0) g.position.lerpVectors(targetPos, startPos, (progress - 0.5) * 2);
                 else {
                     g.position.copy(startPos);
-                    resolveIncomingAttackResult(isSuccess, incomingAtk);
+
+                    if (isSuccess) {
+                        playShieldBlockSfx();
+                        spawnParticles(pacmanMesh.position, 0x00f2ff, 25);
+                        showFloatingText("BLOCKED!", pacmanMesh.position, '#00f2ff');
+                    } else {
+                        const incomingAtk = g.userData.atk;
+                        playerHp = Math.max(0, playerHp - incomingAtk);
+                        updateHUD();
+
+                        playSfx(120, 0.25, 'sawtooth', 0.2);
+                        spawnParticles(pacmanMesh.position, 0xff0000, 20);
+                        showFloatingText(`-${incomingAtk}`, pacmanMesh.position, '#ff0000');
+
+                        if (playerHp <= 0) {
+                            setTimeout(animatePacmanDeath, 600);
+                            return;
+                        }
+                    }
+                    currentGhostAttackIndex++;
+                    setTimeout(startNextGhostAttack, 500);
                     return;
                 }
                 requestAnimationFrame(animateGhostLunge);
@@ -1598,6 +1148,7 @@
             document.getElementById('btn-pellet').disabled = !enable || (powerCharge < 2 || isPowerPelletActive);
         }
 
+        // --- PAC-MAN LOSE ANIMATION ---
         function animatePacmanDeath() {
             battleState = 'DEFEAT_ANIMATION';
             enableActionButtons(false);
@@ -1605,21 +1156,25 @@
             playDeathSfx();
 
             let phaseProgress = 0;
-            const duration = 120;
+            const duration = 120; // ~2 seconds @ 60fps
 
             function deathLoop() {
                 phaseProgress++;
                 const ratio = phaseProgress / duration;
 
+                // Rotate towards screen & spin rapidly around Y and Z
                 pacmanMesh.rotation.y += 0.25;
                 pacmanMesh.rotation.z += 0.15;
 
+                // Open jaws wider and wider until 180 degrees
                 topHalf.rotation.x = -Math.min(Math.PI * 0.9, ratio * Math.PI * 1.1);
                 bottomHalf.rotation.x = Math.min(Math.PI * 0.9, ratio * Math.PI * 1.1);
 
+                // Shrink pacman to zero
                 const scale = Math.max(0, 1 - ratio);
                 pacmanMesh.scale.set(scale, scale, scale);
 
+                // Burst particles periodically
                 if (phaseProgress % 6 === 0) {
                     spawnParticles(pacmanMesh.position, 0xffff00, 8);
                 }
@@ -1635,6 +1190,7 @@
             deathLoop();
         }
 
+        // --- VICTORY & GAMEOVER MODALS ---
         function handleVictory() {
             battleState = 'VICTORY';
             stopBossTimer();
@@ -1644,8 +1200,8 @@
             
             setTimeout(() => {
                 document.getElementById('victory-title').innerText = "VICTORY!";
-                document.getElementById('victory-text').innerText = isMultiplayer ? "You defeated your rival in the 1v1 Arena!" : `Stage ${currentLevel} cleared! Unlocked Level ${unlockedLevel}`;
-                document.getElementById('rescued-text').innerText = isMultiplayer ? "MULTIPLAYER CHAMPION" : ((currentLevel === unlockedLevel - 1) ? "+3 Pac-Citizens Rescued!" : "Level Replayed");
+                document.getElementById('victory-text').innerText = `Stage ${currentLevel} cleared! Unlocked Level ${unlockedLevel}`;
+                document.getElementById('rescued-text').innerText = (currentLevel === unlockedLevel - 1) ? "+3 Pac-Citizens Rescued!" : "Level Replayed";
                 document.getElementById('modal-victory').style.display = 'flex';
                 
                 playSfx(523, 0.1, 'sine');
@@ -1664,12 +1220,7 @@
             playSfx(300, 0.3, 'sawtooth', 0.2);
             setTimeout(() => playSfx(150, 0.5, 'sawtooth', 0.2), 250);
 
-            if (isMultiplayer) {
-                document.getElementById('gameover-title').innerText = "DEFEATED IN ARENA";
-                document.getElementById('gameover-text').innerText = `${opponentName} won the 1v1 duel!`;
-                document.getElementById('btn-retry').innerText = "RETURN TO MENU";
-                document.getElementById('btn-retry').onclick = returnToMenu;
-            } else if (playerLives <= 0) {
+            if (playerLives <= 0) {
                 document.getElementById('gameover-title').innerText = "GAME OVER";
                 document.getElementById('gameover-text').innerText = "ALL LIVES LOST!\nTHE GHOSTS HAVE TAKEN OVER PAC-CITY.";
                 document.getElementById('btn-retry').innerText = "START OVER";
@@ -1691,9 +1242,7 @@
         window.returnToMenu = function() {
             stopBossTimer();
             stopBattleOST();
-            if (peer) { peer.destroy(); peer = null; }
             document.getElementById('modal-victory').style.display = 'none';
-            document.getElementById('modal-gameover').style.display = 'none';
             document.getElementById('screen-battle').style.display = 'none';
             document.getElementById('screen-menu').style.display = 'flex';
             renderMapGrid();
@@ -1701,11 +1250,7 @@
 
         window.retryLevel = function() {
             document.getElementById('modal-gameover').style.display = 'none';
-            if (isMultiplayer) {
-                returnToMenu();
-            } else {
-                startBattleLevel(currentLevel);
-            }
+            startBattleLevel(currentLevel);
         };
 
         function onWindowResize() {
@@ -1714,6 +1259,7 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
+        // --- MAIN RENDER LOOP ---
         function animate() {
             requestAnimationFrame(animate);
             const time = Date.now();
@@ -1735,9 +1281,11 @@
                 cutsceneObjects.forEach(obj => {
                     if (obj.userData.isCitizen && obj.visible) {
                         citizensActive++;
+                        // Move toward Glitchy
                         const dir = new THREE.Vector3().subVectors(glitchy.position, obj.position).normalize();
                         obj.position.add(dir.multiplyScalar(obj.userData.speed));
                         
+                        // Chomping animation
                         obj.children[0].rotation.x = -Math.abs(Math.sin(time * 0.01 + obj.userData.offset)) * 0.5;
                         obj.children[1].rotation.x = Math.abs(Math.sin(time * 0.01 + obj.userData.offset)) * 0.5;
                         
@@ -1757,6 +1305,7 @@
                 }
             } 
             else {
+                // Battle Idle Animations
                 activeGhosts.forEach((g, idx) => {
                     if (g.userData.isGlitchy) {
                         if(Math.random() > 0.4) {
@@ -1771,11 +1320,13 @@
                     }
                 });
 
+                // Cages animation
                 backgroundCages.forEach(c => {
                     if (!c.active && c.cage.material.opacity > 0) {
                         c.cage.position.y += 0.05;
                         c.cage.material.opacity -= 0.03;
                         c.citizen.position.y = 0.8 + Math.abs(Math.sin(time * 0.01)) * 1.5;
+                        // Chomping when free
                         c.citizen.children[0].rotation.x = -Math.abs(Math.sin(time * 0.015)) * 0.6;
                         c.citizen.children[1].rotation.x = Math.abs(Math.sin(time * 0.015)) * 0.6;
                     }
@@ -1788,9 +1339,11 @@
             renderer.render(scene, camera);
         }
 
+        // Initialize application
         init3D();
         loadProgress();
         animate();
     </script>
 </body>
 </html>
+
