@@ -16,19 +16,20 @@
 <link rel="manifest" href="manifest.json">
     <style>
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
-        body { margin: 0; overflow: hidden; background: #000411; font-family: 'Courier New', monospace; color: #fff; }
+        body { margin: 0; overflow: hidden; background: #000411; font-family: 'Courier New', monospace; color: #fff; touch-action: none; }
 
         /* Screens */
         .screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; flex-direction: column; }
         #screen-menu { z-index: 100; background: linear-gradient(135deg, #000411 0%, #001133 100%); align-items: center; justify-content: flex-start; padding: 20px; overflow-y: auto; }
         #screen-battle { z-index: 10; display: none; }
+        #screen-city { z-index: 50; display: none; background: transparent; pointer-events: none; } /* City UI overlay */
 
         /* Header UI */
         h1.title { font-size: 38px; color: #ffff00; text-shadow: 0 0 15px #ffff00, 3px 3px 0 #ff0000; margin: 10px 0 5px 0; letter-spacing: 3px; text-align: center; }
         .subtitle { color: #00f2ff; font-size: 14px; margin-bottom: 20px; text-shadow: 0 0 8px #00f2ff; text-align: center; }
 
         /* Level Map Screen */
-        .map-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 12px; width: 100%; max-width: 800px; background: rgba(0,0,0,0.6); border: 2px solid #00f2ff; border-radius: 12px; padding: 20px; box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); max-height: 60vh; overflow-y: auto; }
+        .map-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 12px; width: 100%; max-width: 800px; background: rgba(0,0,0,0.6); border: 2px solid #00f2ff; border-radius: 12px; padding: 20px; box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); max-height: 50vh; overflow-y: auto; margin-bottom: 20px; }
         .level-btn { aspect-ratio: 1; border-radius: 10px; border: 2px solid #00f2ff; background: rgba(0, 242, 255, 0.1); color: #00f2ff; font-weight: bold; font-size: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; position: relative; }
         .level-btn:hover:not(.locked) { background: #00f2ff; color: #000; box-shadow: 0 0 15px #00f2ff; transform: scale(1.05); }
         .level-btn.locked { border-color: #444; color: #555; background: rgba(255,255,255,0.03); cursor: not-allowed; }
@@ -66,6 +67,8 @@
         .cmd-btn.power:hover:not(:disabled) { background: #ffff00; color: #000; box-shadow: 0 0 20px #ffff00; }
         .cmd-btn.heal { border-color: #00ff00; color: #00ff00; background: rgba(0, 255, 0, 0.15); }
         .cmd-btn.heal:hover:not(:disabled) { background: #00ff00; color: #000; box-shadow: 0 0 20px #00ff00; }
+        .cmd-btn.city { border-color: #ff00ff; color: #ff00ff; background: rgba(255, 0, 255, 0.15); width: 200px; font-size: 16px; margin-bottom: 20px; }
+        .cmd-btn.city:hover { background: #ff00ff; color: #fff; box-shadow: 0 0 20px #ff00ff; }
 
         /* Quick-Time Shield Overlay */
         #shield-overlay { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; background: rgba(0,0,0,0.9); border: 3px solid #00f2ff; border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 0 30px #00f2ff; z-index: 500; }
@@ -81,7 +84,7 @@
         @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-60px) scale(1.4); } }
 
         /* Modals */
-        .modal { display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); flex-direction: column; align-items: center; justify-content: center; z-index: 2000; }
+        .modal { display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); flex-direction: column; align-items: center; justify-content: center; z-index: 2000; pointer-events: auto; }
         .modal-content { background: #001133; border: 3px solid #00f2ff; border-radius: 15px; padding: 30px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 0 30px #00f2ff; }
         .modal h2 { font-size: 32px; margin: 0 0 15px 0; }
         .modal-btn { padding: 12px 30px; font-size: 18px; font-weight: bold; border-radius: 10px; border: none; cursor: pointer; margin-top: 20px; font-family: inherit; }
@@ -101,6 +104,11 @@
         .cutscene-text { background: rgba(0,0,0,0.85); border: 2px solid #00f2ff; color: #ffff00; padding: 20px 30px; font-size: 18px; text-align: center; border-radius: 10px; max-width: 600px; margin-bottom: 20px; box-shadow: 0 0 20px #00f2ff; font-weight: bold; line-height: 1.5; pointer-events: auto; }
         .skip-btn { pointer-events: auto; background: #ff0055; color: white; border: none; padding: 12px 24px; border-radius: 5px; font-family: inherit; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 0 15px #ff0055; }
         .skip-btn:hover { background: #ff3377; }
+        
+        /* Pac-City UI */
+        #dialogue-box { display: none; position: absolute; bottom: 180px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 500px; background: rgba(0,0,0,0.85); border: 2px solid #ff00ff; color: #fff; padding: 20px; border-radius: 15px; text-align: center; font-size: 16px; font-weight: bold; z-index: 200; box-shadow: 0 0 20px rgba(255,0,255,0.4); text-shadow: 1px 1px 2px #000; }
+        #joystick-zone { position: absolute; bottom: 30px; left: 30px; width: 120px; height: 120px; background: rgba(0, 242, 255, 0.15); border: 2px solid rgba(0, 242, 255, 0.5); border-radius: 50%; z-index: 200; pointer-events: auto; touch-action: none; display: flex; align-items: center; justify-content: center; }
+        #joystick-knob { position: absolute; width: 50px; height: 50px; background: #00f2ff; border-radius: 50%; box-shadow: 0 0 15px #00f2ff; transition: transform 0.05s ease-out; }
     </style>
 </head>
 <body>
@@ -116,11 +124,32 @@
             <div>RESCUED: <span id="menu-rescued-display" style="color:#00ff00;">0</span>/300</div>
         </div>
 
+        <button class="cmd-btn city" onclick="enterPacCity()">🏙️ VIEW PAC-CITY</button>
+
         <div class="map-container" id="map-grid"></div>
     </div>
 
     <!-- 3D CANVAS LAYER (Behind UI) -->
     <div id="canvas-container" style="position:absolute; top:0; left:0; width:100vw; height:100vh; z-index:1;"></div>
+
+    <!-- PAC-CITY SCREEN UI -->
+    <div id="screen-city" class="screen">
+        <div style="position: absolute; top: 15px; right: 15px; z-index: 200; pointer-events: auto;">
+            <button class="cmd-btn" style="border-color: #ff0055; color: #ff0055; background: rgba(255,0,85,0.15);" onclick="exitPacCity()">🚪 EXIT CITY</button>
+        </div>
+        
+        <div id="dialogue-box">
+            <!-- Text goes here -->
+        </div>
+        
+        <div style="position: absolute; bottom: 30px; right: 30px; z-index: 200; pointer-events: auto;">
+            <button id="btn-talk" class="cmd-btn power" style="display: none; width: 80px; height: 80px; border-radius: 40px; font-size: 18px; box-shadow: 0 0 20px #ffff00;" onclick="talkToCitizen()">🗣️<br>TALK</button>
+        </div>
+        
+        <div id="joystick-zone">
+            <div id="joystick-knob"></div>
+        </div>
+    </div>
 
     <!-- INTRO CUTSCENE -->
     <div id="screen-intro" class="cutscene-ui">
@@ -224,6 +253,7 @@
         import * as THREE from 'three';
 
         // --- GAME ARCHITECTURE & STATE ---
+        let appState = 'MENU'; // MENU, BATTLE, CITY, CUTSCENE
         let currentLevel = 1;
         let unlockedLevel = 1;
         
@@ -251,6 +281,10 @@
         // Boss Timer State (15 Minutes)
         let bossTimerSeconds = 900;
         let bossTimerInterval = null;
+        
+        // IndexedDB variables
+        let db;
+        const DB_NAME = 'PacFightDB';
 
         // Background Audio OST Management
         const bgAudio = new Audio();
@@ -259,7 +293,6 @@
         function playBattleOST(isBoss) {
             bgAudio.pause();
             bgAudio.currentTime = 0;
-            // Play boss OST for boss levels, classic battle OST for normal levels
             bgAudio.src = isBoss ? 'Pac-Fight BossFight ost.mp3' : 'Pac-Fight battle ost.mp3';
             bgAudio.play().catch(e => {
                 console.log('Audio autoplay prevented or file not found in directory:', e);
@@ -293,49 +326,91 @@
         // Level 100 Final Boss
         const glitchyConfig = { name: 'GLITCHY', color: 0x110022, hp: 60, atk: 8, isGlitchy: true };
 
-        // --- LOCAL STORAGE DATA ---
-        function loadProgress() {
-            const savedLevel = localStorage.getItem('PacFight_Level');
-            const savedLives = localStorage.getItem('PacFight_Lives');
-            
-            if (savedLevel) unlockedLevel = parseInt(savedLevel, 10);
-            if (savedLives) {
-                playerLives = parseInt(savedLives, 10);
-                if (playerLives <= 0) {
-                    // Fail safe if reloaded on 0 lives
-                    hardReset();
-                    return;
-                }
-            }
-            
-            updateGlobalHUD();
-            renderMapGrid();
+        // --- INDEXED DB PROGRESS SYSTEM ---
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, 1);
+                request.onupgradeneeded = (e) => {
+                    const database = e.target.result;
+                    if (!database.objectStoreNames.contains('saves')) {
+                        database.createObjectStore('saves');
+                    }
+                };
+                request.onsuccess = (e) => {
+                    db = e.target.result;
+                    resolve(db);
+                };
+                request.onerror = (e) => reject(e);
+            });
+        }
 
-            // Intro Check
-            if (unlockedLevel === 1 && playerLives === 3 && !sessionStorage.getItem('PacFight_IntroSeen')) {
-                startIntroCutscene();
-                sessionStorage.setItem('PacFight_IntroSeen', 'true');
-            } else {
+        async function loadProgress() {
+            try {
+                if (!db) await initDB();
+                const tx = db.transaction('saves', 'readonly');
+                const store = tx.objectStore('saves');
+                
+                const reqLevel = store.get('PacFight_Level');
+                const reqLives = store.get('PacFight_Lives');
+
+                reqLevel.onsuccess = () => {
+                    if (reqLevel.result) unlockedLevel = parseInt(reqLevel.result, 10);
+                };
+                
+                reqLives.onsuccess = async () => {
+                    if (reqLives.result !== undefined) {
+                        playerLives = parseInt(reqLives.result, 10);
+                        if (playerLives <= 0) {
+                            await hardReset();
+                            return;
+                        }
+                    }
+                };
+
+                tx.oncomplete = () => {
+                    updateGlobalHUD();
+                    renderMapGrid();
+
+                    // Intro Check
+                    if (unlockedLevel === 1 && playerLives === 3 && !sessionStorage.getItem('PacFight_IntroSeen')) {
+                        startIntroCutscene();
+                        sessionStorage.setItem('PacFight_IntroSeen', 'true');
+                    } else {
+                        document.getElementById('screen-menu').style.display = 'flex';
+                    }
+                };
+            } catch (err) {
+                console.error("IndexedDB load error, falling back to defaults", err);
+                updateGlobalHUD();
+                renderMapGrid();
                 document.getElementById('screen-menu').style.display = 'flex';
             }
         }
 
-        function saveProgress() {
+        async function saveProgress() {
             if (currentLevel >= unlockedLevel && unlockedLevel <= 100) {
-                unlockedLevel = currentLevel + 1;
-                localStorage.setItem('PacFight_Level', Math.min(100, unlockedLevel));
+                unlockedLevel = Math.min(100, currentLevel + 1);
             }
-            localStorage.setItem('PacFight_Lives', playerLives);
             updateGlobalHUD();
+            
+            if (!db) await initDB();
+            const tx = db.transaction('saves', 'readwrite');
+            const store = tx.objectStore('saves');
+            store.put(unlockedLevel, 'PacFight_Level');
+            store.put(playerLives, 'PacFight_Lives');
         }
 
-        function hardReset() {
-            localStorage.removeItem('PacFight_Level');
-            localStorage.removeItem('PacFight_Lives');
+        async function hardReset() {
             unlockedLevel = 1;
             playerLives = 3;
             rescuedCount = 0;
-            saveProgress();
+            
+            if (!db) await initDB();
+            const tx = db.transaction('saves', 'readwrite');
+            const store = tx.objectStore('saves');
+            store.put(unlockedLevel, 'PacFight_Level');
+            store.put(playerLives, 'PacFight_Lives');
+
             updateGlobalHUD();
             renderMapGrid();
         }
@@ -433,7 +508,7 @@
         }
 
         // --- THREE.JS SCENE SETUP ---
-        let scene, camera, renderer;
+        let scene, camera, renderer, floor, gridHelper;
         let pacmanMesh, topHalf, bottomHalf, auraMesh;
         let activeParticles = [];
         
@@ -467,20 +542,21 @@
             scene.add(pointLight);
 
             // Arena Floor Grid
-            const floorGeo = new THREE.PlaneGeometry(60, 40);
+            const floorGeo = new THREE.PlaneGeometry(160, 160); // Enlarged for Pac-City
             const floorMat = new THREE.MeshPhongMaterial({ color: 0x001122, side: THREE.DoubleSide });
-            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor = new THREE.Mesh(floorGeo, floorMat);
             floor.rotation.x = -Math.PI / 2;
             floor.position.y = 0;
             scene.add(floor);
 
-            const gridHelper = new THREE.GridHelper(60, 30, 0x00f2ff, 0x002244);
+            gridHelper = new THREE.GridHelper(160, 80, 0x00f2ff, 0x002244);
             gridHelper.position.y = 0.01;
             scene.add(gridHelper);
 
             // Initialize Models
             initCitizenAssets();
             createPacmanModel();
+            initJoystick();
 
             // Resize and Raycaster
             window.addEventListener('resize', onWindowResize);
@@ -509,7 +585,7 @@
             top.add(re); top.add(le);
             group.add(top); group.add(bot);
             
-            group.userData = { isCitizen: true, speed: 0.1 + Math.random() * 0.15, offset: Math.random() * Math.PI * 2 };
+            group.userData = { isCitizen: true, speed: 0.1 + Math.random() * 0.15, offset: Math.random() * Math.PI * 2, wanderTarget: new THREE.Vector3() };
             return group;
         }
 
@@ -710,6 +786,7 @@
 
         // --- CUTSCENES ---
         window.startIntroCutscene = function() {
+            appState = 'CUTSCENE';
             cutsceneMode = 'intro';
             stopBattleOST();
             document.getElementById('screen-menu').style.display = 'none';
@@ -746,6 +823,7 @@
         };
 
         window.endIntroCutscene = function() {
+            appState = 'MENU';
             cutsceneMode = null;
             cutsceneObjects.forEach(obj => scene.remove(obj));
             cutsceneObjects = [];
@@ -755,6 +833,7 @@
         };
 
         window.startEndingCutscene = function() {
+            appState = 'CUTSCENE';
             cutsceneMode = 'ending';
             battleState = 'VICTORY';
             stopBattleOST();
@@ -836,8 +915,158 @@
             document.getElementById('boss-timer-display').innerText = `⏱️ ${formatted}`;
         }
 
+        // --- PAC-CITY SYSTEM & JOYSTICK ---
+        let cityMeshes = [];
+        let cityCitizens = [];
+        let joystickActive = false;
+        let joystickCenter = { x: 0, y: 0 };
+        let joystickDir = { x: 0, y: 0 };
+        const joystickMaxRadius = 35; // Size constraints
+        
+        function initJoystick() {
+            const zone = document.getElementById('joystick-zone');
+            const knob = document.getElementById('joystick-knob');
+
+            function start(e) {
+                if(appState !== 'CITY') return;
+                joystickActive = true;
+                const rect = zone.getBoundingClientRect();
+                joystickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+                move(e);
+            }
+            function move(e) {
+                if (!joystickActive || appState !== 'CITY') return;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                
+                let dx = clientX - joystickCenter.x;
+                let dy = clientY - joystickCenter.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if (dist > joystickMaxRadius) {
+                    dx = (dx/dist) * joystickMaxRadius;
+                    dy = (dy/dist) * joystickMaxRadius;
+                }
+                
+                knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+                joystickDir.x = dx / joystickMaxRadius;
+                joystickDir.y = dy / joystickMaxRadius;
+            }
+            function end(e) {
+                joystickActive = false;
+                knob.style.transform = `translate(-50%, -50%)`;
+                joystickDir.x = 0;
+                joystickDir.y = 0;
+            }
+
+            zone.addEventListener('mousedown', start);
+            window.addEventListener('mousemove', move);
+            window.addEventListener('mouseup', end);
+            zone.addEventListener('touchstart', start, {passive: true});
+            window.addEventListener('touchmove', move, {passive: true});
+            window.addEventListener('touchend', end);
+        }
+
+        window.enterPacCity = function() {
+            appState = 'CITY';
+            document.getElementById('screen-menu').style.display = 'none';
+            document.getElementById('screen-city').style.display = 'block';
+            
+            // Hide menu background objects
+            backgroundCages.forEach(c => c.group.visible = false);
+            
+            pacmanMesh.visible = true;
+            pacmanMesh.position.set(0, 2, 0);
+            pacmanMesh.scale.set(1, 1, 1);
+            
+            // Create Neon Buildings
+            for (let i = 0; i < 25; i++) {
+                const height = 5 + Math.random() * 20;
+                const geo = new THREE.BoxGeometry(4 + Math.random()*4, height, 4 + Math.random()*4);
+                // Cyberpunk neon building colors
+                const colors = [0x00f2ff, 0xff00ff, 0x000411, 0x110033, 0xff0055];
+                const mat = new THREE.MeshPhongMaterial({ 
+                    color: colors[Math.floor(Math.random() * colors.length)], 
+                    transparent: true, 
+                    opacity: 0.85,
+                    shininess: 90
+                });
+                
+                const bldg = new THREE.Mesh(geo, mat);
+                
+                // Keep center free
+                let bx, bz;
+                do {
+                    bx = (Math.random() - 0.5) * 120;
+                    bz = (Math.random() - 0.5) * 120;
+                } while (Math.abs(bx) < 15 && Math.abs(bz) < 15);
+                
+                bldg.position.set(bx, height/2, bz);
+                
+                // Add wireframe neon glow edges
+                const edges = new THREE.EdgesGeometry(geo);
+                const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x00f2ff, transparent: true, opacity: 0.5 }));
+                bldg.add(line);
+
+                scene.add(bldg);
+                cityMeshes.push(bldg);
+            }
+            
+            // Spawn Citizens
+            const countToSpawn = Math.min(rescuedCount, 150); // Performance cap
+            for (let i = 0; i < countToSpawn; i++) {
+                const cit = createPacCitizen();
+                cit.position.set((Math.random() - 0.5) * 100, 0.8, (Math.random() - 0.5) * 100);
+                cit.userData.wanderTarget.copy(cit.position);
+                scene.add(cit);
+                cityCitizens.push(cit);
+            }
+        };
+
+        window.exitPacCity = function() {
+            appState = 'MENU';
+            document.getElementById('screen-city').style.display = 'none';
+            document.getElementById('screen-menu').style.display = 'flex';
+            
+            cityMeshes.forEach(m => { scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
+            cityMeshes = [];
+            
+            cityCitizens.forEach(c => scene.remove(c));
+            cityCitizens = [];
+            
+            backgroundCages.forEach(c => c.group.visible = true);
+            
+            document.getElementById('dialogue-box').style.display = 'none';
+            document.getElementById('btn-talk').style.display = 'none';
+        };
+
+        const cityDialogues = [
+            "Thank you for saving us, Pac-Man!",
+            "Glitchy was terrifying...",
+            "We believe in you!",
+            "Our city is rebuilding thanks to you.",
+            "Waka waka!",
+            "It was so dark in those cages.",
+            "You are our true hero!",
+            "Did you know Ghosts are afraid of Power Pellets?",
+            "Pac-City feels alive again!"
+        ];
+
+        window.talkToCitizen = function() {
+            const db = document.getElementById('dialogue-box');
+            playSfx(800, 0.1, 'sine', 0.2);
+            db.innerText = cityDialogues[Math.floor(Math.random() * cityDialogues.length)];
+            db.style.display = 'block';
+            
+            // hide after 3.5 seconds
+            setTimeout(() => {
+                db.style.display = 'none';
+            }, 3500);
+        };
+
         // --- BATTLE LOGIC ENGINE ---
         window.startBattleLevel = function(levelNum) {
+            appState = 'BATTLE';
             currentLevel = levelNum;
             document.getElementById('screen-menu').style.display = 'none';
             document.getElementById('screen-battle').style.display = 'block';
@@ -1196,7 +1425,7 @@
             stopBossTimer();
             stopBattleOST();
             breakCagesOpen();
-            saveProgress();
+            saveProgress(); // Saves progress in DB
             
             setTimeout(() => {
                 document.getElementById('victory-title').innerText = "VICTORY!";
@@ -1211,11 +1440,12 @@
             }, 1500);
         }
 
-        function handleGameOver() {
+        async function handleGameOver() {
             stopBossTimer();
             stopBattleOST();
             playerLives--;
             updateGlobalHUD();
+            await saveProgress(); // Commits life loss to DB instantly
             
             playSfx(300, 0.3, 'sawtooth', 0.2);
             setTimeout(() => playSfx(150, 0.5, 'sawtooth', 0.2), 250);
@@ -1224,10 +1454,11 @@
                 document.getElementById('gameover-title').innerText = "GAME OVER";
                 document.getElementById('gameover-text').innerText = "ALL LIVES LOST!\nTHE GHOSTS HAVE TAKEN OVER PAC-CITY.";
                 document.getElementById('btn-retry').innerText = "START OVER";
-                document.getElementById('btn-retry').onclick = () => {
+                document.getElementById('btn-retry').onclick = async () => {
                     document.getElementById('modal-gameover').style.display = 'none';
                     document.getElementById('screen-battle').style.display = 'none';
-                    hardReset();
+                    await hardReset(); // Erases DB progress and starts over
+                    appState = 'MENU';
                     document.getElementById('screen-menu').style.display = 'flex';
                 };
             } else {
@@ -1240,6 +1471,7 @@
         }
 
         window.returnToMenu = function() {
+            appState = 'MENU';
             stopBossTimer();
             stopBattleOST();
             document.getElementById('modal-victory').style.display = 'none';
@@ -1264,12 +1496,12 @@
             requestAnimationFrame(animate);
             const time = Date.now();
 
-            if (cutsceneMode === 'intro') {
+            if (appState === 'CUTSCENE' && cutsceneMode === 'intro') {
                 camera.position.x = Math.sin(time * 0.0003) * 45;
                 camera.position.z = Math.cos(time * 0.0003) * 45;
                 camera.lookAt(0, 0, -10);
             } 
-            else if (cutsceneMode === 'ending') {
+            else if (appState === 'CUTSCENE' && cutsceneMode === 'ending') {
                 let citizensActive = 0;
                 const glitchy = cutsceneObjects.find(o => o.userData.isGlitchy);
                 
@@ -1304,7 +1536,84 @@
                     document.getElementById('ending-text').innerText = "GLITCHY HAS BEEN DEFEATED!";
                 }
             } 
-            else {
+            else if (appState === 'CITY') {
+                // Joystick Movement Logic
+                const speed = 0.4;
+                if (joystickDir.x !== 0 || joystickDir.y !== 0) {
+                    pacmanMesh.position.x += joystickDir.x * speed;
+                    pacmanMesh.position.z += joystickDir.y * speed;
+                    
+                    // City bounds (-70 to 70)
+                    pacmanMesh.position.x = Math.max(-70, Math.min(70, pacmanMesh.position.x));
+                    pacmanMesh.position.z = Math.max(-70, Math.min(70, pacmanMesh.position.z));
+                    
+                    // Rotate and chomp
+                    const angle = Math.atan2(joystickDir.x, joystickDir.y);
+                    pacmanMesh.rotation.y = angle;
+                    
+                    const chomp = Math.abs(Math.sin(time * 0.015)) * 0.6;
+                    topHalf.rotation.x = -chomp;
+                    bottomHalf.rotation.x = chomp;
+                } else {
+                    topHalf.rotation.x = 0;
+                    bottomHalf.rotation.x = 0;
+                }
+
+                // Smooth Camera Follow
+                camera.position.lerp(new THREE.Vector3(pacmanMesh.position.x, 22, pacmanMesh.position.z + 28), 0.1);
+                camera.lookAt(pacmanMesh.position);
+
+                // Update wandering Citizens & check for interaction
+                let nearestDist = Infinity;
+                
+                cityCitizens.forEach(cit => {
+                    const distToPlayer = cit.position.distanceTo(pacmanMesh.position);
+                    if (distToPlayer < nearestDist) {
+                        nearestDist = distToPlayer;
+                    }
+
+                    // Wandering AI
+                    const citSpeed = cit.userData.speed * 0.25;
+                    const dir = new THREE.Vector3().subVectors(cit.userData.wanderTarget, cit.position);
+                    
+                    if (dir.lengthSq() > 1.0) {
+                        dir.normalize();
+                        cit.position.add(dir.multiplyScalar(citSpeed));
+                        
+                        const angle = Math.atan2(dir.x, dir.z);
+                        // Smooth rotation
+                        cit.rotation.y += (angle - cit.rotation.y) * 0.1;
+                        
+                        const chomp = Math.abs(Math.sin(time * 0.01 + cit.userData.offset)) * 0.5;
+                        cit.children[0].rotation.x = -chomp;
+                        cit.children[1].rotation.x = chomp;
+                    } else {
+                        // Pick new random target point occasionally
+                        if (Math.random() < 0.01) {
+                            cit.userData.wanderTarget.set(
+                                cit.position.x + (Math.random() - 0.5) * 20,
+                                0.8,
+                                cit.position.z + (Math.random() - 0.5) * 20
+                            );
+                            // Bound to city limits
+                            cit.userData.wanderTarget.x = Math.max(-70, Math.min(70, cit.userData.wanderTarget.x));
+                            cit.userData.wanderTarget.z = Math.max(-70, Math.min(70, cit.userData.wanderTarget.z));
+                        }
+                        cit.children[0].rotation.x = 0;
+                        cit.children[1].rotation.x = 0;
+                    }
+                });
+
+                // Show Talk Button if close to a citizen
+                if (nearestDist < 6.0) {
+                    document.getElementById('btn-talk').style.display = 'block';
+                } else {
+                    document.getElementById('btn-talk').style.display = 'none';
+                    document.getElementById('dialogue-box').style.display = 'none'; // Auto hide dialogue if walked away
+                }
+
+            }
+            else if (appState === 'BATTLE') {
                 // Battle Idle Animations
                 activeGhosts.forEach((g, idx) => {
                     if (g.userData.isGlitchy) {
@@ -1334,6 +1643,20 @@
 
                 updateGhostHPBars();
             }
+            else if (appState === 'MENU') {
+                // Menu slow pan camera
+                camera.position.x = Math.sin(time * 0.0001) * 35;
+                camera.position.z = Math.cos(time * 0.0001) * 35;
+                camera.lookAt(0, 0, 0);
+
+                // Idle idle animation for menu background citizens (cages)
+                backgroundCages.forEach(c => {
+                    if(c.group.visible) {
+                        c.citizen.children[0].rotation.x = -Math.abs(Math.sin(time * 0.015)) * 0.4;
+                        c.citizen.children[1].rotation.x = Math.abs(Math.sin(time * 0.015)) * 0.4;
+                    }
+                });
+            }
 
             updateParticles();
             renderer.render(scene, camera);
@@ -1341,7 +1664,7 @@
 
         // Initialize application
         init3D();
-        loadProgress();
+        loadProgress(); // IndexedDB load handles the rest
         animate();
     </script>
 </body>
