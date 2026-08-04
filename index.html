@@ -12,7 +12,7 @@
   }
 </script>
 
-<!-- No olvides vincular el manifest en el <head> -->
+<!-- Link manifest -->
 <link rel="manifest" href="manifest.json">
     <style>
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
@@ -109,6 +109,10 @@
         #dialogue-box { display: none; position: absolute; bottom: 180px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 500px; background: rgba(0,0,0,0.85); border: 2px solid #ff00ff; color: #fff; padding: 20px; border-radius: 15px; text-align: center; font-size: 16px; font-weight: bold; z-index: 200; box-shadow: 0 0 20px rgba(255,0,255,0.4); text-shadow: 1px 1px 2px #000; }
         #joystick-zone { position: absolute; bottom: 30px; left: 30px; width: 120px; height: 120px; background: rgba(0, 242, 255, 0.15); border: 2px solid rgba(0, 242, 255, 0.5); border-radius: 50%; z-index: 200; pointer-events: auto; touch-action: none; display: flex; align-items: center; justify-content: center; }
         #joystick-knob { position: absolute; width: 50px; height: 50px; background: #00f2ff; border-radius: 50%; box-shadow: 0 0 15px #00f2ff; transition: transform 0.05s ease-out; }
+
+        /* Clear Overlay Text for Boss Cutscene */
+        #clear-overlay { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 72px; font-weight: 900; color: #ffff00; text-shadow: 0 0 20px #ffff00, 0 0 40px #ff0000, 4px 4px 0 #000; z-index: 300; pointer-events: none; letter-spacing: 6px; animation: clearBounce 0.8s infinite alternate ease-in-out; }
+        @keyframes clearBounce { 0% { transform: translate(-50%, -50%) scale(0.9); } 100% { transform: translate(-50%, -50%) scale(1.15); } }
     </style>
 </head>
 <body>
@@ -131,6 +135,9 @@
 
     <!-- 3D CANVAS LAYER (Behind UI) -->
     <div id="canvas-container" style="position:absolute; top:0; left:0; width:100vw; height:100vh; z-index:1;"></div>
+
+    <!-- CLEAR OVERLAY TEXT -->
+    <div id="clear-overlay">CLEAR!</div>
 
     <!-- PAC-CITY SCREEN UI -->
     <div id="screen-city" class="screen">
@@ -159,15 +166,6 @@
             YOU ARE THE LAST SURVIVOR. SAVE THEM ALL!
         </div>
         <button class="skip-btn" onclick="endIntroCutscene()">START BATTLE / SKIP</button>
-    </div>
-
-    <!-- NORMAL BOSS CUTSCENE -->
-    <div id="screen-boss-victory" class="cutscene-ui">
-        <div class="cutscene-text" id="boss-victory-text" style="border-color:#ffff00; color:#ffff00; box-shadow: 0 0 30px #ffff00;">
-            BOSS DEFEATED!<br>
-            PAC-MAN CHARGED AND EXPLODED THE BOSS!<br>
-            RESCUED PAC-CITIZENS ARE CLEARING THE GHOSTS!
-        </div>
     </div>
 
     <!-- ENDING CUTSCENE -->
@@ -278,9 +276,10 @@
         let rescuedCount = 0;
         
         // Cutscene States
-        let cutsceneMode = null; // null, 'intro', 'ending', 'boss_victory'
+        let cutsceneMode = null; // null, 'intro', 'ending', 'boss_defeated'
         let cutsceneObjects = [];
         let backgroundCages = [];
+        let bossCutsceneData = null;
 
         // Turn Management
         let battleState = 'IDLE'; // IDLE, PLAYER_SELECT_TARGET, ANIMATING, SHIELD_MINIGAME, DEFEAT_ANIMATION, VICTORY
@@ -299,11 +298,9 @@
         const bgAudio = new Audio();
         bgAudio.loop = true;
 
-        // Boss Defeated Audio Track
-        const bossDefeatedAudio = new Audio('Boss defeated - Pac-Fight.mp3');
+        let bossWinAudio = null;
 
         function playBattleOST(isBoss) {
-            stopBossDefeatedOST();
             bgAudio.pause();
             bgAudio.currentTime = 0;
             bgAudio.src = isBoss ? 'Pac-Fight BossFight ost.mp3' : 'Pac-Fight battle ost.mp3';
@@ -315,20 +312,6 @@
         function stopBattleOST() {
             bgAudio.pause();
             bgAudio.currentTime = 0;
-        }
-
-        function playBossDefeatedOST() {
-            stopBattleOST();
-            bossDefeatedAudio.pause();
-            bossDefeatedAudio.currentTime = 0;
-            bossDefeatedAudio.play().catch(e => {
-                console.log('Boss Defeated Audio autoplay prevented or file not found:', e);
-            });
-        }
-
-        function stopBossDefeatedOST() {
-            bossDefeatedAudio.pause();
-            bossDefeatedAudio.currentTime = 0;
         }
 
         // Quick Time Defense System
@@ -645,12 +628,11 @@
             scene.add(pacmanMesh);
         }
 
-        function createGhostModel(config, isBoss = false, isScaredBlue = false) {
+        function createGhostModel(config, isBoss = false) {
             const group = new THREE.Group();
             const scale = config.isGlitchy ? 3.0 : (isBoss ? 2.2 : 1.2);
-            const gColor = isScaredBlue ? 0x0000ff : config.color;
 
-            const bodyMat = new THREE.MeshPhongMaterial({ color: gColor, shininess: 50 });
+            const bodyMat = new THREE.MeshPhongMaterial({ color: config.color, shininess: 50 });
             const body = new THREE.Mesh(new THREE.CapsuleGeometry(1, 1.2, 4, 16), bodyMat);
             body.position.y = 1.2;
             group.add(body);
@@ -666,8 +648,8 @@
             // Eyes
             const eGeo = new THREE.SphereGeometry(0.25, 8, 8);
             const pGeo = new THREE.SphereGeometry(0.12, 8, 8);
-            const eMat = new THREE.MeshBasicMaterial({ color: config.isGlitchy ? 0xff0000 : (isScaredBlue ? 0xffb8ff : 0xffffff) });
-            const pMat = new THREE.MeshBasicMaterial({ color: config.isGlitchy ? 0xffff00 : (isScaredBlue ? 0xff0000 : 0x0000ff) });
+            const eMat = new THREE.MeshBasicMaterial({ color: config.isGlitchy ? 0xff0000 : 0xffffff });
+            const pMat = new THREE.MeshBasicMaterial({ color: config.isGlitchy ? 0xffff00 : 0x0000ff });
 
             const lE = new THREE.Mesh(eGeo, eMat); lE.position.set(0.4, 1.7, 0.8);
             const lP = new THREE.Mesh(pGeo, pMat); lP.position.set(0.4, 1.7, 1.0);
@@ -693,9 +675,8 @@
                 isGlitchy: config.isGlitchy,
                 selectionRing: ring,
                 bodyMesh: body,
-                eyeMat: eMat,
-                pupilMat: pMat,
-                basePos: new THREE.Vector3()
+                basePos: new THREE.Vector3(),
+                config: config
             };
 
             return group;
@@ -814,23 +795,6 @@
             document.getElementById('target-prompt').style.display = enable ? 'block' : 'none';
         }
 
-        // Dynamic ghost color update when Power Pellet is active (Only to normal ghosts, not bosses)
-        function updateGhostPelletColors() {
-            activeGhosts.forEach(g => {
-                if (!g.userData.isBoss && !g.userData.isGlitchy) {
-                    if (isPowerPelletActive) {
-                        g.userData.bodyMesh.material.color.setHex(0x0000ff); // Scared Blue
-                        g.userData.eyeMat.color.setHex(0xffb8ff);
-                        g.userData.pupilMat.color.setHex(0xff0000);
-                    } else {
-                        g.userData.bodyMesh.material.color.setHex(g.userData.color); // Normal Color
-                        g.userData.eyeMat.color.setHex(0xffffff);
-                        g.userData.pupilMat.color.setHex(0x0000ff);
-                    }
-                }
-            });
-        }
-
         // --- CUTSCENES ---
         window.startIntroCutscene = function() {
             appState = 'CUTSCENE';
@@ -879,63 +843,6 @@
             pacmanMesh.visible = true;
         };
 
-        // NEW NORMAL BOSS DEFEATED ANIMATION & CUTSCENE
-        window.startNormalBossCutscene = function(bossLastPos) {
-            appState = 'CUTSCENE';
-            cutsceneMode = 'boss_victory';
-            battleState = 'VICTORY';
-            stopBossTimer();
-            stopBattleOST();
-            playBossDefeatedOST();
-
-            document.getElementById('battle-ui').style.display = 'none';
-            document.getElementById('screen-boss-victory').style.display = 'flex';
-            document.getElementById('ghost-hp-overlay').innerHTML = '';
-
-            // Clean previous cutscene objects
-            cutsceneObjects.forEach(obj => scene.remove(obj));
-            cutsceneObjects = [];
-
-            // Spawn boss representation at position
-            const tempBoss = createGhostModel(ghostTypes[(currentLevel - 1) % ghostTypes.length], true);
-            tempBoss.position.copy(bossLastPos);
-            tempBoss.userData.phase = 'CHARGE';
-            scene.add(tempBoss);
-            cutsceneObjects.push(tempBoss);
-
-            // Set Pac-Man facing boss
-            pacmanMesh.visible = true;
-            pacmanMesh.position.set(tempBoss.position.x - 12, 2, tempBoss.position.z + 5);
-            pacmanMesh.lookAt(tempBoss.position);
-
-            camera.position.set(tempBoss.position.x, 15, tempBoss.position.z + 25);
-            camera.lookAt(tempBoss.position);
-
-            // Track audio completion to transition cleanly
-            const handleAudioEnd = () => {
-                bossDefeatedAudio.removeEventListener('ended', handleAudioEnd);
-                finishNormalBossCutscene();
-            };
-            bossDefeatedAudio.addEventListener('ended', handleAudioEnd);
-
-            // Safety fallback in case audio file is missing/fails
-            setTimeout(() => {
-                if (cutsceneMode === 'boss_victory') finishNormalBossCutscene();
-            }, 18000);
-        };
-
-        function finishNormalBossCutscene() {
-            if (cutsceneMode !== 'boss_victory') return;
-            stopBossDefeatedOST();
-            document.getElementById('screen-boss-victory').style.display = 'none';
-            
-            cutsceneObjects.forEach(obj => scene.remove(obj));
-            cutsceneObjects = [];
-            cutsceneMode = null;
-            
-            handleVictory();
-        }
-
         window.startEndingCutscene = function() {
             appState = 'CUTSCENE';
             cutsceneMode = 'ending';
@@ -978,6 +885,82 @@
             document.getElementById('modal-victory').style.display = 'flex';
             saveProgress();
         };
+
+        // --- NORMAL BOSS DEFEATED ANIMATION & CUTSCENE ---
+        function startBossDefeatedCutscene(defeatedBoss) {
+            appState = 'CUTSCENE';
+            cutsceneMode = 'boss_defeated';
+            battleState = 'VICTORY';
+            stopBossTimer();
+            stopBattleOST();
+
+            document.getElementById('battle-ui').style.display = 'none';
+            document.getElementById('ghost-hp-overlay').innerHTML = '';
+
+            // Clean scene objects
+            activeGhosts.forEach(g => {
+                if (g.userData.hpBar) g.userData.hpBar.remove();
+                scene.remove(g);
+            });
+            activeGhosts = [];
+            cutsceneObjects.forEach(obj => scene.remove(obj));
+            cutsceneObjects = [];
+
+            // Play Boss Defeated Audio File
+            bossWinAudio = new Audio('Boss defeated - Pac-Fight.mp3');
+            bossWinAudio.play().catch(e => console.log('Boss win audio autoplay notice:', e));
+
+            // Create Boss Model center stage
+            const bossConfig = defeatedBoss.userData.config || { name: defeatedBoss.userData.name, color: defeatedBoss.userData.color, hp: 10, atk: 2 };
+            const bossModel = createGhostModel(bossConfig, true);
+            bossModel.position.set(0, 2, 0);
+            bossModel.scale.set(4, 4, 4);
+            scene.add(bossModel);
+            cutsceneObjects.push(bossModel);
+
+            // Position Pacman opposite facing boss
+            pacmanMesh.visible = true;
+            pacmanMesh.position.set(-18, 2, 0);
+            pacmanMesh.scale.set(2.2, 2.2, 2.2);
+            pacmanMesh.rotation.set(0, Math.PI / 2, 0);
+
+            camera.position.set(0, 16, 32);
+            camera.lookAt(0, 2, 0);
+
+            bossCutsceneData = {
+                step: 0,
+                timer: 0,
+                bossModel: bossModel,
+                frightenedGhosts: [],
+                chargingCitizens: [],
+                audioEnded: false
+            };
+
+            bossWinAudio.onended = () => {
+                if (bossCutsceneData) bossCutsceneData.audioEnded = true;
+            };
+        }
+
+        function endBossDefeatedCutscene() {
+            if (bossWinAudio) {
+                bossWinAudio.pause();
+                bossWinAudio = null;
+            }
+            document.getElementById('clear-overlay').style.display = 'none';
+            cutsceneObjects.forEach(obj => scene.remove(obj));
+            cutsceneObjects = [];
+            
+            appState = 'MENU';
+            cutsceneMode = null;
+            bossCutsceneData = null;
+            
+            saveProgress();
+
+            document.getElementById('victory-title').innerText = "BOSS DEFEATED!";
+            document.getElementById('victory-text').innerText = `Stage ${currentLevel} cleared! Unlocked Stage ${unlockedLevel}`;
+            document.getElementById('rescued-text').innerText = "+3 Pac-Citizens Rescued!";
+            document.getElementById('modal-victory').style.display = 'flex';
+        }
 
         // --- BOSS TIMER MANAGEMENT ---
         function startBossTimer() {
@@ -1174,7 +1157,6 @@
             currentLevel = levelNum;
             document.getElementById('screen-menu').style.display = 'none';
             document.getElementById('screen-battle').style.display = 'block';
-            document.getElementById('battle-ui').style.display = 'flex';
             
             const isGlitchy = (levelNum === 100);
             const isBoss = (levelNum % 10 === 0);
@@ -1238,7 +1220,17 @@
             document.getElementById('pellet-bar').style.width = `${Math.min(100, (powerCharge / 2) * 100)}%`;
             document.getElementById('btn-pellet').disabled = (powerCharge < 2 || isPowerPelletActive);
             auraMesh.visible = isPowerPelletActive;
-            updateGhostPelletColors();
+
+            // Turn normal ghosts blue during Power Pellet
+            activeGhosts.forEach(g => {
+                if (!g.userData.isGlitchy && g.userData.bodyMesh) {
+                    if (isPowerPelletActive) {
+                        g.userData.bodyMesh.material.color.setHex(0x2121ff); // Classic Blue Frightened Ghost Color
+                    } else {
+                        g.userData.bodyMesh.material.color.setHex(g.userData.color);
+                    }
+                }
+            });
         }
 
         function updateGhostCountUI() {
@@ -1307,8 +1299,6 @@
 
             const startPos = pacmanMesh.position.clone();
             const targetPos = targetGhost.position.clone().add(new THREE.Vector3(-2, 0, 1));
-            const isBossTarget = targetGhost.userData.isBoss;
-            const lastTargetPos = targetGhost.position.clone();
 
             let progress = 0;
             function animateLunge() {
@@ -1334,16 +1324,22 @@
                         spawnParticles(targetGhost.position, 0xffffff, 35);
                         if(targetGhost.userData.hpBar) targetGhost.userData.hpBar.remove();
                         scene.remove(targetGhost);
+                        
+                        const isNormalBoss = targetGhost.userData.isBoss && !targetGhost.userData.isGlitchy;
                         activeGhosts = activeGhosts.filter(g => g !== targetGhost);
                         updateGhostCountUI();
-                    }
 
-                    if (activeGhosts.length === 0) {
-                        stopBossTimer();
-                        if (currentLevel === 100) setTimeout(startEndingCutscene, 1000);
-                        else if (isBossTarget) setTimeout(() => startNormalBossCutscene(lastTargetPos), 800);
-                        else setTimeout(handleVictory, 800);
-                        return;
+                        if (activeGhosts.length === 0) {
+                            stopBossTimer();
+                            if (currentLevel === 100) {
+                                setTimeout(startEndingCutscene, 1000);
+                            } else if (isNormalBoss) {
+                                setTimeout(() => startBossDefeatedCutscene(targetGhost), 800);
+                            } else {
+                                setTimeout(handleVictory, 800);
+                            }
+                            return;
+                        }
                     }
 
                     advanceTurnState();
@@ -1533,7 +1529,6 @@
             battleState = 'VICTORY';
             stopBossTimer();
             stopBattleOST();
-            stopBossDefeatedOST();
             breakCagesOpen();
             saveProgress(); // Saves progress in DB
             
@@ -1547,13 +1542,12 @@
                 setTimeout(() => playSfx(659, 0.1, 'sine'), 80);
                 setTimeout(() => playSfx(784, 0.1, 'sine'), 160);
                 setTimeout(() => playSfx(1046, 0.3, 'sine'), 240);
-            }, 1000);
+            }, 1500);
         }
 
         async function handleGameOver() {
             stopBossTimer();
             stopBattleOST();
-            stopBossDefeatedOST();
             playerLives--;
             updateGlobalHUD();
             await saveProgress(); // Commits life loss to DB instantly
@@ -1586,23 +1580,15 @@
             cutsceneMode = null;
             stopBossTimer();
             stopBattleOST();
-            stopBossDefeatedOST();
-            
-            // Clean up cutscene objects
-            cutsceneObjects.forEach(obj => scene.remove(obj));
-            cutsceneObjects = [];
-
+            if (bossWinAudio) {
+                bossWinAudio.pause();
+                bossWinAudio = null;
+            }
+            document.getElementById('clear-overlay').style.display = 'none';
             document.getElementById('modal-victory').style.display = 'none';
             document.getElementById('screen-battle').style.display = 'none';
-            document.getElementById('screen-boss-victory').style.display = 'none';
             document.getElementById('screen-ending').style.display = 'none';
             document.getElementById('screen-menu').style.display = 'flex';
-
-            pacmanMesh.visible = true;
-            pacmanMesh.scale.set(1, 1, 1);
-            pacmanMesh.position.set(-9, 2, 5);
-            pacmanMesh.rotation.set(0, Math.PI / 3, 0);
-
             renderMapGrid();
         };
 
@@ -1622,89 +1608,125 @@
             requestAnimationFrame(animate);
             const time = Date.now();
 
-            if (appState === 'CUTSCENE' && cutsceneMode === 'intro') {
+            if (appState === 'CUTSCENE' && cutsceneMode === 'boss_defeated' && bossCutsceneData) {
+                const data = bossCutsceneData;
+                data.timer++;
+
+                // Phase 0: Pac-Man Charges into the Boss
+                if (data.step === 0) {
+                    pacmanMesh.position.x += 0.35;
+                    const chomp = Math.abs(Math.sin(time * 0.02)) * 0.8;
+                    topHalf.rotation.x = -chomp;
+                    bottomHalf.rotation.x = chomp;
+
+                    if (pacmanMesh.position.x >= -1.0) {
+                        data.step = 1;
+                        // Explode Boss into frightened ghosts!
+                        scene.remove(data.bossModel);
+                        spawnParticles(new THREE.Vector3(0, 2, 0), 0xffffff, 80);
+                        playSfx(100, 1.0, 'sawtooth', 0.3);
+
+                        // Spawn 80 Blue Frightened Ghosts scattering
+                        const fGhostConfig = { name: 'BLUE', color: 0x2121ff, hp: 1, atk: 0 };
+                        for (let i = 0; i < 80; i++) {
+                            const fg = createGhostModel(fGhostConfig);
+                            const angle = Math.random() * Math.PI * 2;
+                            const r = 2 + Math.random() * 18;
+                            fg.position.set(Math.cos(angle) * r, 0.5 + Math.random() * 3, Math.sin(angle) * r);
+                            scene.add(fg);
+                            data.frightenedGhosts.push(fg);
+                            cutsceneObjects.push(fg);
+                        }
+
+                        // Spawn 60 Charging Citizens
+                        for (let i = 0; i < 60; i++) {
+                            const cit = createPacCitizen();
+                            const angle = Math.random() * Math.PI * 2;
+                            const r = 22 + Math.random() * 15;
+                            cit.position.set(Math.cos(angle) * r, 0.5, Math.sin(angle) * r);
+                            scene.add(cit);
+                            data.chargingCitizens.push(cit);
+                            cutsceneObjects.push(cit);
+                        }
+                    }
+                } 
+                // Phase 1: Pac-Citizens Charge and Eat Blue Ghosts
+                else if (data.step === 1) {
+                    pacmanMesh.position.set(-1, 2, 0);
+                    topHalf.rotation.x = 0; bottomHalf.rotation.x = 0;
+
+                    let activeFrightened = 0;
+
+                    data.chargingCitizens.forEach(cit => {
+                        if (!cit.visible) return;
+
+                        // Find closest frightened ghost
+                        let closest = null;
+                        let minDist = Infinity;
+                        data.frightenedGhosts.forEach(fg => {
+                            if (fg.visible) {
+                                const d = cit.position.distanceTo(fg.position);
+                                if (d < minDist) { minDist = d; closest = fg; }
+                            }
+                        });
+
+                        if (closest) {
+                            const dir = new THREE.Vector3().subVectors(closest.position, cit.position).normalize();
+                            cit.position.add(dir.multiplyScalar(0.45));
+                            cit.lookAt(closest.position);
+
+                            const chomp = Math.abs(Math.sin(time * 0.02 + cit.userData.offset)) * 0.6;
+                            cit.children[0].rotation.x = -chomp;
+                            cit.children[1].rotation.x = chomp;
+
+                            if (cit.position.distanceTo(closest.position) < 2.0) {
+                                closest.visible = false;
+                                spawnParticles(closest.position, 0x2121ff, 12);
+                                playBiteSfx();
+                            }
+                        }
+                    });
+
+                    data.frightenedGhosts.forEach(fg => {
+                        if (fg.visible) {
+                            activeFrightened++;
+                            fg.position.y = 0.5 + Math.sin(time * 0.01 + fg.position.x) * 0.5;
+                        }
+                    });
+
+                    // Camera Orbiting Effect
+                    camera.position.x = Math.sin(time * 0.0008) * 32;
+                    camera.position.z = Math.cos(time * 0.0008) * 32;
+                    camera.lookAt(0, 2, 0);
+
+                    if (activeFrightened < 5 || data.timer > 600) {
+                        data.step = 2;
+                        document.getElementById('clear-overlay').style.display = 'block';
+                    }
+                }
+                // Phase 2: CLEAR! Display & End when audio ends
+                else if (data.step === 2) {
+                    camera.position.x = Math.sin(time * 0.001) * 28;
+                    camera.position.z = Math.cos(time * 0.001) * 28;
+                    camera.lookAt(0, 2, 0);
+
+                    data.chargingCitizens.forEach(cit => {
+                        cit.position.y = 0.5 + Math.abs(Math.sin(time * 0.01 + cit.userData.offset)) * 1.5;
+                        const chomp = Math.abs(Math.sin(time * 0.02)) * 0.6;
+                        cit.children[0].rotation.x = -chomp;
+                        cit.children[1].rotation.x = chomp;
+                    });
+
+                    if (data.audioEnded || data.timer > 1500) {
+                        endBossDefeatedCutscene();
+                    }
+                }
+            }
+            else if (appState === 'CUTSCENE' && cutsceneMode === 'intro') {
                 camera.position.x = Math.sin(time * 0.0003) * 45;
                 camera.position.z = Math.cos(time * 0.0003) * 45;
                 camera.lookAt(0, 0, -10);
             } 
-            else if (appState === 'CUTSCENE' && cutsceneMode === 'boss_victory') {
-                const boss = cutsceneObjects[0];
-                if (boss) {
-                    if (boss.userData.phase === 'CHARGE') {
-                        // Pac-Man charges into boss
-                        pacmanMesh.position.lerp(boss.position, 0.12);
-                        const chomp = Math.abs(Math.sin(time * 0.02)) * 0.8;
-                        topHalf.rotation.x = -chomp;
-                        bottomHalf.rotation.x = chomp;
-
-                        if (pacmanMesh.position.distanceTo(boss.position) < 2.0) {
-                            // Boss Explodes into Blue Ghosts
-                            boss.userData.phase = 'EXPLODED';
-                            spawnParticles(boss.position, 0xffff00, 60);
-                            spawnParticles(boss.position, 0x0000ff, 60);
-                            playSfx(150, 0.4, 'sawtooth');
-
-                            const bossPos = boss.position.clone();
-                            scene.remove(boss);
-                            cutsceneObjects = [];
-
-                            // Spawn Frightened Blue Ghosts scattering
-                            for (let i = 0; i < 12; i++) {
-                                const scaredGhost = createGhostModel(ghostTypes[i % ghostTypes.length], false, true);
-                                const angle = (i / 12) * Math.PI * 2;
-                                scaredGhost.position.set(bossPos.x + Math.cos(angle)*3, 0, bossPos.z + Math.sin(angle)*3);
-                                scaredGhost.userData.scatterVel = new THREE.Vector3(Math.cos(angle)*0.15, 0, Math.sin(angle)*0.15);
-                                scene.add(scaredGhost);
-                                cutsceneObjects.push(scaredGhost);
-                            }
-
-                            // Spawn rescued Pac-Citizens charging in
-                            for (let i = 0; i < 18; i++) {
-                                const cit = createPacCitizen();
-                                const angle = Math.random() * Math.PI * 2;
-                                const dist = 22 + Math.random() * 8;
-                                cit.position.set(bossPos.x + Math.cos(angle)*dist, 0.5, bossPos.z + Math.sin(angle)*dist);
-                                cit.lookAt(bossPos);
-                                scene.add(cit);
-                                cutsceneObjects.push(cit);
-                            }
-                        }
-                    } else if (boss.userData.phase === 'EXPLODED') {
-                        // Citizens chase frightened blue ghosts
-                        let scaredGhosts = cutsceneObjects.filter(o => o.userData.isBoss === false && !o.userData.isCitizen && o.visible);
-                        
-                        cutsceneObjects.forEach(obj => {
-                            if (obj.userData.scatterVel && obj.visible) {
-                                obj.position.add(obj.userData.scatterVel);
-                                obj.position.y = Math.sin(time * 0.005) * 0.2 + 0.2;
-                            }
-                            if (obj.userData.isCitizen && obj.visible && scaredGhosts.length > 0) {
-                                // Target nearest scared ghost
-                                let nearest = scaredGhosts[0];
-                                let minD = obj.position.distanceTo(nearest.position);
-                                scaredGhosts.forEach(sg => {
-                                    const d = obj.position.distanceTo(sg.position);
-                                    if(d < minD) { minD = d; nearest = sg; }
-                                });
-
-                                const dir = new THREE.Vector3().subVectors(nearest.position, obj.position).normalize();
-                                obj.position.add(dir.multiplyScalar(obj.userData.speed * 1.5));
-                                obj.lookAt(nearest.position);
-
-                                const chomp = Math.abs(Math.sin(time * 0.015 + obj.userData.offset)) * 0.6;
-                                obj.children[0].rotation.x = -chomp;
-                                obj.children[1].rotation.x = chomp;
-
-                                if (obj.position.distanceTo(nearest.position) < 2.0) {
-                                    nearest.visible = false;
-                                    spawnParticles(nearest.position, 0x0000ff, 15);
-                                    playBiteSfx();
-                                }
-                            }
-                        });
-                    }
-                }
-            }
             else if (appState === 'CUTSCENE' && cutsceneMode === 'ending') {
                 let citizensActive = 0;
                 const glitchy = cutsceneObjects.find(o => o.userData.isGlitchy);
