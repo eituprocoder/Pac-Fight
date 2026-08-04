@@ -12,7 +12,7 @@
   }
 </script>
 
-<!-- Manifest link -->
+<!-- No olvides vincular el manifest en el <head> -->
 <link rel="manifest" href="manifest.json">
     <style>
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
@@ -28,23 +28,17 @@
         h1.title { font-size: 38px; color: #ffff00; text-shadow: 0 0 15px #ffff00, 3px 3px 0 #ff0000; margin: 10px 0 5px 0; letter-spacing: 3px; text-align: center; }
         .subtitle { color: #00f2ff; font-size: 14px; margin-bottom: 20px; text-shadow: 0 0 8px #00f2ff; text-align: center; }
 
-        /* Level Map Pagination Controls */
-        .page-controls { display: flex; gap: 8px; align-items: center; justify-content: center; width: 100%; max-width: 800px; margin-bottom: 10px; flex-wrap: wrap; }
-        .page-btn { padding: 6px 12px; background: rgba(0, 242, 255, 0.15); border: 1px solid #00f2ff; color: #00f2ff; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: bold; }
-        .page-btn:hover, .page-btn.active { background: #00f2ff; color: #000; box-shadow: 0 0 10px #00f2ff; }
-
         /* Level Map Screen */
-        .map-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 12px; width: 100%; max-width: 800px; background: rgba(0,0,0,0.6); border: 2px solid #00f2ff; border-radius: 12px; padding: 20px; box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); max-height: 45vh; overflow-y: auto; margin-bottom: 15px; }
-        .level-btn { aspect-ratio: 1; border-radius: 10px; border: 2px solid #00f2ff; background: rgba(0, 242, 255, 0.1); color: #00f2ff; font-weight: bold; font-size: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; position: relative; }
+        .map-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 12px; width: 100%; max-width: 800px; background: rgba(0,0,0,0.6); border: 2px solid #00f2ff; border-radius: 12px; padding: 20px; box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); max-height: 50vh; overflow-y: auto; margin-bottom: 20px; }
+        .level-btn { aspect-ratio: 1; border-radius: 10px; border: 2px solid #00f2ff; background: rgba(0, 242, 255, 0.1); color: #00f2ff; font-weight: bold; font-size: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; position: relative; }
         .level-btn:hover:not(.locked) { background: #00f2ff; color: #000; box-shadow: 0 0 15px #00f2ff; transform: scale(1.05); }
         .level-btn.locked { border-color: #444; color: #555; background: rgba(255,255,255,0.03); cursor: not-allowed; }
         .level-btn.boss { border-color: #ff0000; color: #ff0000; background: rgba(255,0,0,0.15); box-shadow: 0 0 10px rgba(255,0,0,0.3); }
         .level-btn.boss:hover:not(.locked) { background: #ff0000; color: #fff; box-shadow: 0 0 20px #ff0000; }
         .level-btn.cleared { border-color: #00ff00; color: #00ff00; background: rgba(0,255,0,0.1); }
-        .level-btn .star-rating { font-size: 8px; color: #ffff00; margin-top: 2px; }
+        .level-btn .star-rating { font-size: 9px; color: #ffff00; margin-top: 2px; }
         .level-btn.glitchy-btn { border-color: #ff00ff; color: #ff00ff; background: rgba(255,0,255,0.15); box-shadow: 0 0 15px rgba(255,0,255,0.5); }
         .level-btn.glitchy-btn:hover:not(.locked) { background: #ff00ff; color: #fff; box-shadow: 0 0 30px #ff00ff; }
-        .level-btn.bonus-btn { border-color: #00ff00; text-shadow: 0 0 5px #00ff00; }
 
         /* Battle UI */
         #battle-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 15px; z-index: 20; }
@@ -60,8 +54,7 @@
         #pellet-bar { background: #ffff00; width: 0%; }
 
         /* Floating Info overlay */
-        #stage-indicator { text-align: center; font-size: 18px; color: #ffff00; font-weight: bold; text-shadow: 0 0 8px #000; background: rgba(0,0,0,0.6); padding: 6px 16px; border-radius: 20px; border: 1px solid #ffff00; display: flex; flex-direction: column; align-items: center; }
-        #wave-indicator { font-size: 14px; color: #00f2ff; margin-top: 2px; }
+        #stage-indicator { text-align: center; font-size: 20px; color: #ffff00; font-weight: bold; text-shadow: 0 0 8px #000; background: rgba(0,0,0,0.6); padding: 6px 16px; border-radius: 20px; border: 1px solid #ffff00; display: flex; flex-direction: column; }
         #boss-timer-display { display: none; margin-top: 4px; font-size: 14px; color: #ff0055; text-shadow: 0 0 10px #ff0000; letter-spacing: 1px; font-weight: bold; animation: pulse 1s infinite alternate; }
         @keyframes pulse { 0% { opacity: 0.8; } 100% { opacity: 1; transform: scale(1.05); } }
 
@@ -74,7 +67,7 @@
         .cmd-btn.power:hover:not(:disabled) { background: #ffff00; color: #000; box-shadow: 0 0 20px #ffff00; }
         .cmd-btn.heal { border-color: #00ff00; color: #00ff00; background: rgba(0, 255, 0, 0.15); }
         .cmd-btn.heal:hover:not(:disabled) { background: #00ff00; color: #000; box-shadow: 0 0 20px #00ff00; }
-        .cmd-btn.city { border-color: #ff00ff; color: #ff00ff; background: rgba(255, 0, 255, 0.15); width: 200px; font-size: 16px; margin-bottom: 15px; }
+        .cmd-btn.city { border-color: #ff00ff; color: #ff00ff; background: rgba(255, 0, 255, 0.15); width: 200px; font-size: 16px; margin-bottom: 20px; }
         .cmd-btn.city:hover { background: #ff00ff; color: #fff; box-shadow: 0 0 20px #ff00ff; }
 
         /* Quick-Time Shield Overlay */
@@ -92,12 +85,12 @@
 
         /* Modals */
         .modal { display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); flex-direction: column; align-items: center; justify-content: center; z-index: 2000; pointer-events: auto; }
-        .modal-content { background: #001133; border: 3px solid #00f2ff; border-radius: 15px; padding: 30px; text-align: center; max-width: 420px; width: 90%; box-shadow: 0 0 30px #00f2ff; }
+        .modal-content { background: #001133; border: 3px solid #00f2ff; border-radius: 15px; padding: 30px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 0 30px #00f2ff; }
         .modal h2 { font-size: 32px; margin: 0 0 15px 0; }
         .modal-btn { padding: 12px 30px; font-size: 18px; font-weight: bold; border-radius: 10px; border: none; cursor: pointer; margin-top: 20px; font-family: inherit; }
 
         /* Top Bar Info */
-        .top-info-bar { width: 100%; max-width: 800px; display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; color: #00f2ff; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; border: 1px solid #00f2ff; }
+        .top-info-bar { width: 100%; max-width: 800px; display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px; color: #00f2ff; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; border: 1px solid #00f2ff; }
 
         /* Ghost HP Bars Overlay */
         #ghost-hp-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 15; }
@@ -117,10 +110,9 @@
         #joystick-zone { position: absolute; bottom: 30px; left: 30px; width: 120px; height: 120px; background: rgba(0, 242, 255, 0.15); border: 2px solid rgba(0, 242, 255, 0.5); border-radius: 50%; z-index: 200; pointer-events: auto; touch-action: none; display: flex; align-items: center; justify-content: center; }
         #joystick-knob { position: absolute; width: 50px; height: 50px; background: #00f2ff; border-radius: 50%; box-shadow: 0 0 15px #00f2ff; transition: transform 0.05s ease-out; }
 
-        /* Extra Life Bonus Game Screen */
-        #screen-minigame { display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1200; background: rgba(0, 4, 17, 0.95); flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        #minigame-canvas { border: 3px solid #00ff00; border-radius: 15px; background: #000818; box-shadow: 0 0 25px #00ff00; cursor: pointer; touch-action: none; }
-        .minigame-hud { display: flex; justify-content: space-between; width: 100%; max-width: 500px; margin-bottom: 10px; font-size: 18px; color: #00ff00; font-weight: bold; text-shadow: 0 0 10px #00ff00; }
+        /* BOSS CLEAR BANNER UI OVERLAY */
+        #boss-clear-banner { display: none; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 72px; font-weight: 900; color: #ffff00; text-shadow: 0 0 20px #ffff00, 4px 4px 0 #ff0055, -4px -4px 0 #00f2ff; letter-spacing: 6px; z-index: 300; animation: popClear 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; pointer-events: none; }
+        @keyframes popClear { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.2); } 100% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); } }
     </style>
 </head>
 <body>
@@ -128,23 +120,24 @@
     <!-- MAP / MENU SCREEN -->
     <div id="screen-menu" class="screen">
         <h1 class="title">PAC-FIGHT</h1>
-        <div class="subtitle">EPIC TURN-BASED RPG (2048 STAGES)</div>
+        <div class="subtitle">EPIC TURN-BASED RPG</div>
 
         <div class="top-info-bar">
-            <div>STAGES: <span id="unlocked-count" style="color:#ffff00;">1</span>/2048</div>
+            <div>STAGES: <span id="unlocked-count" style="color:#ffff00;">1</span>/100</div>
             <div>LIVES: <span id="menu-lives-display">❤️❤️❤️</span></div>
-            <div>RESCUED: <span id="menu-rescued-display" style="color:#00ff00;">0</span>/6144</div>
+            <div>RESCUED: <span id="menu-rescued-display" style="color:#00ff00;">0</span>/300</div>
         </div>
 
         <button class="cmd-btn city" onclick="enterPacCity()">🏙️ VIEW PAC-CITY</button>
 
-        <div class="page-controls" id="page-controls"></div>
         <div class="map-container" id="map-grid"></div>
-        <button class="page-btn" style="background: rgba(255,255,0,0.2); border-color: #ffff00; color: #ffff00;" onclick="jumpToCurrentLevelPage()">🎯 JUMP TO CURRENT LEVEL</button>
     </div>
 
     <!-- 3D CANVAS LAYER (Behind UI) -->
     <div id="canvas-container" style="position:absolute; top:0; left:0; width:100vw; height:100vh; z-index:1;"></div>
+
+    <!-- BOSS DEFEATED CLEAR BANNER OVERLAY -->
+    <div id="boss-clear-banner">CLEAR!</div>
 
     <!-- PAC-CITY SCREEN UI -->
     <div id="screen-city" class="screen">
@@ -169,7 +162,7 @@
     <div id="screen-intro" class="cutscene-ui">
         <div class="cutscene-text" id="intro-text">
             PAC-CITY HAS BEEN CAPTURED...<br>
-            GLITCHY AND THE GHOSTS HAVE LOCKED EVERYONE IN CAGES ACROSS 2048 REALMS.<br>
+            GLITCHY AND THE GHOSTS HAVE LOCKED EVERYONE IN CAGES.<br>
             YOU ARE THE LAST SURVIVOR. SAVE THEM ALL!
         </div>
         <button class="skip-btn" onclick="endIntroCutscene()">START BATTLE / SKIP</button>
@@ -178,7 +171,7 @@
     <!-- ENDING CUTSCENE -->
     <div id="screen-ending" class="cutscene-ui">
         <div class="cutscene-text" id="ending-text" style="border-color:#ff00ff; color:#ffb8ff; box-shadow: 0 0 30px #ff00ff;">
-            ALL RESCUED PAC-CITIZENS ARE CHARGING!<br>
+            THE 300 RESCUED PAC-CITIZENS ARE CHARGING!<br>
             GLITCHY IS LOSING CONTROL!
         </div>
         <button class="skip-btn" id="btn-finish-ending" style="display:none;" onclick="showFinalVictory()">CONTINUE</button>
@@ -201,7 +194,6 @@
 
                 <div id="stage-indicator">
                     <span id="stage-title">STAGE 1</span>
-                    <span id="wave-indicator">WAVE 1/1</span>
                     <span style="font-size: 12px; color: #ff0055; margin-top: 4px;" id="battle-lives-display">LIVES: ❤️❤️❤️</span>
                     <!-- 15 MINUTE BOSS TIMER DISPLAY -->
                     <div id="boss-timer-display">⏱️ 15:00</div>
@@ -240,17 +232,6 @@
         </div>
     </div>
 
-    <!-- EXTRA LIFE REWARD MINIGAME SCREEN -->
-    <div id="screen-minigame">
-        <h2 style="color: #00ff00; text-shadow: 0 0 15px #00ff00; margin: 0 0 10px 0;">🎁 EXTRA LIFE BONUS STAGE!</h2>
-        <div class="minigame-hud">
-            <div>TIME: <span id="minigame-timer">10</span>s</div>
-            <div>HEARTS CAUGHT: <span id="minigame-score">0</span></div>
-        </div>
-        <canvas id="minigame-canvas" width="400" height="400"></canvas>
-        <p style="color: #ffff00; font-size: 14px; margin-top: 10px;">TAP/CLICK THE FALLING HEARTS & GOLDEN PELLETS!</p>
-    </div>
-
     <!-- VICTORY MODAL -->
     <div id="modal-victory" class="modal">
         <div class="modal-content">
@@ -279,16 +260,9 @@
         import * as THREE from 'three';
 
         // --- GAME ARCHITECTURE & STATE ---
-        let appState = 'MENU'; // MENU, BATTLE, CITY, CUTSCENE, MINIGAME
+        let appState = 'MENU'; // MENU, BATTLE, CITY, CUTSCENE
         let currentLevel = 1;
         let unlockedLevel = 1;
-        let currentMapPage = 1;
-        const totalLevels = 2048;
-        const levelsPerPage = 100;
-
-        // Wave State
-        let currentWave = 1;
-        let totalWaves = 1;
         
         // Player Stats
         let playerHp = 20;
@@ -302,7 +276,7 @@
         let rescuedCount = 0;
         
         // Cutscene States
-        let cutsceneMode = null; // null, 'intro', 'ending'
+        let cutsceneMode = null; // null, 'intro', 'ending', 'boss_defeat'
         let cutsceneObjects = [];
         let backgroundCages = [];
 
@@ -319,45 +293,18 @@
         let db;
         const DB_NAME = 'PacFightDB';
 
-        // Background Audio OST & Media Control Blocking System
+        // Background Audio OST Management
         const bgAudio = new Audio();
         bgAudio.loop = true;
 
-        function configureMediaSessionBlocker() {
-            if ('mediaSession' in navigator) {
-                try {
-                    navigator.mediaSession.metadata = new MediaMetadata({
-                        title: 'Pac-Fight RPG',
-                        artist: 'Pac-Fight Sound Team',
-                        album: 'Pac-Fight Battle Tracks'
-                    });
-
-                    // Block Android Timeline & Scrubbing controls
-                    const dummyHandler = () => {};
-                    ['seekto', 'seekbackward', 'seekforward', 'previoustrack', 'nexttrack'].forEach(action => {
-                        try { navigator.mediaSession.setActionHandler(action, null); } catch(e){}
-                    });
-
-                    // Keep music playing & lock external pauses during combat
-                    navigator.mediaSession.setActionHandler('pause', () => {
-                        if (appState === 'BATTLE') {
-                            bgAudio.play().catch(()=>{});
-                        }
-                    });
-                    navigator.mediaSession.setActionHandler('play', () => {
-                        bgAudio.play().catch(()=>{});
-                    });
-                } catch(e) {}
-            }
-        }
+        const bossDefeatAudio = new Audio('Boss defeated - Pac-Fight.mp3');
 
         function playBattleOST(isBoss) {
+            stopBossDefeatAudio();
             bgAudio.pause();
             bgAudio.currentTime = 0;
             bgAudio.src = isBoss ? 'Pac-Fight BossFight ost.mp3' : 'Pac-Fight battle ost.mp3';
-            bgAudio.play().then(() => {
-                configureMediaSessionBlocker();
-            }).catch(e => {
+            bgAudio.play().catch(e => {
                 console.log('Audio autoplay prevented or file not found in directory:', e);
             });
         }
@@ -365,6 +312,20 @@
         function stopBattleOST() {
             bgAudio.pause();
             bgAudio.currentTime = 0;
+        }
+
+        function playBossDefeatAudio() {
+            stopBattleOST();
+            bossDefeatAudio.pause();
+            bossDefeatAudio.currentTime = 0;
+            bossDefeatAudio.play().catch(e => {
+                console.log('Boss defeat audio autoplay prevented or file not found:', e);
+            });
+        }
+
+        function stopBossDefeatAudio() {
+            bossDefeatAudio.pause();
+            bossDefeatAudio.currentTime = 0;
         }
 
         // Quick Time Defense System
@@ -386,8 +347,8 @@
             { name: 'WHITY',  color: 0xffffff, hp: 16, atk: 5 }
         ];
 
-        // Level 2048 Final Boss
-        const glitchyConfig = { name: 'GLITCHY', color: 0x110022, hp: 80, atk: 9, isGlitchy: true };
+        // Level 100 Final Boss
+        const glitchyConfig = { name: 'GLITCHY', color: 0x110022, hp: 60, atk: 8, isGlitchy: true };
 
         // --- INDEXED DB PROGRESS SYSTEM ---
         function initDB() {
@@ -431,7 +392,6 @@
                 };
 
                 tx.oncomplete = () => {
-                    currentMapPage = Math.ceil(unlockedLevel / levelsPerPage);
                     updateGlobalHUD();
                     renderMapGrid();
 
@@ -452,8 +412,8 @@
         }
 
         async function saveProgress() {
-            if (currentLevel >= unlockedLevel && unlockedLevel <= totalLevels) {
-                unlockedLevel = Math.min(totalLevels, currentLevel + 1);
+            if (currentLevel >= unlockedLevel && unlockedLevel <= 100) {
+                unlockedLevel = Math.min(100, currentLevel + 1);
             }
             updateGlobalHUD();
             
@@ -468,7 +428,6 @@
             unlockedLevel = 1;
             playerLives = 3;
             rescuedCount = 0;
-            currentMapPage = 1;
             
             if (!db) await initDB();
             const tx = db.transaction('saves', 'readwrite');
@@ -481,70 +440,43 @@
         }
 
         function updateGlobalHUD() {
-            rescuedCount = Math.min(6144, (unlockedLevel - 1) * 3);
-            const hearts = '❤️'.repeat(Math.max(0, playerLives));
-            document.getElementById('menu-lives-display').innerText = hearts || '💀 0';
-            document.getElementById('battle-lives-display').innerText = `LIVES: ${hearts || '0'}`;
+            rescuedCount = Math.min(300, (unlockedLevel - 1) * 3);
+            const hearts = '❤️'.repeat(Math.max(0, playerLives)) + '🖤'.repeat(Math.max(0, 3 - playerLives));
+            document.getElementById('menu-lives-display').innerText = hearts;
+            document.getElementById('battle-lives-display').innerText = `LIVES: ${hearts}`;
             document.getElementById('menu-rescued-display').innerText = rescuedCount;
-            document.getElementById('unlocked-count').innerText = Math.min(totalLevels, unlockedLevel);
+            document.getElementById('unlocked-count').innerText = Math.min(100, unlockedLevel);
         }
 
-        // --- PAGINATED MAP GENERATION (2048 STAGES) ---
+        // --- MAP GENERATION ---
         function renderMapGrid() {
             const grid = document.getElementById('map-grid');
-            const pageContainer = document.getElementById('page-controls');
             grid.innerHTML = '';
-            pageContainer.innerHTML = '';
 
-            const maxPages = Math.ceil(totalLevels / levelsPerPage);
-            currentMapPage = Math.max(1, Math.min(maxPages, currentMapPage));
-
-            // Render Page Navigation Buttons
-            const startRangePage = Math.max(1, currentMapPage - 2);
-            const endRangePage = Math.min(maxPages, startRangePage + 4);
-
-            for (let p = startRangePage; p <= endRangePage; p++) {
-                const pBtn = document.createElement('button');
-                pBtn.className = `page-btn ${p === currentMapPage ? 'active' : ''}`;
-                const startLvl = (p - 1) * levelsPerPage + 1;
-                const endLvl = Math.min(totalLevels, p * levelsPerPage);
-                pBtn.innerText = `${startLvl}-${endLvl}`;
-                pBtn.onclick = () => { currentMapPage = p; renderMapGrid(); };
-                pageContainer.appendChild(pBtn);
-            }
-
-            // Render Levels for current page
-            const startLevel = (currentMapPage - 1) * levelsPerPage + 1;
-            const endLevel = Math.min(totalLevels, currentMapPage * levelsPerPage);
-
-            for (let i = startLevel; i <= endLevel; i++) {
+            for (let i = 1; i <= 100; i++) {
                 const btn = document.createElement('div');
                 const isBoss = (i % 10 === 0);
-                const isBonus = (i % 16 === 0);
-                const isGlitchy = (i === totalLevels);
+                const isGlitchy = (i === 100);
                 const isLocked = i > unlockedLevel;
                 const isCleared = i < unlockedLevel;
 
                 let classes = 'level-btn';
                 if (isGlitchy) classes += ' glitchy-btn';
                 else if (isBoss) classes += ' boss';
-                if (isBonus && !isGlitchy && !isBoss) classes += ' bonus-btn';
                 
                 if (isLocked) classes += ' locked';
                 if (isCleared) classes += ' cleared';
                 btn.className = classes;
                 
-                let icon = isGlitchy ? '👾' : (isBoss ? '👹' : (isBonus ? '🎁' : i));
+                let icon = isGlitchy ? '👾' : (isBoss ? '👹' : i);
                 btn.innerHTML = `<div>${icon}</div>`;
                 
                 if (isCleared) {
                     btn.innerHTML += `<div class="star-rating">⭐⭐⭐</div>`;
                 } else if (isGlitchy && !isLocked) {
-                    btn.innerHTML += `<div class="star-rating" style="color:#ff00ff">FINAL</div>`;
+                    btn.innerHTML += `<div class="star-rating" style="color:#ff00ff">GLITCHY</div>`;
                 } else if (isBoss && !isLocked) {
                     btn.innerHTML += `<div class="star-rating" style="color:#ff0000">BOSS</div>`;
-                } else if (isBonus && !isLocked) {
-                    btn.innerHTML += `<div class="star-rating" style="color:#00ff00">+LIFE</div>`;
                 }
 
                 if (!isLocked) {
@@ -554,11 +486,6 @@
                 grid.appendChild(btn);
             }
         }
-
-        window.jumpToCurrentLevelPage = function() {
-            currentMapPage = Math.ceil(unlockedLevel / levelsPerPage);
-            renderMapGrid();
-        };
 
         // --- AUDIO SYNTHESIS SYSTEM ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -609,7 +536,7 @@
         let pacmanMesh, topHalf, bottomHalf, auraMesh;
         let activeParticles = [];
         
-        // Shared assets for citizens
+        // Shared assets for citizens to keep rendering smooth for 300 models
         let citizenTopGeo, citizenBotGeo, citizenEyeGeo, citizenMat, citizenEyeMat;
 
         function init3D() {
@@ -639,7 +566,7 @@
             scene.add(pointLight);
 
             // Arena Floor Grid
-            const floorGeo = new THREE.PlaneGeometry(160, 160);
+            const floorGeo = new THREE.PlaneGeometry(160, 160); // Enlarged for Pac-City
             const floorMat = new THREE.MeshPhongMaterial({ color: 0x001122, side: THREE.DoubleSide });
             floor = new THREE.Mesh(floorGeo, floorMat);
             floor.rotation.x = -Math.PI / 2;
@@ -669,6 +596,7 @@
             citizenEyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
         }
 
+        // Identical design to Pac-Man but optimized for 300 copies
         function createPacCitizen() {
             const group = new THREE.Group();
             const top = new THREE.Mesh(citizenTopGeo, citizenMat);
@@ -829,7 +757,23 @@
 
         function setupRaycaster() {
             const container = document.getElementById('canvas-container');
-            
+            container.addEventListener('click', (e) => {
+                if (battleState !== 'PLAYER_SELECT_TARGET') return;
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+                const ghostMeshes = activeGhosts.map(g => g.userData.bodyMesh);
+                const intersects = raycaster.intersectObjects(ghostMeshes);
+
+                if (intersects.length > 0) {
+                    const hitBody = intersects[0].object;
+                    const ghostGroup = activeGhosts.find(g => g.userData.bodyMesh === hitBody);
+                    if (ghostGroup) executePlayerAttack(ghostGroup);
+                }
+            });
+
+            // Fallback listeners on the window to bypass UI blocking
             const handleGlobalTargetSelect = (clientX, clientY) => {
                 if (battleState !== 'PLAYER_SELECT_TARGET') return;
                 mouse.x = (clientX / window.innerWidth) * 2 - 1;
@@ -929,7 +873,7 @@
             scene.add(glitchy);
             cutsceneObjects.push(glitchy);
             
-            // Spawn rescued citizens
+            // Spawn all 300 rescued citizens
             for(let i=0; i<300; i++) {
                 const cit = createPacCitizen();
                 const angle = Math.random() * Math.PI * 2;
@@ -946,11 +890,124 @@
             backgroundCages.forEach(c => scene.remove(c.group));
         };
 
+        // --- NEW NORMAL BOSS DEFEATED ANIMATION & AUDIO ---
+        window.startBossDefeatCutscene = function(lastBossGhost) {
+            appState = 'CUTSCENE';
+            cutsceneMode = 'boss_defeat';
+            battleState = 'VICTORY';
+            stopBossTimer();
+            playBossDefeatAudio(); // Plays Boss defeated - Pac-Fight.mp3
+
+            document.getElementById('battle-ui').style.display = 'none';
+            document.getElementById('ghost-hp-overlay').innerHTML = '';
+
+            const bossPos = lastBossGhost ? lastBossGhost.position.clone() : new THREE.Vector3(0, 0, 0);
+            
+            // Clean active Ghosts
+            activeGhosts.forEach(g => scene.remove(g));
+            activeGhosts = [];
+
+            // Add White Explosion Sphere Mesh
+            const flashGeo = new THREE.SphereGeometry(1, 32, 32);
+            const flashMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 });
+            const flashMesh = new THREE.Mesh(flashGeo, flashMat);
+            flashMesh.position.copy(bossPos);
+            scene.add(flashMesh);
+            cutsceneObjects.push(flashMesh);
+
+            // Spawn 120 Frightened Blue Ghosts bursting outward
+            const blueGhostsList = [];
+            for (let i = 0; i < 120; i++) {
+                const bg = createGhostModel({ name: 'SCARED', color: 0x0022ff, hp: 1, atk: 0 });
+                bg.position.copy(bossPos).add(new THREE.Vector3((Math.random()-0.5)*3, (Math.random()-0.5)*2, (Math.random()-0.5)*3));
+                bg.userData.vel = new THREE.Vector3((Math.random()-0.5)*0.6, (Math.random()-0.5)*0.3, (Math.random()-0.5)*0.6);
+                scene.add(bg);
+                cutsceneObjects.push(bg);
+                blueGhostsList.push(bg);
+            }
+
+            // Spawn charging Horde of Pac-Citizens
+            const chargingCitizensList = [];
+            for (let i = 0; i < 40; i++) {
+                const cit = createPacCitizen();
+                cit.position.set(bossPos.x + (Math.random()-0.5)*30 - 20, 0.5, bossPos.z + (Math.random()-0.5)*30 - 20);
+                scene.add(cit);
+                cutsceneObjects.push(cit);
+                chargingCitizensList.push(cit);
+            }
+
+            // Pac-Man charge animation sequence
+            pacmanMesh.visible = true;
+            pacmanMesh.position.set(bossPos.x - 12, 2, bossPos.z + 5);
+            pacmanMesh.lookAt(bossPos);
+
+            camera.position.set(bossPos.x, 15, bossPos.z + 25);
+            camera.lookAt(bossPos);
+
+            let startTime = Date.now();
+
+            function animBossDefeatLoop() {
+                if (cutsceneMode !== 'boss_defeat') return;
+                const elapsed = (Date.now() - startTime) / 1000;
+
+                // Phase 1: Pac-Man charges into boss (0s - 1.5s)
+                if (elapsed < 1.5) {
+                    pacmanMesh.position.lerp(bossPos, 0.08);
+                    topHalf.rotation.x = -Math.abs(Math.sin(elapsed * 15)) * 0.6;
+                    bottomHalf.rotation.x = Math.abs(Math.sin(elapsed * 15)) * 0.6;
+                }
+                // Phase 2: White explosion & swarm burst (1.5s - 4s)
+                else if (elapsed < 4.0) {
+                    flashMesh.material.opacity = Math.sin((elapsed - 1.5) * Math.PI / 2.5);
+                    flashMesh.scale.addScalar(0.4);
+
+                    blueGhostsList.forEach(bg => {
+                        bg.position.add(bg.userData.vel);
+                        bg.rotation.y += 0.05;
+                    });
+
+                    chargingCitizensList.forEach((cit, idx) => {
+                        cit.position.lerp(bossPos, 0.04);
+                        cit.children[0].rotation.x = -Math.abs(Math.sin(elapsed * 20 + idx)) * 0.6;
+                        cit.children[1].rotation.x = Math.abs(Math.sin(elapsed * 20 + idx)) * 0.6;
+                    });
+
+                    if (Math.random() < 0.4) spawnParticles(bossPos, 0xffff00, 10);
+                }
+                // Phase 3: "CLEAR!" banner & Victory transition (4s - 8s)
+                else {
+                    document.getElementById('boss-clear-banner').style.display = 'block';
+
+                    chargingCitizensList.forEach(cit => {
+                        cit.position.y = 0.5 + Math.abs(Math.sin(elapsed * 8)) * 2;
+                        cit.rotation.y += 0.1;
+                    });
+
+                    blueGhostsList.forEach(bg => {
+                        bg.scale.multiplyScalar(0.95);
+                    });
+                }
+
+                if (elapsed < 8.0) {
+                    requestAnimationFrame(animBossDefeatLoop);
+                } else {
+                    // Transition to standard victory modal
+                    document.getElementById('boss-clear-banner').style.display = 'none';
+                    stopBossDefeatAudio();
+                    cutsceneObjects.forEach(obj => scene.remove(obj));
+                    cutsceneObjects = [];
+                    cutsceneMode = null;
+                    handleVictory();
+                }
+            }
+            animBossDefeatLoop();
+        };
+
         window.showFinalVictory = function() {
             document.getElementById('screen-ending').style.display = 'none';
             document.getElementById('victory-title').innerText = "WORLD SAVED!";
             document.getElementById('victory-text').innerText = "Glitchy is defeated and Pac-City is free!";
-            document.getElementById('rescued-text').innerText = "6144 / 6144 PAC-CITIZENS RESCUED!";
+            document.getElementById('rescued-text').innerText = "300 / 300 PAC-CITIZENS RESCUED!";
             document.getElementById('modal-victory').style.display = 'flex';
             saveProgress();
         };
@@ -958,7 +1015,7 @@
         // --- BOSS TIMER MANAGEMENT ---
         function startBossTimer() {
             stopBossTimer();
-            bossTimerSeconds = 900; // 15 Minutes
+            bossTimerSeconds = 900; // 15 Minutes = 900 Seconds
             updateBossTimerUI();
             document.getElementById('boss-timer-display').style.display = 'block';
 
@@ -1001,7 +1058,7 @@
         let joystickActive = false;
         let joystickCenter = { x: 0, y: 0 };
         let joystickDir = { x: 0, y: 0 };
-        const joystickMaxRadius = 35;
+        const joystickMaxRadius = 35; // Size constraints
         
         function initJoystick() {
             const zone = document.getElementById('joystick-zone');
@@ -1052,15 +1109,18 @@
             document.getElementById('screen-menu').style.display = 'none';
             document.getElementById('screen-city').style.display = 'block';
             
+            // Hide menu background objects
             backgroundCages.forEach(c => c.group.visible = false);
             
             pacmanMesh.visible = true;
             pacmanMesh.position.set(0, 2, 0);
             pacmanMesh.scale.set(1, 1, 1);
             
+            // Create Neon Buildings
             for (let i = 0; i < 25; i++) {
                 const height = 5 + Math.random() * 20;
                 const geo = new THREE.BoxGeometry(4 + Math.random()*4, height, 4 + Math.random()*4);
+                // Cyberpunk neon building colors
                 const colors = [0x00f2ff, 0xff00ff, 0x000411, 0x110033, 0xff0055];
                 const mat = new THREE.MeshPhongMaterial({ 
                     color: colors[Math.floor(Math.random() * colors.length)], 
@@ -1071,6 +1131,7 @@
                 
                 const bldg = new THREE.Mesh(geo, mat);
                 
+                // Keep center free
                 let bx, bz;
                 do {
                     bx = (Math.random() - 0.5) * 120;
@@ -1079,6 +1140,7 @@
                 
                 bldg.position.set(bx, height/2, bz);
                 
+                // Add wireframe neon glow edges
                 const edges = new THREE.EdgesGeometry(geo);
                 const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x00f2ff, transparent: true, opacity: 0.5 }));
                 bldg.add(line);
@@ -1087,7 +1149,8 @@
                 cityMeshes.push(bldg);
             }
             
-            const countToSpawn = Math.min(rescuedCount, 150);
+            // Spawn Citizens
+            const countToSpawn = Math.min(rescuedCount, 150); // Performance cap
             for (let i = 0; i < countToSpawn; i++) {
                 const cit = createPacCitizen();
                 cit.position.set((Math.random() - 0.5) * 100, 0.8, (Math.random() - 0.5) * 100);
@@ -1132,37 +1195,31 @@
             db.innerText = cityDialogues[Math.floor(Math.random() * cityDialogues.length)];
             db.style.display = 'block';
             
+            // hide after 3.5 seconds
             setTimeout(() => {
                 db.style.display = 'none';
             }, 3500);
         };
 
-        // --- BATTLE LOGIC ENGINE WITH GHOST WAVES ---
+        // --- BATTLE LOGIC ENGINE ---
         window.startBattleLevel = function(levelNum) {
             appState = 'BATTLE';
             currentLevel = levelNum;
             document.getElementById('screen-menu').style.display = 'none';
             document.getElementById('screen-battle').style.display = 'block';
             
-            const isGlitchy = (levelNum === totalLevels);
-            const isBoss = (levelNum % 10 === 0) || isGlitchy;
+            const isGlitchy = (levelNum === 100);
+            const isBoss = (levelNum % 10 === 0);
             let title = `STAGE ${currentLevel}`;
             if(isGlitchy) title += ' (FINAL BOSS)';
             else if(isBoss) title += ' (BOSS)';
             document.getElementById('stage-title').innerText = title;
 
-            // Setup Wave count (Boss levels stay 1 wave, non-boss levels augment progressively)
-            if (isBoss) {
-                totalWaves = 1;
-            } else {
-                totalWaves = Math.min(8, 1 + Math.floor((levelNum - 1) / 16));
-            }
-            currentWave = 1;
-
             // Start standard battle OST or Boss battle OST
-            playBattleOST(isBoss);
+            playBattleOST(isBoss || isGlitchy);
 
-            if (isBoss) {
+            // Handle 15 min Boss Timer
+            if (isBoss || isGlitchy) {
                 startBossTimer();
             } else {
                 stopBossTimer();
@@ -1174,9 +1231,26 @@
             powerPelletTurnsLeft = 0;
             updateHUD();
 
-            spawnGhostWave(currentWave);
+            activeGhosts.forEach(g => scene.remove(g));
+            activeGhosts = [];
+            document.getElementById('ghost-hp-overlay').innerHTML = '';
+
+            // Spawn Enemies
+            let ghostCount = isGlitchy ? 1 : (isBoss ? 1 : Math.min(8, 1 + Math.floor((levelNum - 1) / 12)));
+            const radius = 8;
+            for (let i = 0; i < ghostCount; i++) {
+                let config = isGlitchy ? glitchyConfig : ghostTypes[(levelNum + i - 1) % ghostTypes.length];
+                const ghost = createGhostModel(config, isBoss || isGlitchy);
+                const angle = (i - (ghostCount - 1) / 2) * 0.45;
+                ghost.position.set(6 + Math.sin(angle) * radius, 0, 0 + Math.cos(angle) * radius);
+                ghost.rotation.y = -Math.PI / 3;
+                ghost.userData.basePos.copy(ghost.position);
+                scene.add(ghost);
+                activeGhosts.push(ghost);
+            }
 
             createLevelCages();
+            updateGhostCountUI();
             battleState = 'IDLE';
             enableActionButtons(true);
             
@@ -1189,36 +1263,6 @@
             pacmanMesh.rotation.set(0, Math.PI / 3, 0);
             pacmanMesh.position.set(-9, 2, 5);
         };
-
-        function spawnGhostWave(waveIndex) {
-            activeGhosts.forEach(g => {
-                if(g.userData.hpBar) g.userData.hpBar.remove();
-                scene.remove(g);
-            });
-            activeGhosts = [];
-            document.getElementById('ghost-hp-overlay').innerHTML = '';
-
-            const isGlitchy = (currentLevel === totalLevels);
-            const isBoss = (currentLevel % 10 === 0) || isGlitchy;
-
-            let ghostCount = isGlitchy ? 1 : (isBoss ? 1 : Math.min(6, 1 + Math.floor((currentLevel + waveIndex - 2) / 8)));
-            const radius = 8;
-            for (let i = 0; i < ghostCount; i++) {
-                let config = isGlitchy ? glitchyConfig : ghostTypes[(currentLevel + waveIndex + i - 1) % ghostTypes.length];
-                const ghost = createGhostModel(config, isBoss);
-                const angle = (i - (ghostCount - 1) / 2) * 0.45;
-                ghost.position.set(6 + Math.sin(angle) * radius, 0, 0 + Math.cos(angle) * radius);
-                ghost.rotation.y = -Math.PI / 3;
-                ghost.userData.basePos.copy(ghost.position);
-                scene.add(ghost);
-                activeGhosts.push(ghost);
-
-                spawnParticles(ghost.position, config.color, 15);
-            }
-
-            document.getElementById('wave-indicator').innerText = `WAVE ${waveIndex}/${totalWaves}`;
-            updateGhostCountUI();
-        }
 
         function updateHUD() {
             document.getElementById('hp-text').innerText = `${playerHp}/${maxHp} HP`;
@@ -1315,6 +1359,8 @@
                     spawnParticles(targetGhost.position, targetGhost.userData.color, 20);
                     showFloatingText(`-${dmg}`, targetGhost.position, '#ff0000');
 
+                    const isBossDefeated = targetGhost.userData.hp <= 0 && targetGhost.userData.isBoss;
+
                     if (targetGhost.userData.hp <= 0) {
                         spawnParticles(targetGhost.position, 0xffffff, 35);
                         if(targetGhost.userData.hpBar) targetGhost.userData.hpBar.remove();
@@ -1323,23 +1369,16 @@
                         updateGhostCountUI();
                     }
 
-                    // Check wave completion or level victory
                     if (activeGhosts.length === 0) {
-                        if (currentWave < totalWaves) {
-                            currentWave++;
-                            playPowerSfx();
-                            showFloatingText(`WAVE ${currentWave} INCOMING!`, pacmanMesh.position, '#00f2ff');
-                            setTimeout(() => {
-                                spawnGhostWave(currentWave);
-                                battleState = 'IDLE';
-                                enableActionButtons(true);
-                            }, 1000);
-                            return;
-                        }
-
                         stopBossTimer();
-                        if (currentLevel === totalLevels) setTimeout(startEndingCutscene, 1000);
-                        else setTimeout(handleVictoryCheck, 800);
+                        if (currentLevel === 100) {
+                            setTimeout(startEndingCutscene, 1000);
+                        } else if (isBossDefeated) {
+                            // Trigger normal boss victory cutscene + Boss defeated - Pac-Fight.mp3 audio
+                            setTimeout(() => startBossDefeatCutscene(targetGhost), 500);
+                        } else {
+                            setTimeout(handleVictory, 800);
+                        }
                         return;
                     }
 
@@ -1491,21 +1530,25 @@
             playDeathSfx();
 
             let phaseProgress = 0;
-            const duration = 120;
+            const duration = 120; // ~2 seconds @ 60fps
 
             function deathLoop() {
                 phaseProgress++;
                 const ratio = phaseProgress / duration;
 
+                // Rotate towards screen & spin rapidly around Y and Z
                 pacmanMesh.rotation.y += 0.25;
                 pacmanMesh.rotation.z += 0.15;
 
+                // Open jaws wider and wider until 180 degrees
                 topHalf.rotation.x = -Math.min(Math.PI * 0.9, ratio * Math.PI * 1.1);
                 bottomHalf.rotation.x = Math.min(Math.PI * 0.9, ratio * Math.PI * 1.1);
 
+                // Shrink pacman to zero
                 const scale = Math.max(0, 1 - ratio);
                 pacmanMesh.scale.set(scale, scale, scale);
 
+                // Burst particles periodically
                 if (phaseProgress % 6 === 0) {
                     spawnParticles(pacmanMesh.position, 0xffff00, 8);
                 }
@@ -1521,149 +1564,34 @@
             deathLoop();
         }
 
-        // --- EXTRA LIFE REWARD MINI-GAME (EVERY 16 LEVELS) ---
-        let minigameCanvas, minigameCtx;
-        let minigameTimer = 10;
-        let minigameScore = 0;
-        let minigameItems = [];
-        let minigameInterval, minigameAnimFrame;
-
-        function checkBonusMinigameTrigger() {
-            if (currentLevel % 16 === 0) {
-                startExtraLifeMinigame();
-            } else {
-                handleVictory();
-            }
-        }
-
-        function startExtraLifeMinigame() {
-            appState = 'MINIGAME';
-            document.getElementById('screen-battle').style.display = 'none';
-            document.getElementById('screen-minigame').style.display = 'flex';
-
-            minigameCanvas = document.getElementById('minigame-canvas');
-            minigameCtx = minigameCanvas.getContext('2d');
-            
-            minigameTimer = 10;
-            minigameScore = 0;
-            minigameItems = [];
-            document.getElementById('minigame-timer').innerText = minigameTimer;
-            document.getElementById('minigame-score').innerText = minigameScore;
-
-            // Click/Touch listener
-            const clickHandler = (e) => {
-                if (appState !== 'MINIGAME') return;
-                const rect = minigameCanvas.getBoundingClientRect();
-                const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
-                const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
-
-                for (let i = minigameItems.length - 1; i >= 0; i--) {
-                    const item = minigameItems[i];
-                    const dist = Math.hypot(item.x - x, item.y - y);
-                    if (dist < item.radius + 10) {
-                        minigameScore++;
-                        playHealSfx();
-                        document.getElementById('minigame-score').innerText = minigameScore;
-                        minigameItems.splice(i, 1);
-                        break;
-                    }
-                }
-            };
-
-            minigameCanvas.onclick = clickHandler;
-            minigameCanvas.ontouchstart = (e) => { clickHandler(e); e.preventDefault(); };
-
-            minigameInterval = setInterval(() => {
-                minigameTimer--;
-                document.getElementById('minigame-timer').innerText = minigameTimer;
-                if (minigameTimer <= 0) {
-                    endExtraLifeMinigame();
-                }
-            }, 1000);
-
-            function updateMinigame() {
-                if (appState !== 'MINIGAME') return;
-                
-                // Spawn items
-                if (Math.random() < 0.15) {
-                    minigameItems.push({
-                        x: Math.random() * (minigameCanvas.width - 40) + 20,
-                        y: -20,
-                        speed: 2 + Math.random() * 3,
-                        type: Math.random() > 0.3 ? 'heart' : 'pellet',
-                        radius: 18
-                    });
-                }
-
-                // Render
-                minigameCtx.clearRect(0, 0, minigameCanvas.width, minigameCanvas.height);
-
-                for (let i = minigameItems.length - 1; i >= 0; i--) {
-                    const item = minigameItems[i];
-                    item.y += item.speed;
-
-                    minigameCtx.font = "24px sans-serif";
-                    minigameCtx.textAlign = "center";
-                    minigameCtx.textBaseline = "middle";
-                    minigameCtx.fillText(item.type === 'heart' ? '❤️' : '⚡', item.x, item.y);
-
-                    if (item.y > minigameCanvas.height + 30) {
-                        minigameItems.splice(i, 1);
-                    }
-                }
-
-                minigameAnimFrame = requestAnimationFrame(updateMinigame);
-            }
-
-            updateMinigame();
-        }
-
-        function endExtraLifeMinigame() {
-            clearInterval(minigameInterval);
-            cancelAnimationFrame(minigameAnimFrame);
-            document.getElementById('screen-minigame').style.display = 'none';
-
-            let livesEarned = 1;
-            if (minigameScore >= 12) livesEarned = 3;
-            else if (minigameScore >= 6) livesEarned = 2;
-
-            playerLives += livesEarned;
-            updateGlobalHUD();
-
-            handleVictory(`MINIGAME COMPLETED! +${livesEarned} EXTRA LIVES GAINED!`);
-        }
-
         // --- VICTORY & GAMEOVER MODALS ---
-        function handleVictoryCheck() {
-            checkBonusMinigameTrigger();
-        }
-
-        function handleVictory(customMsg = null) {
+        function handleVictory() {
             battleState = 'VICTORY';
             stopBossTimer();
             stopBattleOST();
             breakCagesOpen();
-            saveProgress();
+            saveProgress(); // Saves progress in DB
             
             setTimeout(() => {
                 document.getElementById('victory-title').innerText = "VICTORY!";
-                document.getElementById('victory-text').innerText = customMsg || `Stage ${currentLevel} cleared! Unlocked Level ${unlockedLevel}`;
-                document.getElementById('rescued-text').innerText = (currentLevel === unlockedLevel - 1) ? "+3 Pac-Citizens Rescued!" : "Stage Replayed";
+                document.getElementById('victory-text').innerText = `Stage ${currentLevel} cleared! Unlocked Level ${unlockedLevel}`;
+                document.getElementById('rescued-text').innerText = (currentLevel === unlockedLevel - 1) ? "+3 Pac-Citizens Rescued!" : "Level Replayed";
                 document.getElementById('modal-victory').style.display = 'flex';
                 
                 playSfx(523, 0.1, 'sine');
                 setTimeout(() => playSfx(659, 0.1, 'sine'), 80);
                 setTimeout(() => playSfx(784, 0.1, 'sine'), 160);
                 setTimeout(() => playSfx(1046, 0.3, 'sine'), 240);
-            }, 1000);
+            }, 1500);
         }
 
         async function handleGameOver() {
             stopBossTimer();
             stopBattleOST();
+            stopBossDefeatAudio();
             playerLives--;
             updateGlobalHUD();
-            await saveProgress();
+            await saveProgress(); // Commits life loss to DB instantly
             
             playSfx(300, 0.3, 'sawtooth', 0.2);
             setTimeout(() => playSfx(150, 0.5, 'sawtooth', 0.2), 250);
@@ -1675,7 +1603,7 @@
                 document.getElementById('btn-retry').onclick = async () => {
                     document.getElementById('modal-gameover').style.display = 'none';
                     document.getElementById('screen-battle').style.display = 'none';
-                    await hardReset();
+                    await hardReset(); // Erases DB progress and starts over
                     appState = 'MENU';
                     document.getElementById('screen-menu').style.display = 'flex';
                 };
@@ -1692,6 +1620,7 @@
             appState = 'MENU';
             stopBossTimer();
             stopBattleOST();
+            stopBossDefeatAudio();
             document.getElementById('modal-victory').style.display = 'none';
             document.getElementById('screen-battle').style.display = 'none';
             document.getElementById('screen-menu').style.display = 'flex';
@@ -1731,9 +1660,11 @@
                 cutsceneObjects.forEach(obj => {
                     if (obj.userData.isCitizen && obj.visible) {
                         citizensActive++;
+                        // Move toward Glitchy
                         const dir = new THREE.Vector3().subVectors(glitchy.position, obj.position).normalize();
                         obj.position.add(dir.multiplyScalar(obj.userData.speed));
                         
+                        // Chomping animation
                         obj.children[0].rotation.x = -Math.abs(Math.sin(time * 0.01 + obj.userData.offset)) * 0.5;
                         obj.children[1].rotation.x = Math.abs(Math.sin(time * 0.01 + obj.userData.offset)) * 0.5;
                         
@@ -1753,14 +1684,17 @@
                 }
             } 
             else if (appState === 'CITY') {
+                // Joystick Movement Logic
                 const speed = 0.4;
                 if (joystickDir.x !== 0 || joystickDir.y !== 0) {
                     pacmanMesh.position.x += joystickDir.x * speed;
                     pacmanMesh.position.z += joystickDir.y * speed;
                     
+                    // City bounds (-70 to 70)
                     pacmanMesh.position.x = Math.max(-70, Math.min(70, pacmanMesh.position.x));
                     pacmanMesh.position.z = Math.max(-70, Math.min(70, pacmanMesh.position.z));
                     
+                    // Rotate and chomp
                     const angle = Math.atan2(joystickDir.x, joystickDir.y);
                     pacmanMesh.rotation.y = angle;
                     
@@ -1772,9 +1706,11 @@
                     bottomHalf.rotation.x = 0;
                 }
 
+                // Smooth Camera Follow
                 camera.position.lerp(new THREE.Vector3(pacmanMesh.position.x, 22, pacmanMesh.position.z + 28), 0.1);
                 camera.lookAt(pacmanMesh.position);
 
+                // Update wandering Citizens & check for interaction
                 let nearestDist = Infinity;
                 
                 cityCitizens.forEach(cit => {
@@ -1783,6 +1719,7 @@
                         nearestDist = distToPlayer;
                     }
 
+                    // Wandering AI
                     const citSpeed = cit.userData.speed * 0.25;
                     const dir = new THREE.Vector3().subVectors(cit.userData.wanderTarget, cit.position);
                     
@@ -1791,18 +1728,21 @@
                         cit.position.add(dir.multiplyScalar(citSpeed));
                         
                         const angle = Math.atan2(dir.x, dir.z);
+                        // Smooth rotation
                         cit.rotation.y += (angle - cit.rotation.y) * 0.1;
                         
                         const chomp = Math.abs(Math.sin(time * 0.01 + cit.userData.offset)) * 0.5;
                         cit.children[0].rotation.x = -chomp;
                         cit.children[1].rotation.x = chomp;
                     } else {
+                        // Pick new random target point occasionally
                         if (Math.random() < 0.01) {
                             cit.userData.wanderTarget.set(
                                 cit.position.x + (Math.random() - 0.5) * 20,
                                 0.8,
                                 cit.position.z + (Math.random() - 0.5) * 20
                             );
+                            // Bound to city limits
                             cit.userData.wanderTarget.x = Math.max(-70, Math.min(70, cit.userData.wanderTarget.x));
                             cit.userData.wanderTarget.z = Math.max(-70, Math.min(70, cit.userData.wanderTarget.z));
                         }
@@ -1811,16 +1751,31 @@
                     }
                 });
 
+                // Show Talk Button if close to a citizen
                 if (nearestDist < 6.0) {
                     document.getElementById('btn-talk').style.display = 'block';
                 } else {
                     document.getElementById('btn-talk').style.display = 'none';
-                    document.getElementById('dialogue-box').style.display = 'none';
+                    document.getElementById('dialogue-box').style.display = 'none'; // Auto hide dialogue if walked away
                 }
 
             }
             else if (appState === 'BATTLE') {
+                // Battle Idle Animations & Power Pellet Scared Blue Ghost dynamic color update
                 activeGhosts.forEach((g, idx) => {
+                    if (!g.userData.isBoss && !g.userData.isGlitchy) {
+                        if (isPowerPelletActive) {
+                            // Flash white/blue when power pellet turns are expiring
+                            if (powerPelletTurnsLeft === 1 && Math.floor(time / 150) % 2 === 0) {
+                                g.userData.bodyMesh.material.color.setHex(0xffffff);
+                            } else {
+                                g.userData.bodyMesh.material.color.setHex(0x0022ff); // Scared Ghost Blue
+                            }
+                        } else {
+                            g.userData.bodyMesh.material.color.setHex(g.userData.color);
+                        }
+                    }
+
                     if (g.userData.isGlitchy) {
                         if(Math.random() > 0.4) {
                             g.position.x = g.userData.basePos.x + (Math.random()-0.5)*0.6;
@@ -1834,11 +1789,13 @@
                     }
                 });
 
+                // Cages animation
                 backgroundCages.forEach(c => {
                     if (!c.active && c.cage.material.opacity > 0) {
                         c.cage.position.y += 0.05;
                         c.cage.material.opacity -= 0.03;
                         c.citizen.position.y = 0.8 + Math.abs(Math.sin(time * 0.01)) * 1.5;
+                        // Chomping when free
                         c.citizen.children[0].rotation.x = -Math.abs(Math.sin(time * 0.015)) * 0.6;
                         c.citizen.children[1].rotation.x = Math.abs(Math.sin(time * 0.015)) * 0.6;
                     }
@@ -1847,10 +1804,12 @@
                 updateGhostHPBars();
             }
             else if (appState === 'MENU') {
+                // Menu slow pan camera
                 camera.position.x = Math.sin(time * 0.0001) * 35;
                 camera.position.z = Math.cos(time * 0.0001) * 35;
                 camera.lookAt(0, 0, 0);
 
+                // Idle idle animation for menu background citizens (cages)
                 backgroundCages.forEach(c => {
                     if(c.group.visible) {
                         c.citizen.children[0].rotation.x = -Math.abs(Math.sin(time * 0.015)) * 0.4;
@@ -1865,7 +1824,7 @@
 
         // Initialize application
         init3D();
-        loadProgress();
+        loadProgress(); // IndexedDB load handles the rest
         animate();
     </script>
 </body>
