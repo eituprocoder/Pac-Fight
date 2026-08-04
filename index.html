@@ -110,9 +110,10 @@
         #joystick-zone { position: absolute; bottom: 30px; left: 30px; width: 120px; height: 120px; background: rgba(0, 242, 255, 0.15); border: 2px solid rgba(0, 242, 255, 0.5); border-radius: 50%; z-index: 200; pointer-events: auto; touch-action: none; display: flex; align-items: center; justify-content: center; }
         #joystick-knob { position: absolute; width: 50px; height: 50px; background: #00f2ff; border-radius: 50%; box-shadow: 0 0 15px #00f2ff; transition: transform 0.05s ease-out; }
 
-        /* BOSS CLEAR BANNER UI OVERLAY */
-        #boss-clear-banner { display: none; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 72px; font-weight: 900; color: #ffff00; text-shadow: 0 0 20px #ffff00, 4px 4px 0 #ff0055, -4px -4px 0 #00f2ff; letter-spacing: 6px; z-index: 300; animation: popClear 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; pointer-events: none; }
-        @keyframes popClear { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.2); } 100% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); } }
+        /* BOSS DEFEATED "CLEAR!" SCREEN OVERLAY */
+        #screen-boss-clear { display: none; position: absolute; z-index: 300; top: 0; left: 0; width: 100vw; height: 100vh; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; background: transparent; }
+        .clear-banner { font-size: 90px; font-weight: 900; color: #ffff00; text-shadow: 0 0 30px #ffff00, 0 0 60px #ff0000, 5px 5px 0px #000; letter-spacing: 12px; font-family: 'Courier New', monospace; animation: clearPulse 0.6s infinite alternate; }
+        @keyframes clearPulse { 0% { transform: scale(0.95); text-shadow: 0 0 20px #ffff00, 0 0 40px #ff0000; } 100% { transform: scale(1.1); text-shadow: 0 0 40px #ffff00, 0 0 80px #ff00ff; } }
     </style>
 </head>
 <body>
@@ -135,9 +136,6 @@
 
     <!-- 3D CANVAS LAYER (Behind UI) -->
     <div id="canvas-container" style="position:absolute; top:0; left:0; width:100vw; height:100vh; z-index:1;"></div>
-
-    <!-- BOSS DEFEATED CLEAR BANNER OVERLAY -->
-    <div id="boss-clear-banner">CLEAR!</div>
 
     <!-- PAC-CITY SCREEN UI -->
     <div id="screen-city" class="screen">
@@ -175,6 +173,11 @@
             GLITCHY IS LOSING CONTROL!
         </div>
         <button class="skip-btn" id="btn-finish-ending" style="display:none;" onclick="showFinalVictory()">CONTINUE</button>
+    </div>
+
+    <!-- BOSS DEFEATED CLEAR OVERLAY -->
+    <div id="screen-boss-clear">
+        <div class="clear-banner">CLEAR!</div>
     </div>
 
     <!-- BATTLE SCREEN -->
@@ -260,7 +263,7 @@
         import * as THREE from 'three';
 
         // --- GAME ARCHITECTURE & STATE ---
-        let appState = 'MENU'; // MENU, BATTLE, CITY, CUTSCENE
+        let appState = 'MENU'; // MENU, BATTLE, CITY, CUTSCENE, BOSS_DEFEAT_CUTSCENE
         let currentLevel = 1;
         let unlockedLevel = 1;
         
@@ -276,9 +279,16 @@
         let rescuedCount = 0;
         
         // Cutscene States
-        let cutsceneMode = null; // null, 'intro', 'ending', 'boss_defeat'
+        let cutsceneMode = null; // null, 'intro', 'ending', 'boss_defeated'
         let cutsceneObjects = [];
         let backgroundCages = [];
+
+        // Boss Defeated Animation States
+        let bossDefeatPhase = 0;
+        let bossDefeatTimer = 0;
+        let bossDefeatScaredGhosts = [];
+        let bossDefeatSwarmCitizens = [];
+        let bossDefeatFloatingPacs = [];
 
         // Turn Management
         let battleState = 'IDLE'; // IDLE, PLAYER_SELECT_TARGET, ANIMATING, SHIELD_MINIGAME, DEFEAT_ANIMATION, VICTORY
@@ -297,10 +307,10 @@
         const bgAudio = new Audio();
         bgAudio.loop = true;
 
-        const bossDefeatAudio = new Audio('Boss defeated - Pac-Fight.mp3');
+        // Dedicated Boss Defeated Audio
+        const bossDefeatedAudio = new Audio('Boss defeated - Pac-Fight.mp3');
 
         function playBattleOST(isBoss) {
-            stopBossDefeatAudio();
             bgAudio.pause();
             bgAudio.currentTime = 0;
             bgAudio.src = isBoss ? 'Pac-Fight BossFight ost.mp3' : 'Pac-Fight battle ost.mp3';
@@ -312,20 +322,6 @@
         function stopBattleOST() {
             bgAudio.pause();
             bgAudio.currentTime = 0;
-        }
-
-        function playBossDefeatAudio() {
-            stopBattleOST();
-            bossDefeatAudio.pause();
-            bossDefeatAudio.currentTime = 0;
-            bossDefeatAudio.play().catch(e => {
-                console.log('Boss defeat audio autoplay prevented or file not found:', e);
-            });
-        }
-
-        function stopBossDefeatAudio() {
-            bossDefeatAudio.pause();
-            bossDefeatAudio.currentTime = 0;
         }
 
         // Quick Time Defense System
@@ -695,6 +691,19 @@
             return group;
         }
 
+        // Update Ghost colors for Power Pellet Frightened State (Only normal ghosts)
+        function updateGhostPowerPelletVisuals() {
+            activeGhosts.forEach(g => {
+                if (!g.userData.isBoss && !g.userData.isGlitchy) {
+                    if (isPowerPelletActive) {
+                        g.userData.bodyMesh.material.color.setHex(0x2121ff); // Classic blue frightened ghost color
+                    } else {
+                        g.userData.bodyMesh.material.color.setHex(g.userData.color); // Original ghost color
+                    }
+                }
+            });
+        }
+
         function createLevelCages() {
             backgroundCages.forEach(c => scene.remove(c.group));
             backgroundCages = [];
@@ -891,117 +900,140 @@
         };
 
         // --- NEW NORMAL BOSS DEFEATED ANIMATION & AUDIO ---
-        window.startBossDefeatCutscene = function(lastBossGhost) {
-            appState = 'CUTSCENE';
-            cutsceneMode = 'boss_defeat';
+        window.startBossDefeatedSequence = function(bossGhost) {
+            appState = 'BOSS_DEFEAT_CUTSCENE';
+            cutsceneMode = 'boss_defeated';
             battleState = 'VICTORY';
             stopBossTimer();
-            playBossDefeatAudio(); // Plays Boss defeated - Pac-Fight.mp3
+            stopBattleOST();
 
             document.getElementById('battle-ui').style.display = 'none';
             document.getElementById('ghost-hp-overlay').innerHTML = '';
 
-            const bossPos = lastBossGhost ? lastBossGhost.position.clone() : new THREE.Vector3(0, 0, 0);
-            
-            // Clean active Ghosts
-            activeGhosts.forEach(g => scene.remove(g));
+            // Play Boss Defeated Audio File
+            bossDefeatedAudio.currentTime = 0;
+            bossDefeatedAudio.play().catch(e => console.log("Boss audio play error:", e));
+
+            // Clean up any remaining ghosts
+            activeGhosts.forEach(g => {
+                if (g !== bossGhost) scene.remove(g);
+            });
             activeGhosts = [];
 
-            // Add White Explosion Sphere Mesh
-            const flashGeo = new THREE.SphereGeometry(1, 32, 32);
-            const flashMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 });
-            const flashMesh = new THREE.Mesh(flashGeo, flashMat);
-            flashMesh.position.copy(bossPos);
-            scene.add(flashMesh);
-            cutsceneObjects.push(flashMesh);
+            // Boss Defeat Cutscene State Variables
+            bossDefeatPhase = 1; // 1: Charge, 2: Explosion & Scared Ghosts, 3: Citizens Swarm, 4: Clear Screen
+            bossDefeatTimer = 0;
+            bossDefeatScaredGhosts = [];
+            bossDefeatSwarmCitizens = [];
+            bossDefeatFloatingPacs = [];
 
-            // Spawn 120 Frightened Blue Ghosts bursting outward
-            const blueGhostsList = [];
-            for (let i = 0; i < 120; i++) {
-                const bg = createGhostModel({ name: 'SCARED', color: 0x0022ff, hp: 1, atk: 0 });
-                bg.position.copy(bossPos).add(new THREE.Vector3((Math.random()-0.5)*3, (Math.random()-0.5)*2, (Math.random()-0.5)*3));
-                bg.userData.vel = new THREE.Vector3((Math.random()-0.5)*0.6, (Math.random()-0.5)*0.3, (Math.random()-0.5)*0.6);
-                scene.add(bg);
-                cutsceneObjects.push(bg);
-                blueGhostsList.push(bg);
-            }
+            // Position camera nicely
+            camera.position.set(0, 15, 30);
+            camera.lookAt(0, 2, 0);
 
-            // Spawn charging Horde of Pac-Citizens
-            const chargingCitizensList = [];
-            for (let i = 0; i < 40; i++) {
-                const cit = createPacCitizen();
-                cit.position.set(bossPos.x + (Math.random()-0.5)*30 - 20, 0.5, bossPos.z + (Math.random()-0.5)*30 - 20);
-                scene.add(cit);
-                cutsceneObjects.push(cit);
-                chargingCitizensList.push(cit);
-            }
+            // Phase 1: Pac-Man charges right to the boss
+            const bossPos = bossGhost.position.clone();
+            const startPacPos = pacmanMesh.position.clone();
 
-            // Pac-Man charge animation sequence
-            pacmanMesh.visible = true;
-            pacmanMesh.position.set(bossPos.x - 12, 2, bossPos.z + 5);
-            pacmanMesh.lookAt(bossPos);
+            let progress = 0;
+            function animatePacCharge() {
+                if (appState !== 'BOSS_DEFEAT_CUTSCENE') return;
+                progress += 0.04;
+                pacmanMesh.position.lerpVectors(startPacPos, bossPos, Math.min(1.0, progress));
 
-            camera.position.set(bossPos.x, 15, bossPos.z + 25);
-            camera.lookAt(bossPos);
+                // Fast Chomping animation
+                topHalf.rotation.x = -Math.abs(Math.sin(progress * 25)) * 0.7;
+                bottomHalf.rotation.x = Math.abs(Math.sin(progress * 25)) * 0.7;
 
-            let startTime = Date.now();
-
-            function animBossDefeatLoop() {
-                if (cutsceneMode !== 'boss_defeat') return;
-                const elapsed = (Date.now() - startTime) / 1000;
-
-                // Phase 1: Pac-Man charges into boss (0s - 1.5s)
-                if (elapsed < 1.5) {
-                    pacmanMesh.position.lerp(bossPos, 0.08);
-                    topHalf.rotation.x = -Math.abs(Math.sin(elapsed * 15)) * 0.6;
-                    bottomHalf.rotation.x = Math.abs(Math.sin(elapsed * 15)) * 0.6;
-                }
-                // Phase 2: White explosion & swarm burst (1.5s - 4s)
-                else if (elapsed < 4.0) {
-                    flashMesh.material.opacity = Math.sin((elapsed - 1.5) * Math.PI / 2.5);
-                    flashMesh.scale.addScalar(0.4);
-
-                    blueGhostsList.forEach(bg => {
-                        bg.position.add(bg.userData.vel);
-                        bg.rotation.y += 0.05;
-                    });
-
-                    chargingCitizensList.forEach((cit, idx) => {
-                        cit.position.lerp(bossPos, 0.04);
-                        cit.children[0].rotation.x = -Math.abs(Math.sin(elapsed * 20 + idx)) * 0.6;
-                        cit.children[1].rotation.x = Math.abs(Math.sin(elapsed * 20 + idx)) * 0.6;
-                    });
-
-                    if (Math.random() < 0.4) spawnParticles(bossPos, 0xffff00, 10);
-                }
-                // Phase 3: "CLEAR!" banner & Victory transition (4s - 8s)
-                else {
-                    document.getElementById('boss-clear-banner').style.display = 'block';
-
-                    chargingCitizensList.forEach(cit => {
-                        cit.position.y = 0.5 + Math.abs(Math.sin(elapsed * 8)) * 2;
-                        cit.rotation.y += 0.1;
-                    });
-
-                    blueGhostsList.forEach(bg => {
-                        bg.scale.multiplyScalar(0.95);
-                    });
-                }
-
-                if (elapsed < 8.0) {
-                    requestAnimationFrame(animBossDefeatLoop);
+                if (progress < 1.0) {
+                    requestAnimationFrame(animatePacCharge);
                 } else {
-                    // Transition to standard victory modal
-                    document.getElementById('boss-clear-banner').style.display = 'none';
-                    stopBossDefeatAudio();
-                    cutsceneObjects.forEach(obj => scene.remove(obj));
-                    cutsceneObjects = [];
-                    cutsceneMode = null;
-                    handleVictory();
+                    // Trigger Phase 2: Explosion & Scared Ghosts burst
+                    bossDefeatPhase = 2;
+                    scene.remove(bossGhost);
+                    spawnParticles(bossPos, 0xffffff, 80);
+                    spawnParticles(bossPos, 0x2121ff, 60);
+
+                    // Create dozens of frightened blue ghosts scatter outwards (Frame 00:04 - 00:05)
+                    const blueGhostConfig = { name: 'SCARED', color: 0x2121ff, hp: 1, atk: 0 };
+                    for (let i = 0; i < 70; i++) {
+                        const scaredGhost = createGhostModel(blueGhostConfig, false);
+                        const angle = Math.random() * Math.PI * 2;
+                        const dist = 3 + Math.random() * 16;
+                        const height = Math.random() * 8 + 0.5;
+
+                        scaredGhost.position.set(
+                            bossPos.x + Math.cos(angle) * dist,
+                            height,
+                            bossPos.z + Math.sin(angle) * dist
+                        );
+                        scaredGhost.userData.targetPos = scaredGhost.position.clone();
+                        scene.add(scaredGhost);
+                        bossDefeatScaredGhosts.push(scaredGhost);
+                    }
+
+                    // Create charging Pac-Citizens swarm (Frame 00:06 - 00:20)
+                    for (let i = 0; i < 40; i++) {
+                        const cit = createPacCitizen();
+                        cit.scale.setScalar(1.2);
+                        cit.position.set(
+                            (Math.random() - 0.5) * 40,
+                            Math.random() * 6 + 1,
+                            20 + Math.random() * 15
+                        );
+                        cit.userData.trailOffset = i * 0.15;
+                        scene.add(cit);
+                        bossDefeatSwarmCitizens.push(cit);
+                    }
+
+                    // Phase 3 & Audio sync
+                    bossDefeatedAudio.onended = () => {
+                        showBossClearVictory();
+                    };
+
+                    // Auto-fallback timer to transition to CLEAR overlay if audio ends or takes 24s
+                    setTimeout(() => {
+                        document.getElementById('screen-boss-clear').style.display = 'flex';
+                        // Spawn floating Pacs on clear screen (Frame 00:22 - 00:28)
+                        createFloatingClearPacmans();
+                    }, 21000);
+
+                    setTimeout(() => {
+                        showBossClearVictory();
+                    }, 26000);
                 }
             }
-            animBossDefeatLoop();
+            animatePacCharge();
         };
+
+        function createFloatingClearPacmans() {
+            for (let i = 0; i < 15; i++) {
+                const pac = createPacCitizen();
+                pac.scale.setScalar(2.0);
+                pac.position.set(
+                    (Math.random() - 0.5) * 35,
+                    -10 - Math.random() * 20,
+                    Math.random() * 10
+                );
+                scene.add(pac);
+                bossDefeatFloatingPacs.push(pac);
+            }
+        }
+
+        function showBossClearVictory() {
+            if (appState !== 'BOSS_DEFEAT_CUTSCENE') return;
+            document.getElementById('screen-boss-clear').style.display = 'none';
+
+            // Clean up cutscene meshes
+            bossDefeatScaredGhosts.forEach(g => scene.remove(g));
+            bossDefeatSwarmCitizens.forEach(c => scene.remove(c));
+            bossDefeatFloatingPacs.forEach(p => scene.remove(p));
+            bossDefeatScaredGhosts = [];
+            bossDefeatSwarmCitizens = [];
+            bossDefeatFloatingPacs = [];
+
+            handleVictory();
+        }
 
         window.showFinalVictory = function() {
             document.getElementById('screen-ending').style.display = 'none';
@@ -1207,6 +1239,7 @@
             currentLevel = levelNum;
             document.getElementById('screen-menu').style.display = 'none';
             document.getElementById('screen-battle').style.display = 'block';
+            document.getElementById('screen-boss-clear').style.display = 'none';
             
             const isGlitchy = (levelNum === 100);
             const isBoss = (levelNum % 10 === 0);
@@ -1251,6 +1284,7 @@
 
             createLevelCages();
             updateGhostCountUI();
+            updateGhostPowerPelletVisuals();
             battleState = 'IDLE';
             enableActionButtons(true);
             
@@ -1270,6 +1304,7 @@
             document.getElementById('pellet-bar').style.width = `${Math.min(100, (powerCharge / 2) * 100)}%`;
             document.getElementById('btn-pellet').disabled = (powerCharge < 2 || isPowerPelletActive);
             auraMesh.visible = isPowerPelletActive;
+            updateGhostPowerPelletVisuals();
         }
 
         function updateGhostCountUI() {
@@ -1359,27 +1394,31 @@
                     spawnParticles(targetGhost.position, targetGhost.userData.color, 20);
                     showFloatingText(`-${dmg}`, targetGhost.position, '#ff0000');
 
-                    const isBossDefeated = targetGhost.userData.hp <= 0 && targetGhost.userData.isBoss;
-
                     if (targetGhost.userData.hp <= 0) {
                         spawnParticles(targetGhost.position, 0xffffff, 35);
                         if(targetGhost.userData.hpBar) targetGhost.userData.hpBar.remove();
+
+                        const isBossDefeated = targetGhost.userData.isBoss;
+                        const isGlitchyDefeated = targetGhost.userData.isGlitchy;
+
                         scene.remove(targetGhost);
                         activeGhosts = activeGhosts.filter(g => g !== targetGhost);
                         updateGhostCountUI();
-                    }
 
-                    if (activeGhosts.length === 0) {
-                        stopBossTimer();
-                        if (currentLevel === 100) {
-                            setTimeout(startEndingCutscene, 1000);
-                        } else if (isBossDefeated) {
-                            // Trigger normal boss victory cutscene + Boss defeated - Pac-Fight.mp3 audio
-                            setTimeout(() => startBossDefeatCutscene(targetGhost), 500);
-                        } else {
-                            setTimeout(handleVictory, 800);
+                        // Check if stage is cleared
+                        if (activeGhosts.length === 0) {
+                            stopBossTimer();
+
+                            if (isGlitchyDefeated) {
+                                setTimeout(startEndingCutscene, 1000);
+                            } else if (isBossDefeated) {
+                                // Trigger Boss Defeated Animation with audio!
+                                setTimeout(() => startBossDefeatedSequence(targetGhost), 500);
+                            } else {
+                                setTimeout(handleVictory, 800);
+                            }
+                            return;
                         }
-                        return;
                     }
 
                     advanceTurnState();
@@ -1588,7 +1627,6 @@
         async function handleGameOver() {
             stopBossTimer();
             stopBattleOST();
-            stopBossDefeatAudio();
             playerLives--;
             updateGlobalHUD();
             await saveProgress(); // Commits life loss to DB instantly
@@ -1620,10 +1658,10 @@
             appState = 'MENU';
             stopBossTimer();
             stopBattleOST();
-            stopBossDefeatAudio();
             document.getElementById('modal-victory').style.display = 'none';
             document.getElementById('screen-battle').style.display = 'none';
             document.getElementById('screen-menu').style.display = 'flex';
+            document.getElementById('screen-boss-clear').style.display = 'none';
             renderMapGrid();
         };
 
@@ -1643,7 +1681,49 @@
             requestAnimationFrame(animate);
             const time = Date.now();
 
-            if (appState === 'CUTSCENE' && cutsceneMode === 'intro') {
+            if (appState === 'BOSS_DEFEAT_CUTSCENE') {
+                // Animate Scared Blue Ghosts hovering & scattering
+                bossDefeatScaredGhosts.forEach((g, idx) => {
+                    g.position.y += Math.sin(time * 0.005 + idx) * 0.03;
+                    g.rotation.y += 0.05;
+                });
+
+                // Animate Citizens Swarm charging through blue ghosts
+                bossDefeatSwarmCitizens.forEach((cit, idx) => {
+                    const t = (time * 0.003 + cit.userData.trailOffset);
+                    cit.position.x = Math.sin(t * 1.5) * 18;
+                    cit.position.z = Math.cos(t * 1.2) * 12 - 2;
+                    cit.position.y = 1 + Math.sin(t * 3) * 3;
+
+                    // Chomping motion
+                    cit.children[0].rotation.x = -Math.abs(Math.sin(time * 0.02 + idx)) * 0.7;
+                    cit.children[1].rotation.x = Math.abs(Math.sin(time * 0.02 + idx)) * 0.7;
+
+                    // Eat nearby scared blue ghosts
+                    bossDefeatScaredGhosts.forEach((sg) => {
+                        if (sg.visible && sg.position.distanceTo(cit.position) < 3.0) {
+                            sg.visible = false;
+                            spawnParticles(sg.position, 0x2121ff, 12);
+                            playSfx(400 + Math.random() * 300, 0.05, 'sawtooth');
+                        }
+                    });
+                });
+
+                // Animate Floating Pacs on "CLEAR!" phase
+                bossDefeatFloatingPacs.forEach((pac, idx) => {
+                    pac.position.y += 0.25;
+                    pac.rotation.y += 0.03;
+                    pac.children[0].rotation.x = -Math.abs(Math.sin(time * 0.015 + idx)) * 0.5;
+                    pac.children[1].rotation.x = Math.abs(Math.sin(time * 0.015 + idx)) * 0.5;
+                    if (pac.position.y > 25) pac.position.y = -15;
+                });
+
+                // Dynamic camera pan for boss defeat sequence
+                camera.position.x = Math.sin(time * 0.0008) * 22;
+                camera.position.z = 24 + Math.cos(time * 0.0008) * 8;
+                camera.lookAt(0, 2, 0);
+            }
+            else if (appState === 'CUTSCENE' && cutsceneMode === 'intro') {
                 camera.position.x = Math.sin(time * 0.0003) * 45;
                 camera.position.z = Math.cos(time * 0.0003) * 45;
                 camera.lookAt(0, 0, -10);
@@ -1761,21 +1841,8 @@
 
             }
             else if (appState === 'BATTLE') {
-                // Battle Idle Animations & Power Pellet Scared Blue Ghost dynamic color update
+                // Battle Idle Animations
                 activeGhosts.forEach((g, idx) => {
-                    if (!g.userData.isBoss && !g.userData.isGlitchy) {
-                        if (isPowerPelletActive) {
-                            // Flash white/blue when power pellet turns are expiring
-                            if (powerPelletTurnsLeft === 1 && Math.floor(time / 150) % 2 === 0) {
-                                g.userData.bodyMesh.material.color.setHex(0xffffff);
-                            } else {
-                                g.userData.bodyMesh.material.color.setHex(0x0022ff); // Scared Ghost Blue
-                            }
-                        } else {
-                            g.userData.bodyMesh.material.color.setHex(g.userData.color);
-                        }
-                    }
-
                     if (g.userData.isGlitchy) {
                         if(Math.random() > 0.4) {
                             g.position.x = g.userData.basePos.x + (Math.random()-0.5)*0.6;
@@ -1809,7 +1876,7 @@
                 camera.position.z = Math.cos(time * 0.0001) * 35;
                 camera.lookAt(0, 0, 0);
 
-                // Idle idle animation for menu background citizens (cages)
+                // Idle animation for menu background citizens (cages)
                 backgroundCages.forEach(c => {
                     if(c.group.visible) {
                         c.citizen.children[0].rotation.x = -Math.abs(Math.sin(time * 0.015)) * 0.4;
